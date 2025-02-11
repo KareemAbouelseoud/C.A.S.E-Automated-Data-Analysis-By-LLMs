@@ -15,9 +15,19 @@ class SignUpRequest(BaseModel):
     email:str
     username: str
     password: str
-
+class StHistory(BaseModel):
+    project_id:str
+    last_conv:str
 
 class CreateProject(BaseModel):
     name:str
     user_id: str
-    
+
+class Recommender(BaseModel):
+    prompt:str
+    project_id:str
+
+class Chat(BaseModel):
+    prompt:str
+    messages:Optional[str]=None
+    project_id:str

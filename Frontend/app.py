@@ -143,7 +143,7 @@ if __name__=='__main__':
     # full_app.add_page("pages/About/about.py", title='Home')
     full_app.add_page('Displays/Login.py',title='Login')
     full_app.add_page('Displays/Signup.py',title='Signup')
-    full_app.add_page("Displays/Projects.py",title='Projects') 
+    full_app.add_page("Displays/Projects/Projects.py",title='Projects') 
     full_app.add_page("Displays/About.py",title='About') 
     full_app.run()
 
