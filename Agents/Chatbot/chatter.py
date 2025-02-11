@@ -30,24 +30,29 @@ from langgraph.graph import END
 from langchain import hub
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import ToolMessage
-from botTools import tools
+from Agents.Chatbot.botTools import tools
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+from Database import mainDatabase
 
 load_dotenv()
 CONFIGURATIONS={
     'temperature':0.7,
-    'model':"gemini-1.5-flash",
+    'model':"gemini-2.0-flash",
 }
-systemPrompt = "You are a chatbot"
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
-system_prompt = hub.pull("chatter").messages[0].content
+system_prompt = hub.pull("chatter").messages[0].prompt.template
 
 
 
-async def chat_node(state,config: RunnableConfig):
-    messages = state["messages"]
+async def chatter_node(state,config: RunnableConfig):
+    project_id = state["project_id"]
+    data_report=mainDatabase.fetch_data_report(project_id)
+    old_messages = state["messages"]
     messages=[
-        {"role": "system", "content":system_prompt }
-    ]+messages
+        {"role": "system", "content":system_prompt+f"\n\n Data Report:\n {data_report}" }
+    ]+old_messages
     model=llm.bind_tools(tools=tools)
     response= await model.ainvoke(messages,config)
     return {"messages": [response]}

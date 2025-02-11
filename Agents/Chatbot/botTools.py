@@ -13,17 +13,20 @@ from typing import Annotated
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 @tool
-def visualizer(user_query: Annotated[str,'The user query to be visualized'],project_id=None):
+def visualizer(
+    visualization_request: Annotated[str,'The visualization request created by the assistant according to the user intent and data report'],
+    project_id:str=None
+    ):
     """
      Visualizes the user's query using a graph.
     Args:
-        user_query (str): The user query to be visualized.
+        visualization_request (str): The visualization request created by the assistant according to the user intent and data report.
         project_id (str, optional): The ID of the project. Defaults to None.
     Returns:
         list: A list containing a message and the visualization data. If the visualization is generated, the message informs the user and includes the visualization data. Otherwise, the message informs the user that no visualization was generated and suggests trying again later.
 
     """
-    graph_response=viz_graph.invoke({'project_id':str(project_id),'messages':[{"role":"human","content":user_query}]})
+    graph_response=viz_graph.invoke({'project_id':str(project_id),'messages':[{"role":"human","content":visualization_request}]})
     if graph_response['visualization']:
         return ['Inform the user that the visualization has been generated',graph_response['visualization']]
     else:
