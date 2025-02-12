@@ -5,8 +5,28 @@ from typing_extensions import TypedDict,Annotated,NotRequired
 from Agents.Chatbot.chatter import chatter_node,should_continue
 from Agents.Chatbot.botTools import tool_node
 from dotenv import load_dotenv
+import json
+import numpy as np
 
-
+def make_serializable(obj):
+    """
+    Convert an object to a serializable format.
+    """
+    if isinstance(obj, dict):
+        return {k: make_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [make_serializable(i) for i in obj]
+    elif isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
+        return int(obj)
+    elif isinstance(obj, (np.float64, np.float32, np.float16)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
+        return None
+    else:
+        return obj
+    
 load_dotenv()
 class State(TypedDict):
     """
@@ -48,5 +68,5 @@ async def chat(user_input,project_id,messages=None):
                         visuals.append(visual)
     
     for visual in visuals:
-        yield visual
+        yield json.dumps(make_serializable(visual))
                         

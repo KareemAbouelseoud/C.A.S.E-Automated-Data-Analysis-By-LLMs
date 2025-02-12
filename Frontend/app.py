@@ -94,7 +94,17 @@ class MultiPageApp():
     def logout(self):
         st.empty()
         st.session_state['loggedIn'] = False
-        self.controller.remove(f"user_{st.session_state['user_id']}_session")        
+        self.controller.remove(f"user_{st.session_state['user_id']}_session")     
+        st.session_state['Project']=None
+        st.session_state['Visualization']=None
+        st.session_state["newProject"] = False
+        st.session_state['Project']=None
+        st.session_state['Visualization']=None
+        st.session_state['viz_data']=[]
+        if 'board' in st.session_state:
+            st.session_state['board']=None
+        if "w"  in st.session_state:
+            del st.session_state['w']   
 
 
     def run(self):

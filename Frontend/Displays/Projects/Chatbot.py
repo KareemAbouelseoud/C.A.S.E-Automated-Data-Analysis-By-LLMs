@@ -9,6 +9,7 @@ import uuid
 import os
 import json
 import asyncio
+import plotly.graph_objects as go
 
 modules_path = Path("/home/robo/Modules")
 
@@ -63,13 +64,13 @@ class Chatbot:
         
     def setup_app_interface(self):
         """
-        Sets up the main interface of the Athena application, including:
+        Sets up the main interface of the Zeus application, including:
         - Displaying the title and warnings.
         - Setting up the buttons and event handlers.
         - Displaying the chat history.
         """
 
-        st.markdown("<h1 style='text-align: center; font-size: 50px;'>Athena</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; font-size: 50px;'>ZEUS</h1>", unsafe_allow_html=True)
         # Apply CSS to all elements with the class `.st-emotion-cache-4oy321`
         st.markdown("""
             <style>
@@ -83,7 +84,7 @@ class Chatbot:
                 width:auto;
                 max-width: 90%;
                 text-align: left;
-                background: rgba(50, 50, 50, 0.3);
+                background: rgba(50, 50, 50, 0.4);
             }
             </style>
         """, unsafe_allow_html=True)
@@ -133,10 +134,12 @@ class Chatbot:
                     st.markdown(message["content"])
             if message['role'] == 'visualizer':
                 with st.chat_message(message["role"],avatar='📈'):
-                    self.get_visuals(**message['content'])
+                    self.get_visuals(message['content'])
             
-    def get_visuals(self,visual,**kwargs):
-        st.plotly_chart(visual)
+    def get_visuals(self,visual):
+        
+        fig = go.Figure(data=visual[0]['data'], layout=visual[0]['layout'])
+        st.plotly_chart(fig)
         
     def accept_user_input(self):
         """
@@ -155,7 +158,6 @@ class Chatbot:
                  chatbotRequests.create_new_chat(st.session_state['Project'])
 
             st.session_state.messages.append({"role": "user", "content": sanitized_input,})
-            st.session_state.stop_condition=False
 
             self.generate_response(sanitized_input)
             self.recommend(sanitized_input)
@@ -223,7 +225,7 @@ class Chatbot:
         """
         Display the output of claude
         """
-        with st.chat_message("assistant", avatar='🧙'):
+        with st.chat_message("assistant", avatar='👸🏼'):
             visuals=[]
             if stream:
                 escaped_response=st.write_stream((self.stream_ans(response,visuals)))
@@ -234,7 +236,7 @@ class Chatbot:
         if len(visuals)>0:
             with st.chat_message('visualizer',avatar='📈'):
                 for visual in visuals:
-                    self.get_visuals(**visual)
+                    self.get_visuals(visual)
                     st.session_state.messages.append({'role':'visualizer','content':visual})
             
     
@@ -248,10 +250,9 @@ class Chatbot:
             st.session_state['conv_change']=''
             st.session_state['new']=True
             st.session_state.messages = []
-            st.session_state['stop_condition']=False
             st.session_state['Bot_Clicked']=False
             # Add greeting message to chat history
-            first_message = "Athena: Good Morning. I am Athena, a Smart Assistant for C.A.S.E. How can I assist you today?"
+            first_message = "Zeus: Good Morning. I am Zeus, a Smart Assistant for C.A.S.E. How can I assist you today?"
             st.session_state.messages.append({"role": "assistant", "content": first_message})
 
     def stream_ans(self,response,visuals):
@@ -265,9 +266,9 @@ class Chatbot:
                 word = word.decode('utf-8')
                 buffer += word
                 try:
-                    if buffer[0] == '{':
+                    if buffer[0] == '{' or buffer[0] == '[':
                         json_obj = json.loads(buffer)
-                        if isinstance(json_obj, dict):
+                        if isinstance(json_obj, list):
                             visuals.append(json_obj)
                             buffer = ""
                     else:
@@ -293,7 +294,6 @@ class Chatbot:
         """
         Function Helper for recommend()
         """
-        st.session_state['stop_condition']=True
         st.session_state.recommendation=prompt
 
     def recommend(self,prompt=None):
@@ -308,12 +308,13 @@ class Chatbot:
             else:
                 recommendations=chatbotRequests.recommender([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}],st.session_state.Project)
         else:
-            recommendations=['What are your features','Create Dashboard for Apple','Generate a beginner portfolio for Me','Should I buy Tesla Stock','What If I invested in Amazon 2 years ago with $10000']
+            recommendations=['What are your features']
             
         for i in range(len(recommendations)):
             if i>6:
                 break
             if recommendations[i]!=' ':
+                recommendations[i]=recommendations[i].replace('"','')
                 st.button(recommendations[i],on_click=self.recommend_response,args=[recommendations[i]])
     
 

@@ -28,17 +28,13 @@ def visualizer(
     """
     graph_response=viz_graph.invoke({'project_id':str(project_id),'messages':[{"role":"human","content":visualization_request}]})
     if graph_response['visualization']:
-        return ['Inform the user that the visualization has been generated',graph_response['visualization']]
+        return ['YOU MUST Inform the user that the visualization has been generated',graph_response['visualization']]
     else:
         return ['No visualization generated, inform the user to try again later',None]
     
-    
-
-                
 
 
 tools = [visualizer,
-         
          ]
 
 
@@ -59,6 +55,7 @@ def tool_node(state):
             if not isinstance(tool_result, list):
                 tool_result=[tool_result]
             else:
+
                 visual_results.append(tool_result[1])
 
             output_messages.append(
