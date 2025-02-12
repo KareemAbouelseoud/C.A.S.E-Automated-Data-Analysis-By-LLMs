@@ -34,19 +34,21 @@ Variables:
 - graph: The compiled state graph.
 """
 import sys
-sys.path.append("C.A.S.E-Automated-Data-Analysis-By-LLMs\Agents\\")
+
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from typing_extensions import TypedDict,Annotated,NotRequired
 import operator
 from langgraph.graph import StateGraph, START, END
-from caller import caller_node
-from planner import planner_node,planner_brancher,tool_brancher
-from mainTools import tool_node
-from designer import designer_chain
-from coder.coderPipeline import coder
+from Agents.codeGeneration.caller import caller_node
+from Agents.codeGeneration.planner import planner_node,planner_brancher,tool_brancher
+from Agents.codeGeneration.mainTools import tool_node
+from Agents.codeGeneration.designer import designer_chain
+from Agents.codeGeneration.coder.coderPipeline import coder
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
 import operator
-import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from Database import mainDatabase
 
@@ -73,7 +75,7 @@ builder.add_conditional_edges("planner", planner_brancher)
 builder.add_edge('caller','tools')
 builder.add_conditional_edges('tools',tool_brancher)
 builder.add_edge('coder',END)
-graph = builder.compile()
+viz_graph = builder.compile()
 
 def generate_visualizations(project_id):
     data_report=mainDatabase.fetch_data_report(project_id)
@@ -83,7 +85,7 @@ def generate_visualizations(project_id):
     print(response.response)
     try:
         for idx,design in  enumerate(response.response):
-            graph_response=graph.invoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}],data_report:data_report})
+            graph_response=viz_graph.invoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
             if graph_response['visualization']:
                 for viz in graph_response['visualization']:
                     visualizations.append(viz)

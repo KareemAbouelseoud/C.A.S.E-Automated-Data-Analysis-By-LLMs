@@ -94,7 +94,17 @@ class MultiPageApp():
     def logout(self):
         st.empty()
         st.session_state['loggedIn'] = False
-        self.controller.remove(f"user_{st.session_state['user_id']}_session")        
+        self.controller.remove(f"user_{st.session_state['user_id']}_session")     
+        st.session_state['Project']=None
+        st.session_state['Visualization']=None
+        st.session_state["newProject"] = False
+        st.session_state['Project']=None
+        st.session_state['Visualization']=None
+        st.session_state['viz_data']=[]
+        if 'board' in st.session_state:
+            st.session_state['board']=None
+        if "w"  in st.session_state:
+            del st.session_state['w']   
 
 
     def run(self):
@@ -143,7 +153,7 @@ if __name__=='__main__':
     # full_app.add_page("pages/About/about.py", title='Home')
     full_app.add_page('Displays/Login.py',title='Login')
     full_app.add_page('Displays/Signup.py',title='Signup')
-    full_app.add_page("Displays/Projects.py",title='Projects') 
+    full_app.add_page("Displays/Projects/Projects.py",title='Projects') 
     full_app.add_page("Displays/About.py",title='About') 
     full_app.run()
 

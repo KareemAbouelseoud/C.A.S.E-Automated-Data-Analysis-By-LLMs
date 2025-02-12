@@ -127,3 +127,9 @@ async def getProject(project_id:str):
     API endpoint to receive and save uploaded files.
     """
     return json.dumps({'data':mainDatabase.get_project(project_id)})
+
+
+
+
+
+

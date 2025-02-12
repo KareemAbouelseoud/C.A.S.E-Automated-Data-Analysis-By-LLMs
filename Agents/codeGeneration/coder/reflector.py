@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 load_dotenv()
 CONFIGURATIONS={
     'temperature':0.7,
-    'model':"gemini-1.5-flash",
+    'model':"gemini-2.0-flash",
 }
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 system_prompt = hub.pull("reflector").messages[0].prompt.template

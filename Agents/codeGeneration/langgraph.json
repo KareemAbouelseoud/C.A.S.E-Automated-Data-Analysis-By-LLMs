@@ -1,6 +1,6 @@
 {
     "dependencies": ["."],
     "graphs": {
-      "pipeline": "pipeline:graph"
+      "pipeline": "pipeline:viz_graph"
     }
   }

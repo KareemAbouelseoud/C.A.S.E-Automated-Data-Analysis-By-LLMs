@@ -11,6 +11,7 @@ project_directory=r'Database\Projects\projects.csv' #temp until we create a real
 raw_datasets_directory=r'Database\rawDatasets'
 processed_datasets_directory=r'Database\processedDatasets'
 data_reports_directory=r'Database\dataReports'
+chat_directory=r'Database\Users\Chats.csv'
 
 def check_login(username,password):
     df=pd.read_csv(user_directory)
@@ -152,3 +153,41 @@ def fetch_data_report(project_id):
             return json_string
     else:
         return None
+
+def create_new_chat_id(project_id):
+    with open(chat_directory, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([project_id])
+
+def clear_history(project_id):
+    df=pd.read_csv(chat_directory)
+    df_filtered = df[df['project_id'].astype(str)!=str(project_id)]
+    df_filtered.to_csv(chat_directory,index=False)
+
+def get_model_chat_history(project_id):
+    df=pd.read_csv(chat_directory)
+    if df[df['project_id'].astype(int)==int(project_id)]['st_history'] is not None:
+        try:
+            return json.loads(df[df['project_id'].astype(int)==int(project_id)]['st_history'].values[0])
+        except:
+            return []
+
+def update_st_chat_history(project_id,last_conv : list):
+    df=pd.read_csv(chat_directory)
+    hist_dict={'st_history':[],'model_history':[]}
+    for message in last_conv:
+        hist_dict['st_history'].append({'role':message['role'],'content':message['content']})
+        if 'visualizer'!=message['role']:
+            hist_dict['model_history'].append({'role':message['role'],'content':message['content']})
+
+    project_index = df[df['project_id'].astype(str) == project_id].index
+    if not project_index.empty:
+        df.at[project_index[0], 'st_history'] = json.dumps(hist_dict['st_history'])
+        df.at[project_index[0], 'model_history'] = json.dumps(hist_dict['model_history'])
+        df.at[project_index[0], 'last_date'] = datetime.now()
+    else:
+        # Handle the case where the project_id is not found
+        print(f"Project ID {project_id} not found in chat history.")
+
+    df.to_csv(chat_directory, index=False)
+

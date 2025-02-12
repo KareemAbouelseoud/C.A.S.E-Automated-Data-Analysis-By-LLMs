@@ -11,7 +11,7 @@ from Requests import databaseRequests,visualizationRequests
 from Objects import Dashboard,Plot
 from streamlit_elements import elements,event,sync,lazy
 from types import SimpleNamespace
-
+from Projects.Chatbot import Chatbot
 class Projects:
 
     def __init__(self) -> None:
@@ -113,8 +113,9 @@ class Projects:
 """,unsafe_allow_html=True)
         tabs=st.tabs(['Raw Dataset','Processed Dataset','Insights','Visualizations','AutoML'])
         with tabs[0]:
-            with st.container(border=True):
-                st.dataframe(pd.read_json(StringIO(project['raw_dataset'])),use_container_width=True,)
+            # with st.container(border=True):
+            #     st.dataframe(pd.read_json(StringIO(project['raw_dataset'])),use_container_width=True,)
+            Chatbot()
         
         with tabs[3]:
             self.visualizationsPage()

@@ -25,7 +25,7 @@ Variables:
 - llm: An instance of ChatGoogleGenerativeAI configured with the specified model and temperature.
 """
 from langchain_google_genai import ChatGoogleGenerativeAI
-from mainTools import tools
+from Agents.codeGeneration.mainTools import tools
 from dotenv import load_dotenv
 from langchain import hub
 
