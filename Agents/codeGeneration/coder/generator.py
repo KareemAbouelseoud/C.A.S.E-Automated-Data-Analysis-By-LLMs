@@ -22,7 +22,7 @@ class CODE(BaseModel):
     code: str = Field(description="Code block not including import statements")
 
     
-def generator_node(state):
+async def generator_node(state):
     """
     Generate a code solution
 
@@ -67,14 +67,14 @@ def generator_node(state):
             )
         ]
             # Solution
-        code_solution = code_gen_chain.invoke(
+        code_solution = await code_gen_chain.ainvoke(
             {"messages": state['messages']+messages}
         )
     else:
         old_messages = state["messages"]
         old_messages[-1][1]=old_messages[-1][1]+f"Here is the data report crucial for the plot: \n {state['data_report']}\n"
         # Solution
-        code_solution = code_gen_chain.invoke(
+        code_solution = await code_gen_chain.ainvoke(
             {"messages":old_messages}
         )
     messages += [
@@ -91,13 +91,13 @@ def generator_node(state):
 
 
 
-def parse_output(solution):
+async def parse_output(solution):
     """When we add 'include_raw=True' to structured output,
     it will return a dict w 'raw', 'parsed', 'parsing_error'."""
 
     return solution["parsed"]    
 
-def insert_errors(inputs):
+async def insert_errors(inputs):
     """Insert errors for tool parsing in the messages"""
 
     # Get errors
