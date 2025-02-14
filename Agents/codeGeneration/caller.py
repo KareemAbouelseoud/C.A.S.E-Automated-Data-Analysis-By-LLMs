@@ -40,13 +40,13 @@ llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURAT
 
 system_prompt = hub.pull("caller").messages[0].content
 
-def caller_node(state):
+async def caller_node(state):
     messages = [
         {"role": "system", "content": system_prompt},
     ]+state['messages']
     # the model can now see the tools, and is forced to choose one
     model_with_tools=llm.bind_tools(tools,tool_choice='any')
-    response = model_with_tools.invoke(messages)
+    response = await model_with_tools.ainvoke(messages)
     return {"messages": [response]}
 
 

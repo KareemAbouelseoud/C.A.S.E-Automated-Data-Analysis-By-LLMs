@@ -42,19 +42,23 @@ system_prompt = hub.pull("planner").messages[0].content
 class Planner(BaseModel):
     next: Literal["coder", "caller"]
 
+CONFIGURATIONS={
+    'temperature':0.7,
+    'model':"gemini-1.5-flash",
+}
 
 
-def planner_node(state):
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.7)
+async def planner_node(state):
+    llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
     messages = [
         {"role": "system", "content": system_prompt},
     ] + state["messages"]
-    response = llm.with_structured_output(Planner).invoke(messages)
+    response =await llm.with_structured_output(Planner).ainvoke(messages)
     goto = response.next
     return {'next':goto}
 
-def planner_brancher(state)-> Literal["coder", "caller"]:
+async def planner_brancher(state)-> Literal["coder", "caller"]:
     return state['next']
 
-def tool_brancher(state)-> Literal["caller", "__end__"]:
+async def tool_brancher(state)-> Literal["caller", "__end__"]:
     return state['next']
