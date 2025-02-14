@@ -1,16 +1,4 @@
-import sys
-import os
-
-# Add the parent directory to the sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from Database import mainDatabase
-from fastapi import APIRouter
-from Agents.Chatbot import pipeline,recommender
-import json
-import numpy as np
-from dataItems import Chat,Recommender,StHistory
-from fastapi.responses import StreamingResponse
-import datetime
+from config import *
 chatbot_router = APIRouter()
 
 

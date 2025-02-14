@@ -1,14 +1,4 @@
-import sys
-import os
-
-# Add the parent directory to the sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from fastapi import APIRouter
-from Agents.codeGeneration import pipeline
-import json
-import numpy as np
-import time
+from config import *
 viz_router = APIRouter()
 
 def make_serializable(obj):
