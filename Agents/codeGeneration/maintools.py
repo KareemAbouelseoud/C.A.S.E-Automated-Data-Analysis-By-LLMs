@@ -706,7 +706,7 @@ tools = [create_line_plot,
         create_boxplot,
         create_violin_plot]
 
-def tool_node(state)->Literal["caller", "__end__"]:
+async def tool_node(state)->Literal["caller", "__end__"]:
     tools_by_name = {create_line_plot.name: create_line_plot,
                     create_scatter_plot.name: create_scatter_plot,
                     create_bubble_plot.name: create_bubble_plot,
@@ -731,7 +731,7 @@ def tool_node(state)->Literal["caller", "__end__"]:
         try:
             # Invoke the tool based on the tool call
             tool_call["args"]["project_id"] = state["project_id"]
-            tool_result = tools_by_name[tool_call["name"]].invoke(tool_call["args"])
+            tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             return {"next": "__end__",'visualization':tool_result}
         except Exception as e:
             # Return the error if the tool call fails

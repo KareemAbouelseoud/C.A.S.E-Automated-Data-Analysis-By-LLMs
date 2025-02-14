@@ -20,11 +20,11 @@ rec_sys=hub.pull("recommender").messages[0].prompt.template
 class RECOMMENDER(BaseModel):
     rec: list[str]
 
-def recommender(messages,project_id) -> dict:
+async def recommender(messages,project_id) -> dict:
     data_report=mainDatabase.fetch_data_report(project_id)
     total_messages = [
         {"role": "system", "content": rec_sys+f"\n\n Data Report:\n {data_report}" },
      ]+ messages
-    response = llm.with_structured_output(RECOMMENDER).invoke(total_messages)
+    response = await llm.with_structured_output(RECOMMENDER).ainvoke(total_messages)
     return response.rec
     

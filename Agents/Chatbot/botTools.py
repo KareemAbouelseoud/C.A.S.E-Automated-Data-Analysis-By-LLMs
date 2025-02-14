@@ -13,7 +13,7 @@ from typing import Annotated
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 @tool
-def visualizer(
+async def visualizer(
     visualization_request: Annotated[str,'The visualization request created by the assistant according to the user intent and data report'],
     project_id:str=None
     ):
@@ -26,7 +26,7 @@ def visualizer(
         list: A list containing a message and the visualization data. If the visualization is generated, the message informs the user and includes the visualization data. Otherwise, the message informs the user that no visualization was generated and suggests trying again later.
 
     """
-    graph_response=viz_graph.invoke({'project_id':str(project_id),'messages':[{"role":"human","content":visualization_request}]})
+    graph_response=await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":visualization_request}]})
     if graph_response['visualization']:
         return ['YOU MUST Inform the user that the visualization has been generated',graph_response['visualization']]
     else:
@@ -38,7 +38,7 @@ tools = [visualizer,
          ]
 
 
-def tool_node(state):
+async def tool_node(state):
     tools_by_name = {visualizer.name: visualizer,
                      }
     
@@ -51,7 +51,7 @@ def tool_node(state):
         try:
             # Invoke the tool based on the tool call
             tool_call["args"]["project_id"] = state["project_id"]
-            tool_result = tools_by_name[tool_call["name"]].invoke(tool_call["args"])
+            tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             if not isinstance(tool_result, list):
                 tool_result=[tool_result]
             else:
