@@ -39,8 +39,7 @@ tools = [visualizer,
 
 
 async def tool_node(state):
-    tools_by_name = {visualizer.name: visualizer,
-                     }
+    tools_by_name = {tool.name: tool for tool in tools}
     
     messages = state["messages"]
     # get the last message of this state

@@ -707,21 +707,7 @@ tools = [create_line_plot,
         create_violin_plot]
 
 async def tool_node(state)->Literal["caller", "__end__"]:
-    tools_by_name = {create_line_plot.name: create_line_plot,
-                    create_scatter_plot.name: create_scatter_plot,
-                    create_bubble_plot.name: create_bubble_plot,
-                    create_swarm_plot.name: create_swarm_plot,
-                    grouped_bar_plot.name: grouped_bar_plot,
-                    create_pairplot.name: create_pairplot,
-                    create_radar_chart.name: create_radar_chart,
-                    create_treemap.name: create_treemap,
-                    create_correlation_heatmap.name: create_correlation_heatmap,
-                    create_faceted_bar_chart.name: create_faceted_bar_chart,
-                    create_histogram.name: create_histogram,
-                    create_pie_chart.name: create_pie_chart,
-                    create_area_chart.name: create_area_chart,
-                    create_boxplot.name: create_boxplot,
-                    create_violin_plot.name: create_violin_plot}
+    tools_by_name = {tool.name: tool for tool in tools}
     
     messages = state["messages"]
     # get the last message of this state
