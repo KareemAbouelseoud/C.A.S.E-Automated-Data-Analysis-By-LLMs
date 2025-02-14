@@ -43,7 +43,7 @@ builder.add_node("tools",tool_node)
 
 builder.add_edge(START, "chatter_node")
 builder.add_conditional_edges('chatter_node', should_continue)
-
+builder.add_edge('tools', 'chatter_node')
 graph = builder.compile()
 
 

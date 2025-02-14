@@ -1,0 +1,8 @@
+{
+    "dependencies": ["."],
+    "graphs": {
+      "Visualization Generation: IRIS": "codeGeneration.pipeline:viz_graph",
+      "Chatbot: ZEUS": "Chatbot.pipeline:graph",
+      "AutoML": "AutoML.pipeline:graph"
+    }
+  }
