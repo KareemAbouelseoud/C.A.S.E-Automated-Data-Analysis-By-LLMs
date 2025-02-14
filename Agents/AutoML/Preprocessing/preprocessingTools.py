@@ -17,22 +17,6 @@ from sklearn.impute import KNNImputer
 from typing import Annotated, Optional, List
 
 @tool
-async def syntethic_function(
-    parameter_1:Annotated[str,'description of parameter 1'],
-    parameter_2: Annotated[bool,'description of parameter 2']=False
-    ):
-    """
-        Retrieves the latest news for a given stock ticker.
-        Args:
-            ticker (str): The stock ticker symbol for which to retrieve news.
-            more (bool, optional): If True, retrieves more detailed news information. Defaults to False.
-        Returns:
-            str: A summary of the latest news for the specified stock ticker. If more is True, returns a message indicating the detailed news information.
-        """
-    # This is a synthetic tools for demonstration purposes. Each function should have a docstring and should describe each parameter as shown above
-    
-
-@tool
 async def handle_outliers(
     data: Annotated[pd.DataFrame, 'Input dataset (training data).'],
     method: Annotated[str, 'Method: "zscore" or "iqr"'] = 'iqr',
@@ -103,7 +87,7 @@ async def parse_datetime(
 
 # Tool for handling null values
 @tool
-def handle_null_values(
+async def handle_null_values(
     df: Annotated[pd.DataFrame, "The DataFrame to process"],
     strategy: Annotated[str, "The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean', 'knn'."],
     value: Annotated[Optional[float], "The value to fill nulls with (if strategy is 'fill_value')."] = None,
@@ -128,7 +112,7 @@ def handle_null_values(
 
 # Tool for removing duplicates
 @tool
-def remove_duplicates(
+async def remove_duplicates(
     df: Annotated[pd.DataFrame, "The DataFrame to process"],
     strategy: Annotated[str, "The strategy to handle duplicates. Options: 'rows', 'columns'."],
     subset: Annotated[Optional[List[str]], "List of columns to consider for row duplicates (if strategy is 'rows')."] = None,
@@ -147,10 +131,36 @@ def remove_duplicates(
 
 tools=[
     handle_outliers,
-    parse_datetime
+    parse_datetime,
+    handle_null_values,
+    remove_duplicates,
 ]
 
 async def tool_node(state):
-        tools_by_name = {handle_outliers.name: handle_outliers,
-                        parse_datetime.name: parse_datetime
-                     }
+    tools_by_name = {
+        handle_outliers.name: handle_outliers,
+        parse_datetime.name: parse_datetime
+                    }
+    
+    messages = state["preprocessing_messages"]
+    # get the last message of this state
+    last_message = messages[-1]
+    preprocessors = []
+    output_messages = []
+    for tool_call in last_message.tool_calls:
+        try:
+            # Invoke the tool based on the tool call
+            tool_call["args"]["project_id"] = state["project_id"]
+            tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
+            preprocessors.append(tool_result)
+        except Exception as e:
+            # Return the error if the tool call fails
+            output_messages.append(
+                ToolMessage(
+                    content=f"an error occurred while running the tool: {str(e)}",
+                    name=tool_call["name"],
+                    tool_call_id=tool_call["id"],
+                    status="error",
+                )
+            )
+    return {'preprocessing_messages':output_messages,'pipeline':preprocessors}
