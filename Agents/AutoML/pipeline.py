@@ -12,12 +12,12 @@ class State(TypedDict):
     """
     project_id:str # Project ID
     mode: str # Mode Selected by the User
-    pipeline: object # Preprocessing Pipeline
+    pipeline: Annotated[list[tuple], operator.add] # Preprocessing Pipeline
     data_report: NotRequired[str] # Data Report
     #Data Names
-    columns: NotRequired[list[str]] # Columns Names
-    X_columns: NotRequired[list[str]] # X Columns
-    y_column: NotRequired[str] # Y Column
+    columns: NotRequired[list[str]] # Columns Names (user defined)
+    X_columns: NotRequired[list[str]] # X Columns (llm defined)
+    y_column: NotRequired[str] # Y Column (user defined)
     #Actual Data
     X_train: NotRequired[object] # Training Features
     X_test: NotRequired[object] # Testing Features
@@ -32,3 +32,9 @@ builder.add_node('splitter_node', splitter_node)
 builder.add_edge(START, 'splitter_node')
 
 graph = builder.compile()
+
+
+
+
+async def automl(project_id,mode,features,label):
+    response=await graph.ainvoke({'project_id':project_id,'mode':mode,'columns':features,'y_column':label,'pipeline':[]})
