@@ -36,7 +36,7 @@ Variables:
 import sys
 
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 
 from typing_extensions import TypedDict,Annotated,NotRequired
 import operator
@@ -49,7 +49,6 @@ from Agents.codeGeneration.coder.coderPipeline import coder
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
 import operator
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from Database import mainDatabase
 
 class State(TypedDict):
