@@ -98,3 +98,17 @@ async def parse_datetime(
 
     # Return a FunctionTransformer with the transformation logic
     return FunctionTransformer(datetime_transform)
+
+tools=[
+    handle_outliers,
+    parse_datetime
+]
+
+async def tool_node(state):
+        tools_by_name = {handle_outliers.name: handle_outliers,
+                        parse_datetime.name: parse_datetime
+                     }
+        
+        
+        
+    
