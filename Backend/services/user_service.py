@@ -30,13 +30,12 @@ class UserService:
         user_data = x.model_dump()
         matchingEmails=await self.user_repository.Filter({"email":user_data["email"]})
         matchingUsernames=await self.user_repository.Filter({"username":user_data["username"]})
-        print(type(matchingEmails))
         if len(matchingEmails)!=0:
             return "Email already exists."
         elif len(matchingUsernames)!=0:
             return "Username already exists."
         user_data["password"]=bcrypt.hashpw(user_data["password"].encode(), bcrypt.gensalt()).decode()
-        new_user =User(**user_data, Project=[])
+        new_user =User(**user_data, Projects=[])
         return await self.user_repository.create(new_user)
 
     async def update_user(self, id: str, user: User) -> bool:

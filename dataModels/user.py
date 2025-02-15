@@ -11,4 +11,10 @@ class User(BaseModel):
     last_name:str
     email:str
     password:str
-    Project:List[str]
+    Projects:List[str]
+    
+    @classmethod
+    def from_mongo(cls, document):
+        """Convert MongoDB document to Project model with string ID."""
+        document["id"] = ObjectId(document["_id"])  # Convert ObjectId to string
+        return cls(**document)

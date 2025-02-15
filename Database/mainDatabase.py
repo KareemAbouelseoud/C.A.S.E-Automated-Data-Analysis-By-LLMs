@@ -171,7 +171,7 @@ def get_model_chat_history(project_id):
             return json.loads(df[df['project_id'].astype(int)==int(project_id)]['st_history'].values[0])
         except:
             return []
-
+#TODO: Convert to monogo
 def update_st_chat_history(project_id,last_conv : list):
     df=pd.read_csv(chat_directory)
     hist_dict={'st_history':[],'model_history':[]}
