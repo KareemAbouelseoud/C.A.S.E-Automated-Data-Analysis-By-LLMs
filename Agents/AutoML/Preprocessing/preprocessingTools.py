@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.impute import KNNImputer
 from typing import Annotated, Optional, List
+from Database import mainDatabase
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 @tool
@@ -61,7 +62,8 @@ async def normalize_continous_feature(
 
 @tool
 async def handle_outliers(
-    data: Annotated[pd.DataFrame, 'Input dataset (training data).'],
+    column_name: Annotated[str, 'column name to be processed'],
+    project_id: str = None,
     method: Annotated[str, 'Method: "zscore" or "iqr"'] = 'iqr',
     threshold: Annotated[float, 'Threshold for outlier detection.'] = 1.5
     #train_size: Annotated[float, 'Fraction of data to use for training.'] = 0.8,
@@ -70,63 +72,73 @@ async def handle_outliers(
     Detects outliers in the training data and returns a transformer to remove them.
     The transformer is configured with the training data's parameters (e.g., IQR bounds).
     """
-    #train_data, val_data = train_test_split(data, train_size=train_size, random_state=42)
-    #numeric_data = train_data.select_dtypes(include=[np.number])
-    numeric_data = data.select_dtypes(include=[np.number])
+    
+    data = await mainDatabase.fetch_dataset(project_id)
 
+    try:
+        if column_name not in data.columns:
+            raise ValueError(f"Column '{column_name}' not found in the dataset.")
+        if data[column_name].astype(np.number):
+            raise ValueError(f"Column '{column_name}' is not numeric.")
+        
+        if method == 'iqr':
+            Q1 = data[column_name].quantile(0.25)
+            Q3 = data[column_name].quantile(0.75)
+            IQR = Q3 - Q1
+            lower = Q1 - threshold * IQR
+            upper = Q3 + threshold * IQR
 
-    if method == 'iqr':
-        Q1 = numeric_data.quantile(0.25)
-        Q3 = numeric_data.quantile(0.75)
-        IQR = Q3 - Q1
-        lower = Q1 - threshold * IQR
-        upper = Q3 + threshold * IQR
+            def outlier_transform():
+                data_numeric = data.select_dtypes(include=[np.number])
+                mask = ~((data_numeric < lower) | (data_numeric > upper)).any(axis=1)
+                return data[mask].reset_index(drop=True)
 
-        def outlier_transform(input_data):
-            input_data_numeric = input_data.select_dtypes(include=[np.number])
-            mask = ~((input_data_numeric < lower) | (input_data_numeric > upper)).any(axis=1)
-            return input_data[mask].reset_index(drop=True)
+        elif method == 'zscore':
+            mean = data[column_name].mean()
+            std = data[column_name].std()
+            threshold = threshold  
 
-    elif method == 'zscore':
-        mean = numeric_data.mean()
-        std = numeric_data.std()
-        threshold = threshold  
-
-        def outlier_transform(input_data):
-            input_data_numeric = input_data.select_dtypes(include=[np.number])
-            z_scores = (input_data_numeric - mean) / std
-            mask = (np.abs(z_scores) < threshold).all(axis=1)
-            return input_data[mask].reset_index(drop=True)
-
-    else:
-        raise ValueError(f"Unknown method: {method}")
-
-    return FunctionTransformer(outlier_transform)
+            def outlier_transform():
+                input_data_numeric = data.select_dtypes(include=[np.number])
+                z_scores = (input_data_numeric - mean) / std
+                mask = (np.abs(z_scores) < threshold).all(axis=1)
+                return data[mask].reset_index(drop=True)
+            
+        else:
+            raise ValueError(f"Unknown method: {method}")
+        
+        return ("handle_outliers",FunctionTransformer(outlier_transform),column_name)
+    
+    except Exception as e:
+        print(f"Error in handle_outliers: {e}") #can we make it more descriptive? LLM generated msg?
 
 @tool
 async def parse_datetime(
-    data: Annotated[pd.DataFrame, 'Input dataset (training data).'],
-    extract_features: Annotated[bool, 'Extract features like year, month, etc.'] = True,
-    #datetime_columns: Annotated[list, 'List of datetime columns to parse.'],
-    #train_size: Annotated[float, 'Fraction of data to use for training.'] = 0.8,
+    column_name: Annotated[str, 'column name to be processed'],
+    project_id: str = None,
 ) -> FunctionTransformer:
     """
     Parses datetime columns and returns a transformer to apply the same parsing to new data.
     """
-    #train_data, val_data = train_test_split(data, train_size=train_size, random_state=42)
-    datetime_columns = data.select_dtypes(include=[np.datetime64]).columns
-    def datetime_transform(input_data): # or train_data
-        input_data = input_data.copy()
-        for col in datetime_columns:
-            input_data[col] = pd.to_datetime(input_data[col])
-            if extract_features:
-                input_data[f'{col}_year'] = input_data[col].dt.year
-                input_data[f'{col}_month'] = input_data[col].dt.month
-                input_data[f'{col}_day'] = input_data[col].dt.day
-        return input_data
+    data = await mainDatabase.fetch_dataset(project_id)
+    try:
+        if column_name not in data.columns:
+            raise ValueError(f"Column '{column_name}' not found in the dataset.")
+        def datetime_transform():
+            data[column_name] = data[column_name].copy()
+            try:
+                data[column_name] = pd.to_datetime(data[column_name], errors='coerce')
+                if data[column_name].values.dtype != np.datetime64:
+                    raise ValueError("column is not datetime")
+            except ValueError as e:
+                raise ValueError(f"Error parsing datetime column '{column_name}': {e}")
+            return data[column_name]
 
     # Return a FunctionTransformer with the transformation logic
-    return FunctionTransformer(datetime_transform)
+        return ("parse_datetime",FunctionTransformer(datetime_transform),column_name)
+
+    except Exception as e:
+        print(f"Error in parse_datetime: {e}")
 
 # Tool for handling null values
 @tool
