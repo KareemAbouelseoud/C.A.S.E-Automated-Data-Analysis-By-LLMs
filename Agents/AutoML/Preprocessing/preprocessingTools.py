@@ -192,11 +192,7 @@ tools=[
 ]
 
 async def tool_node(state):
-    tools_by_name = {
-        handle_outliers.name: handle_outliers,
-        parse_datetime.name: parse_datetime
-                    }
-    
+    tools_by_name = {tool.name: tool for tool in tools}
     messages = state["preprocessing_messages"]
     # get the last message of this state
     last_message = messages[-1]
