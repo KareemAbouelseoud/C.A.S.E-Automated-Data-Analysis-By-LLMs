@@ -1,6 +1,8 @@
 from config import *
-chatbot_router = APIRouter()
 
+project_service = ProjectService()
+
+chatbot_router = APIRouter()
 
 @chatbot_router.post('/chat')
 async def chat(item: Chat):
@@ -49,22 +51,25 @@ async def get_model_history(project_id: str):
     return {'data':mainDatabase.get_model_chat_history(project_id)}
 
 
-@chatbot_router.post("/update_user_st_history")
-async def update_user_st_history(item: StHistory):
+@chatbot_router.post("/project/{project_id}/chat_streamlit")
 
+async def update_user_st_history(item: StHistory,project_id:str,user_id:str):
+    if project_id=="" or user_id=="":
+        raise HTTPException(status_code=400, detail="Project Id and user Id Can not be null")
     project_id=item.project_id
     last_conv=json.loads(item.last_conv)
     mainDatabase.update_st_chat_history(project_id,last_conv)
 
-
-@chatbot_router.get('/clear_history/{project_id}')
-async def clear_user_history(project_id: str):
+@chatbot_router.get("/project/{project_id}/chat/clear",tags=["Project"])
+async def clearChatHistory(project_id:str,user_id:str):
     """
-    Clears history for specific user
+    Clears streamlit and model history for specific user project
     Args:
         project_id (str): project_id of the User
 
     Returns:
-        None
+        True : if updated else it raise error
     """
-    mainDatabase.clear_history(project_id)
+    if project_id=="" or user_id=="":
+        raise HTTPException(status_code=400, detail="Project Id and user Id Can not be null")
+    return {'Updated':await project_service.clearChatHistory(project_id)}

@@ -6,6 +6,8 @@ class ProjectService:
     def __init__(self):
         self.project_repository = get_repo()
         self.userRepository = UserRepository()
+        self.vizRepository= VisualizationRepository()
+    #region Project functions
 
     async def get_project(self, id: str) -> Optional[Project]:
         project=await self.project_repository.get_by_id(id)
@@ -18,6 +20,8 @@ class ProjectService:
     async def create_project(self,file:UploadFile = File(...), user_id: str = Form(...), name: str = Form(...)) -> Project:
         # 0. Check if user exist already
         user = await self.userRepository.get_by_id(user_id) 
+        if user==None:
+            raise HTTPException(status_code=400, detail="Invalid user_Id Please provide an existing user id.")
         # 1. Validate file type (ensure it's a CSV)
         if file.content_type != "text/csv":
             raise HTTPException(status_code=400, detail="Invalid file type. Only CSV files are allowed.")
@@ -39,19 +43,84 @@ class ProjectService:
             if project:
                 user.Projects.append(str(project.id))
                 await self.userRepository.update(user_id,user)
-            return project
-
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error saving project and data to MongoDB: {e}")
+            raise HTTPException(status_code=500, detail=f"Error creating project and data to MongoDB: {e}")
+        try:
+            await self.vizRepository.create(str(project.id),user_id=user_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error creating project visualization and data to MongoDB: {e}")
+
+        return project
         
 
     async def update_project(self, id: str, project: Project) -> bool:
         return await self.project_repository.update(id, project)
     
-    async def clearChatHistory(self, id: str, project: Project) -> bool:
-        project.project_Chat=None
-        return await self.project_repository.update(id, project)
-
     async def delete_project(self, id: str) -> bool:
         return await self.project_repository.delete(id)
+    #endregion
+    
+    #region Chat Functions
+
+    async def clearChatHistory(self, project_id: str,user_id:str) -> bool:
+        try:
+            user = await self.userRepository.get_by_id(user_id)  
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving user from MongoDB: {e}")
+        try:
+            project = await self.get_project(project_id) 
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            
+        if user==None:
+            raise HTTPException(status_code=400, detail="Invalid user_Id Please provide an existing user id.")
+        if project==None:
+            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        
+        
+        project.model_Chat=None
+        project.streamlit_Chat=None
+
+        try:
+            await self.project_repository.update(project_id, project)
+            project.model_dump()
+            return True
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Updating project and data to MongoDB: {e}")
+    
+    async def updateChatHistory(self, project_id: str, user_id:str,last_conv:list) -> bool:
+        try:
+            user = await self.userRepository.get_by_id(user_id)  
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving user from MongoDB: {e}")
+        try:
+            project = await self.get_project(project_id) 
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            
+        if user==None:
+            raise HTTPException(status_code=400, detail="Invalid user_Id Please provide an existing user id.")
+        if project==None:
+            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        
+        hist_dict={'st_history':[],'model_history':[]}
+        for message in last_conv:
+            hist_dict['st_history'].append({'role':message['role'],'content':message['content']})
+            if 'visualizer'!=message['role']:
+                hist_dict['model_history'].append({'role':message['role'],'content':message['content']})
+        
+        project.model_Chat.messages=hist_dict['model_history']
+        project.streamlit_Chat.messages=hist_dict['st_history']
+        
+        project.model_Chat.last_date=datetime.now()
+        project.streamlit_Chat.last_date=datetime.now()
+        
+        try:
+            await self.project_repository.update(id, project)
+            return True
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Updating project's chat to MongoDB: {e}")
+    
+    #endregion
+
 

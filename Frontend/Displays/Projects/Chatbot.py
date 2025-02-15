@@ -10,6 +10,7 @@ import os
 import json
 import asyncio
 import plotly.graph_objects as go
+from dataModels.visualization import ChatViz
 
 modules_path = Path("/home/robo/Modules")
 
@@ -237,6 +238,10 @@ class Chatbot:
             with st.chat_message('visualizer',avatar='📈'):
                 for visual in visuals:
                     self.get_visuals(visual)
+                    ##TODO: SAVE TO MONGODB CAHT GENERATED VIZ
+                    new_chat_viz=ChatViz(id=uuid.uuid4(),viz=visual)
+                    ##TODO: REPLACE ID OF VIZ with VISUAL VARIABLE 
+                    ##TODO: HANDLE THE RETRIVAL ON INTIAIALZING
                     st.session_state.messages.append({'role':'visualizer','content':visual})
             
     

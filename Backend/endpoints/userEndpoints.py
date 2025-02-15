@@ -10,7 +10,7 @@ def getuser_service():
 user_service =getuser_service()
 user_router = APIRouter()
 
-@user_router.post('/login',tags=["users"])
+@user_router.post('/user/login',tags=["users"])
 async def login(body: LoginRequest):
     """
     Endpoint to validate user login credentials.
@@ -23,7 +23,7 @@ async def login(body: LoginRequest):
     """
     return {'data':str(await user_service.check_login(body.username,body.password))}
 
-@user_router.get('/get_id/{username}',tags=["users"])
+@user_router.get('/user/get_id/{username}',tags=["users"])
 async def get_id(username: str):
     """
     Endpoint to retrieve user ID based on username.
@@ -35,7 +35,7 @@ async def get_id(username: str):
         dict: JSON with user ID.
     """
     return {'data':str(await user_service.get_user_id(username))}
-@user_router.post('/signup',tags=["users"])
+@user_router.post('/user/signup',tags=["users"])
 async def Signup(body: SignUpRequest):
     """
     Endpoint to register a new user.
@@ -48,7 +48,7 @@ async def Signup(body: SignUpRequest):
     """
     return {'data':await user_service.create_user(body)}
 
-@user_router.get('/get_name/{user_id}',tags=["users"])
+@user_router.get('/user/get_name/{user_id}',tags=["users"])
 async def get_name(user_id: str):
     """
     Endpoint to fetch first name of user account
@@ -64,7 +64,7 @@ async def get_name(user_id: str):
     user = await  user_service.get_user(user_id)
     return {'data': user.first_name if user!=None else None}
 
-@user_router.get('/get_username/{user_id}',tags=["users"])
+@user_router.get('/user/get_username/{user_id}',tags=["users"])
 async def get_username(user_id: str):
     """
     Endpoint to fetch Username of user account
@@ -79,7 +79,7 @@ async def get_username(user_id: str):
     """
     user = await user_service.get_user(user_id)
     return {'data': user.username if user!=None else None}
-@user_router.get('/get_email/{user_id}',tags=["users"])
+@user_router.get('/user/get_email/{user_id}',tags=["users"])
 async def get_email(user_id: str):
     """
     Endpoint to fetch Email of user account
@@ -94,7 +94,7 @@ async def get_email(user_id: str):
     """
     user = await user_service.get_user(user_id)
     return {'data': user.email if user!=None else None}
-@user_router.get('/get_user/{user_id}',tags=["users"])
+@user_router.get('/user/get_user/{user_id}',tags=["users"])
 async def get_user(user_id: str):
     """
     Endpoint to fetch user account

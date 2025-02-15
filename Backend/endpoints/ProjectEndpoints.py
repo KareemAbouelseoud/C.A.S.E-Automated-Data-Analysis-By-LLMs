@@ -12,7 +12,7 @@ Project_router = APIRouter()
 
 
 project_service = get_project_service()
-@Project_router.post("/createProject",tags=["Project"])
+@Project_router.post("/project",tags=["Project"])
 async def upload_file(file: UploadFile = File(...), user_id: str = Form(...), name: str = Form(...)):
     """
     API endpoint to receive and save uploaded files.
@@ -28,7 +28,7 @@ async def upload_file(file: UploadFile = File(...), user_id: str = Form(...), na
         # Handle unexpected errors
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
-@Project_router.get("/readProjects/{user_id}",tags=["Project"])
+@Project_router.get("/project/GetProjects/{user_id}",tags=["Project"])
 async def readProjects(user_id:str):
     """
     API endpoint to receive and save uploaded files.
@@ -39,16 +39,9 @@ async def readProjects(user_id:str):
         # Handle unexpected errors
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
     
-@Project_router.get("/projectDetails/{project_id}",tags=["Project"])
+@Project_router.get("/project/projectDetails/{project_id}",tags=["Project"])
 async def getProject(project_id:str):
     """
     API endpoint to receive and save uploaded files.
     """
     return {'data':await project_service.get_project(project_id)}
-
-@Project_router.get("/project/{project_id}/clearChatHistory",tags=["Project"])
-async def clearChatHistory(project_id:str):
-    """
-    API endpoint to receive and save uploaded files.
-    """
-    return {'data':await project_service.clearChatHistory(project_id)}

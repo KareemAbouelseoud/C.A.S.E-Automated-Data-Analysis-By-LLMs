@@ -2,6 +2,7 @@
 from typing import List, Optional
 from bson.objectid import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime
 
 # class Dataset:
 #     def __init__(self, name: str, project_id: str, data_type: str, _id: ObjectId = None):
@@ -27,7 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field
 #         )
 
 class Chat(BaseModel):
-    
+    last_date:datetime
     messages:Optional[str]=None
 
 class Project(BaseModel):
@@ -36,8 +37,8 @@ class Project(BaseModel):
     name: str
     Dataset: str
     user_id: str  # Reference to the User model
-    streamlit_Chat:Optional[str]= Field(default=None, alias="streamlit_Chat")
-    model_Chat:Optional[str]= Field(default=None, alias="model_Chat")
+    streamlit_Chat:Optional[Chat]= Field(default=None, alias="streamlit_Chat")
+    model_Chat:Optional[Chat]= Field(default=None, alias="model_Chat")
     data_report:Optional[str]= Field(default=None, alias="data_report")
     
     @classmethod
