@@ -7,7 +7,7 @@ from Agents.Chatbot.botTools import tool_node
 from dotenv import load_dotenv
 import json
 import numpy as np
-
+from langchain.load import dump,load
 def make_serializable(obj):
     """
     Convert an object to a serializable format.
@@ -34,7 +34,7 @@ class State(TypedDict):
     """
     project_id:str
     messages: Annotated[list[AnyMessage], operator.add]
-    visual: NotRequired[Annotated[list[AnyMessage], operator.add]]
+    visual: Annotated[list[AnyMessage], operator.add]
 
 builder = StateGraph(State)
 
@@ -54,12 +54,13 @@ async def chat(user_input,project_id,messages=None):
         messages=[]
     messages.append({"role": "user", "content": user_input})
     visuals=[]
-    async for chunk in graph.astream({"messages": messages,'project_id':project_id}, stream_mode=["messages",'updates']):
-        print(chunk)
+    async for chunk in graph.astream({"messages": messages,'project_id':project_id}, stream_mode=["messages",'updates','values']):
         if chunk[0] == 'messages':
             if chunk[1][0].content and isinstance(chunk[1][0], AIMessageChunk):
                 if chunk[1][0].content:
                     yield chunk[1][0].content
+        elif chunk[0] == 'values':
+            print(chunk[1])
 
         elif chunk[0] == 'updates':
             if 'tools' in chunk[1]:

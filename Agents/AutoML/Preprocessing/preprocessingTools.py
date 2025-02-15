@@ -17,6 +17,7 @@ async def encode_categorical_feature(
     column: Annotated[str, 'Column to encode.'],
     method: Annotated[str, 'Method: "onehot" or "label"'] = 'onehot',
     sparse: Annotated[bool, 'Whether to return a sparse matrix (for one-hot encoding ONLY).'] = True,
+    project_id: str = None,
 ) -> tuple:
     """
     Encodes categorical features and returns a transformer to apply the same encoding to new data.
@@ -34,6 +35,7 @@ async def encode_categorical_feature(
 async def normalize_continous_feature(
     column: Annotated[str, 'Column to normalize.'],
     method: Annotated[str, 'Method: "minmax" or "standard" or "log" or "robust"'] = 'minmax',
+    project_id: str = None,
 ) -> tuple:
     """
     Normalizes continuous features and returns a transformer to apply the same normalization to new data.
@@ -67,7 +69,7 @@ async def handle_outliers(
     method: Annotated[str, 'Method: "zscore" or "iqr"'] = 'iqr',
     threshold: Annotated[float, 'Threshold for outlier detection.'] = 1.5
     #train_size: Annotated[float, 'Fraction of data to use for training.'] = 0.8,
-) -> FunctionTransformer:
+) -> tuple:
     """
     Detects outliers in the training data and returns a transformer to remove them.
     The transformer is configured with the training data's parameters (e.g., IQR bounds).
@@ -116,7 +118,7 @@ async def handle_outliers(
 async def parse_datetime(
     column_name: Annotated[str, 'column name to be processed'],
     project_id: str = None,
-) -> FunctionTransformer:
+) -> tuple:
     """
     Parses datetime columns and returns a transformer to apply the same parsing to new data.
     """
@@ -143,11 +145,12 @@ async def parse_datetime(
 # Tool for handling null values
 @tool
 async def handle_null_values(
-    df: Annotated[pd.DataFrame, "The DataFrame to process"],
+    df: Annotated[str, "The DataFrame to process"],
     strategy: Annotated[str, "The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean', 'knn'."],
     value: Annotated[Optional[float], "The value to fill nulls with (if strategy is 'fill_value')."] = None,
-    n_neighbors: Annotated[Optional[int], "Number of neighbors for KNN imputation (if strategy is 'knn')."] = 5
-) -> pd.DataFrame:
+    n_neighbors: Annotated[Optional[int], "Number of neighbors for KNN imputation (if strategy is 'knn')."] = 5,
+    project_id: str = None,
+) -> tuple:
     """
     Handle null values in a DataFrame using the specified strategy.
     """
@@ -166,13 +169,15 @@ async def handle_null_values(
         raise ValueError(f"Unknown strategy: {strategy}")
 
 # Tool for removing duplicates
+
 @tool
 async def remove_duplicates(
-    df: Annotated[pd.DataFrame, "The DataFrame to process"],
+    df: Annotated[str, "The DataFrame to process"],
     strategy: Annotated[str, "The strategy to handle duplicates. Options: 'rows', 'columns'."],
-    subset: Annotated[Optional[List[str]], "List of columns to consider for row duplicates (if strategy is 'rows')."] = None,
-    keep: Annotated[Optional[str], "Whether to keep the 'first', 'last', or False (if strategy is 'rows' or 'columns')."] = "first"
-) -> pd.DataFrame:
+    subset: Annotated[Optional[str], "List of columns to consider for row duplicates (if strategy is 'rows')."] = None,
+    keep: Annotated[Optional[str], "Whether to keep the 'first', 'last', or False (if strategy is 'rows' or 'columns')."] = "first",
+    project_id: str = None,
+) -> tuple:
     """
     Remove duplicate rows or columns from a DataFrame using the specified strategy.
     """
@@ -194,6 +199,7 @@ tools=[
 async def tool_node(state):
     tools_by_name = {tool.name: tool for tool in tools}
     messages = state["preprocessing_messages"]
+    print("TOOL NODE:",messages)
     # get the last message of this state
     last_message = messages[-1]
     preprocessors = []
@@ -204,6 +210,13 @@ async def tool_node(state):
             tool_call["args"]["project_id"] = state["project_id"]
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             preprocessors.append(tool_result)
+            output_messages.append(
+                ToolMessage(
+                    content=f"Preprocessing step completed: {tool_call['name']}",
+                    name=tool_call["name"],
+                    tool_call_id=tool_call["id"],
+                )
+            )
         except Exception as e:
             # Return the error if the tool call fails
             output_messages.append(

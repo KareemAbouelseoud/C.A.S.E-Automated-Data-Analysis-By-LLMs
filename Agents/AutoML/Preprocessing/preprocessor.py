@@ -21,11 +21,16 @@ system_prompt = hub.pull("preprocessor").messages[0].prompt.template
 async def preprocessor_node(state):
     project_id = state["project_id"]
     data_report=mainDatabase.fetch_data_report(project_id)
-    old_messages = state["preprocessing_messages"]
+    if 'preprocessing_messages' not in state or state['preprocessing_messages'] is None:
+        old_messages= []
+    else:
+        old_messages = state["preprocessing_messages"]
+        
     messages=[
         {"role": "system", "content":system_prompt+f"\n\n Data Report:\n {data_report}" },
         {"role": "user", "content": f"Train Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']}"},
     ]+old_messages
+    print("PREPROCESSOR:",old_messages)
     model=llm.bind_tools(tools=tools,tool_choice='any')
     response= await model.ainvoke(messages)
     return {"preprocessing_messages": [response]}

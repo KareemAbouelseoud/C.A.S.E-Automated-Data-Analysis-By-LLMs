@@ -5,6 +5,7 @@ from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
 import operator
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from AutoML.Splitting.splitter import splitter_node
 from AutoML.Preprocessing.pipeline import graph as preprocessor_graph
 
@@ -48,6 +49,6 @@ graph = builder.compile()
 
 
 
-async def automl(project_id,mode,features,label):
+async def automl(project_id,mode,label,features=None):
     response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'pipeline':[]})
     # This will contain everything needed. from steps taken by each agent to the final model(s) and their performance

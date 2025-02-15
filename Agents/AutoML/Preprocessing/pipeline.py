@@ -1,7 +1,7 @@
 import operator
 from langchain_core.messages import AnyMessage
 from langgraph.graph import START, StateGraph
-from typing_extensions import TypedDict,Annotated
+from typing_extensions import TypedDict,Annotated,NotRequired
 from dotenv import load_dotenv
 import os
 import sys
@@ -14,6 +14,9 @@ class State(TypedDict):
     """
     A class to represent the state of the application.
     """
+    project_id:str # Project ID
+    X_columns: NotRequired[list[str]] # X Columns (user then LLM defined)
+    y_column: NotRequired[str] # Y Column (user defined)
     preprocessing_messages: Annotated[list[AnyMessage], operator.add]
 
 builder = StateGraph(State)

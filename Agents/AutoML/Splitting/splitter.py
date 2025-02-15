@@ -22,12 +22,12 @@ class Splitter(BaseModel):
     stratify: bool = Field(description="Whether to stratify the data before splitting")
     logic: str = Field(description="The logic used to split the data")
 
-def train_test_split(project_id, X_columns, y_column, test_size, shuffle, stratify):
+def train_test_split(df, X_columns, y_column, test_size, shuffle, stratify):
     """ Split the data into training and testing sets. """
     from sklearn.model_selection import train_test_split
     
-    X=project_id[X_columns]
-    y=project_id[y_column]
+    X=df[X_columns]
+    y=df[y_column]
 
     return train_test_split(
         X, y,
@@ -41,6 +41,12 @@ async def splitter_node(state):
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
     project_id = state["project_id"]
     data_report=mainDatabase.fetch_data_report(project_id)
+    df = mainDatabase.fetch_dataset(project_id)
+    if 'X_columns' not in state or state['X_columns'] is None:
+        X_columns = df.columns.tolist()
+    else:
+        X_columns = state['X_columns']
+    
     messages=[
         {"role": "system", "content":system_prompt+f"\n\n Data Report:\n {data_report}" },
         {"role": "user", "content": f"Train Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']}"},
@@ -49,5 +55,10 @@ async def splitter_node(state):
     test_size = response.test_size
     shuffle = response.shuffle
     stratify = response.stratify
-    X_train,X_test, y_train, y_test=train_test_split(state["project_id"], state["X_columns"], state["y_column"], test_size, shuffle, stratify)
-    return {"X_train": X_train, "X_test": X_test, "y_train": y_train, "y_test": y_test, "splitting_logic": response.logic}
+    X_train,X_test, y_train, y_test=train_test_split(df,X_columns, state["y_column"], test_size, shuffle, stratify)
+    return {"X_train": X_train,
+            "X_test": X_test,
+            "y_train": y_train,
+            "y_test": y_test, 
+            "splitting_logic": response.logic,
+            'X_columns':X_columns}
