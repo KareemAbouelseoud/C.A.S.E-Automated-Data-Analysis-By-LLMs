@@ -33,7 +33,7 @@ load_dotenv()
 
 CONFIGURATIONS={
     'temperature':0.7,
-    'model':"gemini-1.5-flash",
+    'model':"gemini-2.0-flash",
 }
 
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])

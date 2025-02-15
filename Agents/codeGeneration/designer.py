@@ -39,7 +39,7 @@ load_dotenv()
 
 CONFIGURATIONS={
     'temperature':0.6,
-    'model':"gemini-1.5-flash",
+    'model':"gemini-2.0-flash",
 }
 
 # The Designer should respond with this sturcture of a List of json strings

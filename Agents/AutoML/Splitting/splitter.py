@@ -12,7 +12,7 @@ load_dotenv()
 system_prompt = hub.pull("splitter").messages[0].prompt.template
 CONFIGURATIONS={
     'temperature':0.7,
-    'model':"gemini-1.5-flash",
+    'model':"gemini-2.0-flash",
 }
 
 class Splitter(BaseModel):
