@@ -1,20 +1,63 @@
-import json
-import yfinance as yf
-import requests
 import pandas as pd
-import streamlit as st
 from io import StringIO
 from langchain_core.tools import tool
 from langchain_core.messages import ToolMessage
-from langgraph.prebuilt import ToolNode     
 from typing import Annotated
 import sys
 from pathlib import Path
 import numpy as np
 from sklearn.preprocessing import FunctionTransformer
-from sklearn.model_selection import train_test_split
 from sklearn.impute import KNNImputer
 from typing import Annotated, Optional, List
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+
+@tool
+async def encode_categorical_feature(
+    column: Annotated[str, 'Column to encode.'],
+    method: Annotated[str, 'Method: "onehot" or "label"'] = 'onehot',
+    sparse: Annotated[bool, 'Whether to return a sparse matrix (for one-hot encoding ONLY).'] = True,
+) -> tuple:
+    """
+    Encodes categorical features and returns a transformer to apply the same encoding to new data.
+    """
+    if method == 'onehot':
+        encoder = OneHotEncoder(sparse=sparse, handle_unknown='ignore')
+    elif method == 'label':
+        encoder = LabelEncoder()
+    else:
+        raise ValueError(f"Unknown method: {method}")
+
+    return ("encode_categorical_feature",encoder,[column])
+
+@tool
+async def normalize_continous_feature(
+    column: Annotated[str, 'Column to normalize.'],
+    method: Annotated[str, 'Method: "minmax" or "standard" or "log" or "robust"'] = 'minmax',
+) -> tuple:
+    """
+    Normalizes continuous features and returns a transformer to apply the same normalization to new data.
+    """
+    if method == 'minmax':
+        def minmax_transform(input_data):
+            input_data = input_data.copy()
+            return (input_data - input_data.min()) / (input_data.max() - input_data.min())
+    elif method == 'standard':
+        def standard_transform(input_data):
+            input_data = input_data.copy()
+            return (input_data - input_data.mean()) / input_data.std()
+    elif method == 'log':
+        def log_transform(input_data):
+            input_data = input_data.copy()
+            return np.log1p(input_data)
+    elif method == 'robust':
+        def robust_transform(input_data):
+            input_data = input_data.copy()
+            input_data = (input_data - input_data.median()) / (input_data.quantile(0.75) - input_data.quantile(0.25))
+            return input_data
+    else:
+        raise ValueError(f"Unknown method: {method}")
+
+    return ("normalize_continous_feature",FunctionTransformer(minmax_transform if method == 'minmax' else standard_transform if method == 'standard' else log_transform if method == 'log' else robust_transform),[column])
 
 @tool
 async def handle_outliers(
