@@ -66,48 +66,55 @@ async def handle_outliers(
     project_id: str = None,
     method: Annotated[str, 'Method: "zscore" or "iqr"'] = 'iqr',
     threshold: Annotated[float, 'Threshold for outlier detection.'] = 1.5
-    #train_size: Annotated[float, 'Fraction of data to use for training.'] = 0.8,
-) -> FunctionTransformer:
+) -> tuple:
     """
     Detects outliers in the training data and returns a transformer to remove them.
     The transformer is configured with the training data's parameters (e.g., IQR bounds).
+
+    Args:
+        column_name: Name of the column to process.
+        project_id: ID of the project to fetch the dataset.
+        method: Outlier detection method ("zscore" or "iqr").
+        threshold: Threshold for outlier detection.
+
+    Returns:
+        A tuple of three elements:
+        1. Function Name: A string representing the name of the function.
+        2. Transformer: An instance of FunctionTransformer configured with the appropriate outlier detection method. This transformer can be applied to new data to remove outliers based on the parameters derived from the training data.
+        3. Column Name: A list containing the name of the column that the transformer will process.
     """
-    
     data = await mainDatabase.fetch_dataset(project_id)
 
     try:
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
-        if data[column_name].astype(np.number):
+        if not pd.api.types.is_numeric_dtype(data[column_name]):
             raise ValueError(f"Column '{column_name}' is not numeric.")
         
         if method == 'iqr':
-            Q1 = data[column_name].quantile(0.25)
-            Q3 = data[column_name].quantile(0.75)
-            IQR = Q3 - Q1
-            lower = Q1 - threshold * IQR
-            upper = Q3 + threshold * IQR
-
-            def outlier_transform():
-                data_numeric = data.select_dtypes(include=[np.number])
-                mask = ~((data_numeric < lower) | (data_numeric > upper)).any(axis=1)
-                return data[mask].reset_index(drop=True)
+            def outlier_transform_by_iqr(input_data):
+                input_data = input_data.copy()
+                Q1 = input_data.quantile(0.25)
+                Q3 = input_data.quantile(0.75)
+                IQR = Q3 - Q1
+                lower = Q1 - threshold * IQR
+                upper = Q3 + threshold * IQR
+                mask = (input_data[column_name] >= lower) & (input_data[column_name]) <= upper
+                return input_data[mask].reset_index(drop=True)  
 
         elif method == 'zscore':
-            mean = data[column_name].mean()
-            std = data[column_name].std()
-            threshold = threshold  
-
-            def outlier_transform():
-                input_data_numeric = data.select_dtypes(include=[np.number])
-                z_scores = (input_data_numeric - mean) / std
-                mask = (np.abs(z_scores) < threshold).all(axis=1)
-                return data[mask].reset_index(drop=True)
+            def outlier_transform_by_zscore(input_data):
+                input_data = input_data.copy()
+                mean = input_data[column_name].mean()
+                std = input_data[column_name].std()
+                z_scores = (input_data[column_name] - mean) / std
+                mask = np.abs(z_scores) < threshold
+                return input_data[mask].reset_index(drop=True)
             
-        else:
+        else: 
             raise ValueError(f"Unknown method: {method}")
         
-        return ("handle_outliers",FunctionTransformer(outlier_transform),column_name)
+        return ("handle_outliers",FunctionTransformer(outlier_transform_by_iqr if method == "iqr" else outlier_transform_by_zscore),[column_name])
     
     except Exception as e:
         print(f"Error in handle_outliers: {e}") #can we make it more descriptive? LLM generated msg?
@@ -116,26 +123,32 @@ async def handle_outliers(
 async def parse_datetime(
     column_name: Annotated[str, 'column name to be processed'],
     project_id: str = None,
-) -> FunctionTransformer:
+) -> tuple:
     """
     Parses datetime columns and returns a transformer to apply the same parsing to new data.
+    
+    Args:
+        column_name: Name of the column to process.
+        project_id: ID of the project to fetch the dataset.
+
+    Returns:
+        A tuple of three elements:
+        1. Function Name: A string representing the name of the function.
+        2. Transformer: An instance of FunctionTransformer. This transformer can be applied to new data to parse datetime strings based on the parameters derived from the training data.
+        3. Column Name: A list containing the name of the column that the transformer will process.
     """
     data = await mainDatabase.fetch_dataset(project_id)
     try:
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
-        def datetime_transform():
-            data[column_name] = data[column_name].copy()
-            try:
-                data[column_name] = pd.to_datetime(data[column_name], errors='coerce')
-                if data[column_name].values.dtype != np.datetime64:
-                    raise ValueError("column is not datetime")
-            except ValueError as e:
-                raise ValueError(f"Error parsing datetime column '{column_name}': {e}")
-            return data[column_name]
+        def datetime_transform(input_data):
+            input_data = input_data.copy()
+            input_data = pd.to_datetime(input_data, errors='coerce')
+            if input_data.isna().all():
+                raise ValueError(f"Column '{column_name}' doesn't contain any datetime string instances.")
+            return input_data
 
-    # Return a FunctionTransformer with the transformation logic
-        return ("parse_datetime",FunctionTransformer(datetime_transform),column_name)
+        return ("parse_datetime",FunctionTransformer(datetime_transform),[column_name])
 
     except Exception as e:
         print(f"Error in parse_datetime: {e}")
