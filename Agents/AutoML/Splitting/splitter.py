@@ -20,6 +20,7 @@ class Splitter(BaseModel):
     test_size: float = Field(description="Test size for splitting the data")
     shuffle: bool = Field(description="Whether to shuffle the data before splitting")
     stratify: bool = Field(description="Whether to stratify the data before splitting")
+    logic: str = Field(description="The logic used to split the data")
 
 def train_test_split(project_id, X_columns, y_column, test_size, shuffle, stratify):
     """ Split the data into training and testing sets. """
@@ -49,4 +50,4 @@ async def splitter_node(state):
     shuffle = response.shuffle
     stratify = response.stratify
     X_train,X_test, y_train, y_test=train_test_split(state["project_id"], state["X_columns"], state["y_column"], test_size, shuffle, stratify)
-    return {"X_train": X_train, "X_test": X_test, "y_train": y_train, "y_test": y_test}
+    return {"X_train": X_train, "X_test": X_test, "y_train": y_train, "y_test": y_test, "splitting_logic": response.logic}

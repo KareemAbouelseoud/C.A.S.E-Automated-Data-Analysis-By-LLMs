@@ -21,11 +21,11 @@ class State(TypedDict):
     y_column: NotRequired[str] # Y Column (user defined)
 
     #Splitting
+    splitting_logic: NotRequired[str] # Splitting Steps Documented for the User and rest of Agents
     X_train: NotRequired[object] # Training Features
     X_test: NotRequired[object] # Testing Features
     y_train: NotRequired[object] # Training Target
     y_test: NotRequired[object] # Testing Target
-    splitting_logic: NotRequired[str] # Splitting Steps Documented for the User and rest of Agents
 
     #Preprocessing Pipeline
     preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
