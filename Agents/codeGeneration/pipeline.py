@@ -79,15 +79,15 @@ viz_graph = builder.compile()
 async def generate_visualizations(project_id):
     data_report=mainDatabase.fetch_data_report(project_id)
     response=await designer_chain.ainvoke({'data_report':data_report})
+    print("Response from designer chain",response.response)
     visualizations=[]
-    print(len(response.response))
-    print(response.response)
     try:
         for idx,design in  enumerate(response.response):
             graph_response= await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
+            print("Graph response",graph_response)
             if graph_response['visualization']:
-                for viz in graph_response['visualization']:
-                    visualizations.append(viz)
+                visualizations.append(graph_response['visualization'])
+                
     except Exception as e:
         print(e)
     return visualizations     
