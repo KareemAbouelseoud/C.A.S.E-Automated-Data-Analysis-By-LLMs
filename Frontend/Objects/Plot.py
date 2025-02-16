@@ -35,15 +35,18 @@ class Plots(Dashboard.Item):
 
     def create_plot(self):
         fig_dict=self.fig_dict
-        self.fig = plotly.Plot(data=fig_dict['data'], layout=fig_dict['layout'],config={
-                                    'displayModeBar': True,
-                                    'scrollZoom': True,
-                                    'displaylogo': True,
-                                        'editable': True,
-                                        'showLink': False,
-                                        'modeBarButtonsToRemove': ['zoom', 'resetScale'],
-                                        'responsive': True,
-                                    },)
+        try:
+            self.fig = plotly.Plot(data=fig_dict['data'], layout=fig_dict['layout'],config={
+                                        'displayModeBar': True,
+                                        'scrollZoom': True,
+                                        'displaylogo': True,
+                                            'editable': True,
+                                            'showLink': False,
+                                            'modeBarButtonsToRemove': ['zoom', 'resetScale'],
+                                            'responsive': True,
+                                        },)
+        except Exception as e:
+               print(fig_dict)
                             
 
     def __call__(self):

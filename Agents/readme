@@ -1,0 +1,3 @@
+You can run langgraph dev right away from the Agents Directory.
+You will find all the available graphs that are made at the top left of the langgraph studio page.
+If you want to add your graph, simply go to langgraph.json and add the relative directory of the graph module and pass the graph name at the end just like the examples found inside the file.

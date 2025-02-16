@@ -22424,3 +22424,38 @@ Did you mean "dash"?
 Bad property path:
 shape
 ^^^^^
+2025-02-11 17:31:58,721 - root - ERROR - An error occurred: Invalid property specified for object of type plotly.graph_objs.scatterpolargl.Line: 'shape'
+
+Did you mean "dash"?
+
+    Valid properties:
+        color
+            Sets the line color.
+        dash
+            Sets the style of the lines.
+        width
+            Sets the line width (in px).
+        
+Did you mean "dash"?
+
+Bad property path:
+shape
+^^^^^
+2025-02-11 17:38:25,123 - root - ERROR - An error occurred: Invalid property specified for object of type plotly.graph_objs.scatterpolargl.Line: 'shape'
+
+Did you mean "dash"?
+
+    Valid properties:
+        color
+            Sets the line color.
+        dash
+            Sets the style of the lines.
+        width
+            Sets the line width (in px).
+        
+Did you mean "dash"?
+
+Bad property path:
+shape
+^^^^^
+2025-02-11 17:38:27,242 - root - ERROR - An error occurred: Must specify a fill 'value' or 'method'.

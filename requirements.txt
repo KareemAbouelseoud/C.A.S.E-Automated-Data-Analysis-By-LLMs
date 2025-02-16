@@ -45,6 +45,7 @@ idna==3.10
 ipython==8.31.0
 jedi==0.19.2
 Jinja2==3.1.4
+joblib==1.4.2
 jsonpatch==1.33
 jsonpointer==3.0.0
 jsonschema==4.23.0
@@ -100,6 +101,8 @@ requests-toolbelt==1.0.0
 rich==13.9.4
 rpds-py==0.22.3
 rsa==4.9
+scikit-learn==1.6.1
+scipy==1.15.1
 seaborn==0.13.2
 six==1.17.0
 smmap==5.0.1
@@ -113,6 +116,7 @@ streamlit-cookies-controller==0.0.4
 streamlit-elements-plotly @ git+https://github.com/kareem8996/streamlit-elements-plotly@5d40927fb50fa428f26fe826accb4612ebcbcdeb
 streamlit-navigation-bar==3.3.0
 tenacity==9.0.0
+threadpoolctl==3.5.0
 toml==0.10.2
 tornado==6.4.2
 tqdm==4.67.1
