@@ -5,17 +5,17 @@ import requests
 import json
 url='http://127.0.0.1:8000'
 
-def chat(prompt,project_id,messages=None):
-    if messages:
-        response=requests.post(url + "/chat", json={"prompt": prompt, 'messages': json.dumps(messages), 'project_id': project_id},stream=True)
-    else:
-        response=requests.post(url + "/chat", json={"prompt": prompt, 'project_id': project_id},stream=True)
+def chat(prompt,project_id):
+    
+    response=requests.post(url + "/chat", json={"prompt": prompt,'project_id': project_id},stream=True)
+    print(response)
         
     return response
 
 def recommender(prompt,project_id):
     response=requests.post(url+"/recommend", json={"prompt": json.dumps(prompt),'project_id':project_id})
-    return json.loads(response.json()['data'])
+    print(json.loads(response.json()))
+    return json.loads(response.json())['data']
 
 
 
@@ -33,8 +33,8 @@ def get_model_history(project_id):
     list
         The Streamlit chat history.
     """
-    response=requests.get(url+f"/get_model_history/{project_id}")
-    return response.json()['data']
+    response=requests.get(url+f"/project/{project_id}/get_model_history")
+    return json.loads(response.json())['data']
 
 def create_new_chat(user_id):
     """

@@ -132,7 +132,7 @@ class ProjectService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project's chat to MongoDB: {e}")
     
-    async def get_model_chat_history(self, project_id: str) -> Optional[Project]:
+    async def get_model_chat_history(self, project_id: str) -> Optional[List[str]]:
         try:
             project = await self.project_repository.get_by_id(project_id)
         except Exception as e:
@@ -140,6 +140,8 @@ class ProjectService:
             
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        if project.model_Chat==None:
+            return []
         return json.loads(project.model_Chat.messages)
     
     async def get_streamlit_chat_history(self, project_id: str) -> Optional[Project]:

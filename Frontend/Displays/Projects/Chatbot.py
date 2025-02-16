@@ -199,15 +199,10 @@ class Chatbot:
         """
         with st.spinner("Generating response..."):
             try:
-                if len(st.session_state.messages)==2:
-                    response =chatbotRequests.chat(user_input,project_id=st.session_state.Project)
-                else:
-                    response=chatbotRequests.chat(user_input,messages=chatbotRequests.get_model_history(st.session_state['Project']),project_id=st.session_state.Project)
+
+                response =chatbotRequests.chat(user_input,project_id=st.session_state.Project)
                 self.display_assistant_response(response)
-                
-                # else:
-                #     self.display_assistant_response("Sorry, Security Layer Intervention. Can't provide an answer.\n Ask another question please.")
-                
+
             except Exception as e:
                 raise e
                 error_message = f"An error occurred: {str(e)}"
