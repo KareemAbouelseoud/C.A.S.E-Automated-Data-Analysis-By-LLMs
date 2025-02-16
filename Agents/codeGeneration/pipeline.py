@@ -51,6 +51,7 @@ from langchain_core.messages import AnyMessage
 import operator
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from Database import mainDatabase
+from Backend.services.project_service import ProjectService
 
 class State(TypedDict):
     """
@@ -77,8 +78,9 @@ builder.add_conditional_edges('tools',tool_brancher)
 builder.add_edge('coder',END)
 viz_graph = builder.compile()
 
-def generate_visualizations(project_id):
-    data_report=mainDatabase.fetch_data_report(project_id)
+async def generate_visualizations(project_id):
+    _project_service=ProjectService()
+    data_report=await _project_service.fetch_data_report(project_id)
     response=designer_chain.invoke({'data_report':data_report})
     visualizations=[]
     print(len(response.response))
@@ -86,7 +88,9 @@ def generate_visualizations(project_id):
     try:
         for idx,design in  enumerate(response.response):
             graph_response=viz_graph.invoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
+            print(graph_response)
             if graph_response['visualization']:
+                print(graph_response['visualization'])
                 for viz in graph_response['visualization']:
                     visualizations.append(viz)
     except Exception as e:

@@ -1,4 +1,5 @@
 from config import *
+from Agents.codeGeneration import pipeline 
 def get_repo():
     repo = VisualizationRepository()
     return repo
@@ -87,7 +88,7 @@ class visualizationsService:
             raise HTTPException(status_code=500, detail=f"Error Retriving project Visualizations and data to MongoDB: {e}")
         project_Visualizations.Auto_generated_viz=serializable_visualizations
         try:
-            return (await self.viz_repository.update(id, project_Visualizations),serializable_visualizations)
+            return (await self.viz_repository.update(project_id, project_Visualizations),serializable_visualizations)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project Visualizations and data to MongoDB: {e}")
     #endregion

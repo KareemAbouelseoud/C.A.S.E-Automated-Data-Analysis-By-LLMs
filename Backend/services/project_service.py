@@ -71,19 +71,30 @@ class ProjectService:
             project = await self.get_project(project_id) 
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+        try:
+            project_viz = await self.vizRepository.get_by_project_id(project_id) 
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving project visualizations from MongoDB: {e}")
             
         if user==None:
             raise HTTPException(status_code=400, detail="Invalid user_Id Please provide an existing user id.")
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        if project_viz==None:
+            raise HTTPException(status_code=400, detail="Project Visualization is not created in MongoDB")
         
         
         project.model_Chat=None
         project.streamlit_Chat=None
+        project_viz.Chat_visualizations=[]
 
         try:
             await self.project_repository.update(project_id, project)
-            project.model_dump()
+            
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Updating project and data to MongoDB: {e}")
+        try:
+            await self.vizRepository.update(project_id, project_viz)
             return True
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project and data to MongoDB: {e}")
@@ -109,8 +120,8 @@ class ProjectService:
             if 'visualizer'!=message['role']:
                 hist_dict['model_history'].append({'role':message['role'],'content':message['content']})
         
-        project.model_Chat.messages=hist_dict['model_history']
-        project.streamlit_Chat.messages=hist_dict['st_history']
+        project.model_Chat.messages=json.dumps(hist_dict['model_history'])
+        project.streamlit_Chat.messages=json.dumps(hist_dict['st_history'])
         
         project.model_Chat.last_date=datetime.now()
         project.streamlit_Chat.last_date=datetime.now()
@@ -121,6 +132,36 @@ class ProjectService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project's chat to MongoDB: {e}")
     
+    async def get_model_chat_history(self, project_id: str) -> Optional[Project]:
+        try:
+            project = await self.project_repository.get_by_id(project_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            
+        if project==None:
+            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        return json.loads(project.model_Chat.messages)
+    
+    async def get_streamlit_chat_history(self, project_id: str) -> Optional[Project]:
+        try:
+            project = await self.project_repository.get_by_id(project_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            
+        if project==None:
+            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        return json.loads(project.streamlit_Chat.messages)
     #endregion
 
+    #region other fetches
+    async def fetch_data_report(self, project_id: str) -> Optional[str]:
+        try:
+            project = await self.project_repository.get_by_id(project_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            
+        if project==None:
+            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        return project.data_report
 
+    #endregion

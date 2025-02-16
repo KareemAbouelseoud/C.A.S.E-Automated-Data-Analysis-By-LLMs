@@ -1,7 +1,8 @@
 """
 This file contains the data items used in the application.
 """
-from config import *
+from typing import  Optional
+from pydantic import BaseModel
 
 
 class LoginRequest(BaseModel):

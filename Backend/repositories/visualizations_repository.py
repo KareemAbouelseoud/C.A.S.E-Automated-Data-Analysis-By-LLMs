@@ -25,8 +25,8 @@ class VisualizationRepository(BaseRepository[visualizations]):
         result = await self.collection.delete_one({"_id": ObjectId(id)})
         return result.deleted_count > 0
     
-    async def update(self, id: str, visualizations:visualizations) -> bool:
-        result = await self.collection.update_one({"_id": ObjectId(id)}, {"$set": visualizations.model_dump(exclude={"id"})})
+    async def update(self, project_id: str, visualizations:visualizations) -> bool:
+        result = await self.collection.update_one({"project_id":project_id }, {"$set": visualizations.model_dump(exclude={"id"})})
         return result.modified_count > 0
     
     async def get_by_id(self, id: str) -> Optional[visualizations]:

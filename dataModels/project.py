@@ -40,6 +40,7 @@ class Project(BaseModel):
     streamlit_Chat:Optional[Chat]= Field(default=None, alias="streamlit_Chat")
     model_Chat:Optional[Chat]= Field(default=None, alias="model_Chat")
     data_report:Optional[str]= Field(default=None, alias="data_report")
+    dataset_description:Optional[str]= Field(default=None, alias="dataset_description")
     
     @classmethod
     def from_mongo(cls, document):
