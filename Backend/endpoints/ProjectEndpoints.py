@@ -34,7 +34,7 @@ async def readProjects(user_id:str):
     API endpoint to receive and save uploaded files.
     """
     try:
-        return await project_service.get_user_projects(user_id)
+        return json.dumps({'data':await project_service.get_user_projects(user_id)})
     except Exception as e:
         # Handle unexpected errors
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
@@ -44,4 +44,4 @@ async def getProject(project_id:str):
     """
     API endpoint to receive and save uploaded files.
     """
-    return {'data':await project_service.get_project(project_id)}
+    return json.dumps({'data':await project_service.get_project(project_id)})

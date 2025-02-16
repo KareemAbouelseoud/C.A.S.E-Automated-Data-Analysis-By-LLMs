@@ -69,11 +69,12 @@ class visualizationsService:
             raise HTTPException(status_code=500, detail=f"Error Retriving project Visualizations and data to MongoDB: {e}")
         project_Visualizations.Chat_visualizations.append(new_viz)
         try:
-            return await self.viz_repository.update(id, project_Visualizations)
+            return await self.viz_repository.update(project_id, project_Visualizations)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project Visualizations and data to MongoDB: {e}")
     
     async def update_Auto_Gen_Viz(self, project_id: str) -> Tuple[bool, List[str]]:
+        #BUG:pipeline generate visualization is still making errors
         visualizations = await pipeline.generate_visualizations(project_id)
         serializable_visualizations = [make_serializable(v) for v in visualizations]
         try:

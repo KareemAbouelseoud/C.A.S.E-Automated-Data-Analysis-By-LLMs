@@ -23,7 +23,7 @@ class ProjectService:
         if user==None:
             raise HTTPException(status_code=400, detail="Invalid user_Id Please provide an existing user id.")
         # 1. Validate file type (ensure it's a CSV)
-        if file.content_type != "text/csv":
+        if file.filename[-4:].lower().strip() != ".csv":
             raise HTTPException(status_code=400, detail="Invalid file type. Only CSV files are allowed.")
         # 2. Read the CSV file content
         contents = await file.read()
@@ -36,7 +36,7 @@ class ProjectService:
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Error converting CSV to JSON: {e}")
         
-        new_project = Project(name=name, user_id=user_id,Dataset=dataframe)
+        new_project = Project(name=name, user_id=user_id,Dataset=dataframe,created_Date=datetime.now())
         # 5.  Important: Save ٍProject to MongoDB
         try:       
             project = await self.project_repository.create(new_project)         

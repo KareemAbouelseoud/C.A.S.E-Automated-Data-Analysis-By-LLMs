@@ -15,6 +15,7 @@ class ProjectRepository(BaseRepository[Project]):
         if document:
             project=Project.from_mongo(document)
             project.id=str(project.id)
+            project.created_Date=project.created_Date.strftime("%d %B %Y")
             return project
         return None
 
@@ -24,6 +25,7 @@ class ProjectRepository(BaseRepository[Project]):
         async for document in self.collection.find(filter):
             project=Project.from_mongo(document)
             project.id=str(project.id)
+            project.created_Date=project.created_Date.strftime("%d %B %Y")
             filtered_Items.append(project.model_dump())  # Convert ObjectId
         return filtered_Items
 
@@ -31,7 +33,10 @@ class ProjectRepository(BaseRepository[Project]):
     async def get_all(self) -> List[Project]:
         projects = []
         async for document in self.collection.find():
-            projects.append(Project(**document))
+            project=Project.from_mongo(document)
+            project.id=str(project.id)
+            project.created_Date=project.created_Date.strftime("%d %B %Y")
+            projects.append(project)
         return projects
 
     async def create(self, project: Project) -> Project:

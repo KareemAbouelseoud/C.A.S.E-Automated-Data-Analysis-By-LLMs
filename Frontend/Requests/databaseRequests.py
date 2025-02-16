@@ -3,6 +3,7 @@ import streamlit as st
 import json
 
 url = 'http://127.0.0.1:8000'
+#region User API CALLS
 def check_login(username,password):
     """
     Validates user login credentials.
@@ -19,7 +20,7 @@ def check_login(username,password):
     str
         The login validation response.
     """
-    response=requests.post(url+"/login",json={'username':username,'password':password})
+    response=requests.post(url+"/user/login",json={'username':username,'password':password})
     return response.json()['data']
 
 def check_signup(first_name,last_name,email,username,password):
@@ -44,7 +45,7 @@ def check_signup(first_name,last_name,email,username,password):
     str
         The signup response.
     """
-    response=requests.post(url+"/signup",json={'first_name':first_name,'last_name':last_name,
+    response=requests.post(url+"/user/signup",json={'first_name':first_name,'last_name':last_name,
                                                                 'email':email,'username':username,                                                           
                                                                 'password':password})
     return response.json()['data']
@@ -64,7 +65,39 @@ def get_user_id(username):
     str
         The User ID
     """
-    response=requests.get(url+f"/get_id/{username}")
+    response=requests.get(url+f"/user/get_id/{username}")
+    return response.json()['data']
+def get_user(username):
+    """
+    Retrieves the user ID based on the provided username.
+
+    Parameters
+    ----------
+    username : str
+        The username to retrieve the ID for.
+
+    Returns
+    -------
+    str
+        User Object
+    """
+    response=requests.get(url+f"/user/get_id/{username}")
+    return response.json()['data']
+def get_user_by_username(username):
+    """
+    Retrieves the user ID based on the provided username.
+
+    Parameters
+    ----------
+    username : str
+        The username to retrieve the ID for.
+
+    Returns
+    -------
+    str
+        User Object
+    """
+    response=requests.get(url+f"/user/get_user_username/{username}")
     return response.json()['data']
 
 def get_name(user_id):
@@ -82,12 +115,13 @@ def get_name(user_id):
     str
         First_NAME
     """
-    response=requests.get(url+f"/get_name/{user_id}")
+    response=requests.get(url+f"/user/get_name/{user_id}")
     return response.json()['data']
 
 
+#endregion
 def create_project(user_id,name,uploaded_file):
-        print(user_id,name)
+        
         files = {"file": uploaded_file}
         data={
              'user_id': str(user_id),
@@ -95,15 +129,17 @@ def create_project(user_id,name,uploaded_file):
         }
 
         # Send the POST request
-        response = requests.post(url+'/createProject', files=files,data=data)
+        response = requests.post(url+'/project', files=files,data=data)
 
+#region User Project API CALLS
 def read_projects(user_id):
-     response=requests.get(url+f'/readProjects/{str(user_id)}')
+     response=requests.get(url+f'/project/GetProjects/{str(user_id)}')
+     print(response.json())
      projects=json.loads(response.json())['data']
      return projects
 
 def get_project_details(project_id):
-     response=requests.get(url+f'/projectDetails/{str(project_id)}')
+     response=requests.get(url+f'/project/projectDetails/{str(project_id)}')
      project=json.loads(response.json())['data']
      return project
-
+#endregion

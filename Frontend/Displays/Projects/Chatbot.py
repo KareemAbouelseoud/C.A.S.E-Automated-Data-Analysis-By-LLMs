@@ -25,6 +25,8 @@ st.empty()
 #This chatbot assists users with financial queries using a conversational interface.
 #It maintains chat history, and responds with financial insights.
 ###
+from streamlit_cookies_controller import CookieController
+controller=CookieController()
 
 
 class Chatbot:
@@ -110,7 +112,7 @@ class Chatbot:
         """, unsafe_allow_html=True)
 
         if st.sidebar.button('Clear History'):
-            chatbotRequests.clear_history(st.session_state.user_id)
+            chatbotRequests.clear_history(controller.get("user_id"))
             del st.session_state.messages
             del st.session_state.new
             if 'recommendation' in st.session_state:
@@ -239,10 +241,11 @@ class Chatbot:
                 for visual in visuals:
                     self.get_visuals(visual)
                     ##TODO: SAVE TO MONGODB CAHT GENERATED VIZ
-                    new_chat_viz=ChatViz(id=uuid.uuid4(),viz=visual)
-                    ##TODO: REPLACE ID OF VIZ with VISUAL VARIABLE 
+                    viz_id=uuid.uuid4()
+                    new_chat_viz=ChatViz(id=viz_id,viz=visual)
+                    
                     ##TODO: HANDLE THE RETRIVAL ON INTIAIALZING
-                    st.session_state.messages.append({'role':'visualizer','content':visual})
+                    st.session_state.messages.append({'role':'visualizer','content':viz_id})
             
     
 

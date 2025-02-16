@@ -4,7 +4,7 @@ project_service = ProjectService()
 
 chatbot_router = APIRouter()
 
-@chatbot_router.post('/chat')
+@chatbot_router.post('/chat',tags=["Chat"])
 async def chat(item: Chat):
     prompt = item.prompt
     project_id = item.project_id
@@ -14,7 +14,7 @@ async def chat(item: Chat):
     else:
         return StreamingResponse(pipeline.chat(prompt,project_id),media_type="text/event-stream")
     
-@chatbot_router.post("/recommend")
+@chatbot_router.post("/recommend",tags=["Chat"])
 async def recommend(item: Recommender):
 
     prompt = item.prompt
@@ -22,7 +22,7 @@ async def recommend(item: Recommender):
 
     return {"data":json.dumps(recommender.recommender(json.loads(prompt),project_id))}
 
-@chatbot_router.get('project/{project_id}/get_model_history')
+@chatbot_router.get('project/{project_id}/get_model_history',tags=["Chat"])
 async def get_model_history(project_id: str):
     """
     Endpoint to retrieve Streamlit chat history for a specific chat ID.
@@ -36,7 +36,7 @@ async def get_model_history(project_id: str):
     # return {'data':mainDatabase.get_model_chat_history(project_id)}
     return {'data':project_service.get_model_chat_history(project_id)}
 
-@chatbot_router.get('project/{project_id}/get_streamlit_history')
+@chatbot_router.get('project/{project_id}/get_streamlit_history',tags=["Chat"])
 async def get_streamlit_history(project_id: str):
     """
     Endpoint to retrieve Streamlit chat history for a specific chat ID.
@@ -51,7 +51,7 @@ async def get_streamlit_history(project_id: str):
     return {'data':project_service.get_streamlit_chat_history(project_id)}
 
 
-@chatbot_router.post("/project/{project_id}/chat_streamlit")
+@chatbot_router.post("/project/{project_id}/chat_streamlit",tags=["Chat"])
 async def update_user_st_history(item: StHistory,project_id:str,user_id:str):
     if project_id=="" or user_id=="":
         raise HTTPException(status_code=400, detail="Project Id and user Id Can not be null")
@@ -59,7 +59,7 @@ async def update_user_st_history(item: StHistory,project_id:str,user_id:str):
     last_conv=json.loads(item.last_conv)
     await project_service.updateChatHistory(project_id,user_id,last_conv)
 
-@chatbot_router.get("/project/{project_id}/chat/clear",tags=["Project"])
+@chatbot_router.get("/project/{project_id}/chat/clear",tags=["Project","Chat"])
 async def clearChatHistory(project_id:str,user_id:str):
     """
     Clears streamlit and model history for specific user project

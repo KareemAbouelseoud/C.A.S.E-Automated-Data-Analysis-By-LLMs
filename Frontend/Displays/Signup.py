@@ -39,9 +39,11 @@ class SignUp:
             elif response=="Username already exists.":
                 st.toast(response)
             elif response== "Signup successful!":
-                st.session_state['user_id']=databaseRequests.get_user_id(self.__username)
+                # st.session_state['user_id']=databaseRequests.get_user_id(self.__username)
+                user =databaseRequests.get_user_by_username(self.__username)
                 st.session_state['loggedIn']=True
-                controller.set(f"user_{st.session_state['user_id']}_session", st.session_state['user_id'])  # set expiration date as needed
+                controller.set("user",user)
+                controller.set(f"user_id", user["id"])  # set expiration date as needed
 
                 
             else:

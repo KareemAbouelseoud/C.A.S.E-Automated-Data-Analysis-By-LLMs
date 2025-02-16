@@ -94,7 +94,8 @@ class MultiPageApp():
     def logout(self):
         st.empty()
         st.session_state['loggedIn'] = False
-        self.controller.remove(f"user_{st.session_state['user_id']}_session")     
+        self.controller.remove(f"user")     
+        self.controller.remove(f"user_id")     
         st.session_state['Project']=None
         st.session_state['Visualization']=None
         st.session_state["newProject"] = False
@@ -127,17 +128,20 @@ class MultiPageApp():
         cookies = self.controller.getAll()
         if st.session_state['loggedIn']==False:
             for key in cookies:
-                if key.startswith("user_"):
+                if key=="user_id":
                     st.session_state['user_id'] = cookies[key]
                     st.session_state['loggedIn']=True
-                    st.toast(f"Welcome back, {databaseRequests.get_name(st.session_state.user_id)}!",icon='🎉')
+                    print(st.session_state.user_id)
+                    user_first_name=controller.get("user")["first_name"]
+                    st.toast(f"Welcome back, {user_first_name}!",icon='🎉')
                     break
                 
 
         if st.session_state['loggedIn']==False:
             self.login()
         else:
-            st.sidebar.title(f"Hello {databaseRequests.get_name(st.session_state.user_id)}")    
+            user_first_name=controller.get("user")["first_name"]
+            st.sidebar.title(f"Hello {user_first_name}")    
             pg=st.navigation([self.pages[-1]])
             pg.run()
             clicked=st.sidebar.button("Logout",on_click=self.logout)

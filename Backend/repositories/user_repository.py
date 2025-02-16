@@ -22,24 +22,30 @@ class UserRepository(BaseRepository[User]):
     async def get_by_username(self, username: str) -> Optional[User]:
         document = await self.collection.find_one({"username":username })
         if document!=None:
-            return User(**document)
+            user=User.from_mongo(document)
+            user.id=str(user.id)
+            return user
         return None
 
     async def get_all(self) -> List[User]:
         users = []
         async for document in self.collection.find():
-            users.append(User(**document))
+            user=User.from_mongo(document)
+            user.id=str(user.id)
+            users.append(user)
         return users
 
     async def create(self, user: User) -> User:
         result = await self.collection.insert_one(user.model_dump(exclude={"id"}))
         user.id = str(result.inserted_id)  # Set the ID after insertion
-        return user
+        return user.model_dump()
    
     async def Filter(self,filter:dict)->List[User]:
         filtered_Items=[]
         async for document in self.collection.find(filter):
-            filtered_Items.append(User(**document))
+            user=User.from_mongo(document)
+            user.id=str(user.id)
+            filtered_Items.append(user)
         return filtered_Items
 
     

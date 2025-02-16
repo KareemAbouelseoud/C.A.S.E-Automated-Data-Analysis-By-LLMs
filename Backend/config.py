@@ -50,7 +50,7 @@ from repositories.user_repository import UserRepository
 from services.project_service import ProjectService
 from services.user_service import UserService
 from services.visualizations_service import visualizationsService
-
+from Agents.codeGeneration import pipeline 
 from Agents.Chatbot import pipeline as chatbot_pipeline, recommender
 from Database import mainDatabase
 

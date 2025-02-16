@@ -18,14 +18,22 @@ class UserService:
     async def get_user_id(self,username: str):
         user = await self.user_repository.get_by_username(username)
         return str(user.id)
+    async def get_user_by_username(self,username: str)-> User: 
+        try:
+            user = await self.user_repository.get_by_username(username)
+            return user.model_dump()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retriving User from MongoDB: {e}")
+    
     
     async def get_user(self, id: str) -> Optional[User]:
         return await self.user_repository.get_by_id(id)
 
     async def get_users(self) -> List[User]:
         return await self.user_repository.get_all()
+    
 
-    async def create_user(self, x: SignUpRequest) -> User:
+    async def create_user(self, x: SignUpRequest) -> Optional[User]:
         
         user_data = x.model_dump()
         matchingEmails=await self.user_repository.Filter({"email":user_data["email"]})
