@@ -21,10 +21,11 @@ class RECOMMENDER(BaseModel):
     rec: list[str]
 
 async def recommender(messages,project_id) -> dict:
+    filtered_messages = [msg for msg in messages if msg['role'] in ['user', 'assistant']]
     data_report=mainDatabase.fetch_data_report(project_id)
     total_messages = [
         {"role": "system", "content": rec_sys+f"\n\n Data Report:\n {data_report}" },
-     ]+ messages
+     ]+ filtered_messages
     response = await llm.with_structured_output(RECOMMENDER).ainvoke(total_messages)
     return response.rec
     

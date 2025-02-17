@@ -65,7 +65,9 @@ async def normalize_continous_feature(
 @tool
 async def handle_outliers(
     column_name: Annotated[str, 'column name to be processed'],
+    strategy: Annotated[str, "The strategy to handle outliers. Options: 'remove', 'impute_mean', 'impute_median','winsorize','knn'."],
     project_id: str = None,
+    n_neighbors: Annotated[Optional[int], "Number of neighbors for KNN imputation (if strategy is 'knn')."] = 5, 
     method: Annotated[str, 'Method: "zscore" or "iqr"'] = 'iqr',
     threshold: Annotated[float, 'Threshold for outlier detection.'] = 1.5
 ) -> tuple:
@@ -75,7 +77,9 @@ async def handle_outliers(
 
     Args:
         column_name: Name of the column to process.
+        strategy: The strategy to handle outliers. Options: 'remove', 'impute_mean', 'impute_median', 'log_transform', 'winsorize', 'cap', 'floor'.
         project_id: ID of the project to fetch the dataset.
+        n_neighbors: Number of neighbors for KNN imputation (if strategy is 'knn').
         method: Outlier detection method ("zscore" or "iqr").
         threshold: Threshold for outlier detection.
 
@@ -93,28 +97,109 @@ async def handle_outliers(
         if not pd.api.types.is_numeric_dtype(data[column_name]):
             raise ValueError(f"Column '{column_name}' is not numeric.")
         
-        if method == 'iqr':
-            def outlier_transform_by_iqr(input_data):
-                input_data = input_data.copy()
-                Q1 = input_data.quantile(0.25)
-                Q3 = input_data.quantile(0.75)
-                IQR = Q3 - Q1
-                lower = Q1 - threshold * IQR
-                upper = Q3 + threshold * IQR
-                mask = (input_data[column_name] >= lower) & (input_data[column_name]) <= upper
-                return input_data[mask].reset_index(drop=True)  
+        if strategy == 'remove':
+            if method == 'iqr':
+                def outlier_transform_by_iqr(input_data):
+                    input_data = input_data.copy()
+                    Q1 = input_data.quantile(0.25)
+                    Q3 = input_data.quantile(0.75)
+                    IQR = Q3 - Q1
+                    lower = Q1 - threshold * IQR
+                    upper = Q3 + threshold * IQR
+                    mask = (input_data[column_name] >= lower) & (input_data[column_name]) <= upper
+                    return input_data[mask].reset_index(drop=True)  
 
-        elif method == 'zscore':
-            def outlier_transform_by_zscore(input_data):
-                input_data = input_data.copy()
-                mean = input_data[column_name].mean()
-                std = input_data[column_name].std()
-                z_scores = (input_data[column_name] - mean) / std
-                mask = np.abs(z_scores) < threshold
-                return input_data[mask].reset_index(drop=True)
+            elif method == 'zscore':
+                def outlier_transform_by_zscore(input_data):
+                    input_data = input_data.copy()
+                    mean = input_data[column_name].mean()
+                    std = input_data[column_name].std()
+                    z_scores = (input_data[column_name] - mean) / std
+                    mask = np.abs(z_scores) < threshold
+                    return input_data[mask].reset_index(drop=True)
+                
+            else: 
+                raise ValueError(f"Unknown method: {method}")
+        
+        
+        elif strategy == 'impute_mean':
+            if method == 'iqr':
+                def outlier_transform_by_iqr(input_data):
+                    input_data = input_data.copy()
+                    Q1 = input_data.quantile(0.25)
+                    Q3 = input_data.quantile(0.75)
+                    IQR = Q3 - Q1
+                    lower = Q1 - threshold * IQR
+                    upper = Q3 + threshold * IQR
+                    mask = (input_data[column_name] >= lower) & (input_data[column_name]) <= upper
+                    input_data.loc[~mask, column_name] = input_data[column_name].mean()
+                    return input_data  
+
+            elif method == 'zscore':
+                def outlier_transform_by_zscore(input_data):
+                    input_data = input_data.copy()
+                    mean = input_data[column_name].mean()
+                    std = input_data[column_name].std()
+                    z_scores = (input_data[column_name] - mean) / std
+                    input_data.loc[np.abs(z_scores) >= threshold, column_name] = mean
+                    return input_data
+            else: 
+                raise ValueError(f"Unknown method: {method}")
+                
+        
+        elif strategy == 'median':
+            if method == 'iqr':
+                def outlier_transform_by_iqr(input_data):
+                    input_data = input_data.copy()
+                    median = input_data[column_name].median()
+                    Q1 = input_data.quantile(0.25)
+                    Q3 = input_data.quantile(0.75)
+                    IQR = Q3 - Q1
+                    lower = Q1 - threshold * IQR
+                    upper = Q3 + threshold * IQR
+                    mask = (input_data[column_name] >= lower) & (input_data[column_name]) <= upper
+                    input_data.loc[~mask, column_name] = median
+                    return input_data  
+
+            elif method == 'zscore':
+                def outlier_transform_by_zscore(input_data):
+                    input_data = input_data.copy()
+                    mean = input_data[column_name].mean()
+                    std = input_data[column_name].std()
+                    z_scores = (input_data[column_name] - mean) / std
+                    input_data.loc[np.abs(z_scores) >= threshold, column_name] = median
+                    return input_data
+            else: 
+                raise ValueError(f"Unknown method: {method}")
+                        
+        
+        elif strategy == 'winsorize':
+            if method == "iqr":
+                def outlier_transform_by_iqr(input_data):
+                    input_data = input_data.copy()
+                    Q1 = input_data.quantile(0.25)
+                    Q3 = input_data.quantile(0.75)
+                    IQR = Q3 - Q1
+                    lower = Q1 - threshold * IQR
+                    upper = Q3 + threshold * IQR
+                    input_data[column_name] = np.clip(input_data[column_name], lower, upper)
+                    return input_data  
+
+            elif method == 'zscore':
+                def outlier_transform_by_zscore(input_data):
+                    input_data = input_data.copy()
+                    mean = input_data[column_name].mean()
+                    std = input_data[column_name].std()
+                    input_data[column_name] = np.clip(input_data[column_name], mean - threshold * std, mean + threshold * std)
+                    return input_data
             
-        else: 
-            raise ValueError(f"Unknown method: {method}")
+            else: 
+                raise ValueError(f"Unknown method: {method}")
+            
+                
+        elif strategy == "knn":
+            return KNNImputer(n_neighbors=n_neighbors)
+    
         
         return ("handle_outliers",FunctionTransformer(outlier_transform_by_iqr if method == "iqr" else outlier_transform_by_zscore),[column_name])
     
@@ -155,52 +240,134 @@ async def parse_datetime(
     except Exception as e:
         print(f"Error in parse_datetime: {e}")
 
-# Tool for handling null values
 @tool
 async def handle_null_values(
-    df: Annotated[str, "The DataFrame to process"],
+    column_name: Annotated[str, 'column name to be processed'],
     strategy: Annotated[str, "The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean', 'knn'."],
+    project_id: str = None,
     value: Annotated[Optional[float], "The value to fill nulls with (if strategy is 'fill_value')."] = None,
     n_neighbors: Annotated[Optional[int], "Number of neighbors for KNN imputation (if strategy is 'knn')."] = 5,
-    project_id: str = None,
 ) -> tuple:
     """
     Handle null values in a DataFrame using the specified strategy.
-    """
-    if strategy == "drop":
-        return df.dropna()
-    elif strategy == "fill_value":
-        if value is None:
-            raise ValueError("A value must be provided for the 'fill_value' strategy.")
-        return df.fillna(value)
-    elif strategy == "fill_mean":
-        return df.fillna(df.mean())
-    elif strategy == "knn":
-        imputer = KNNImputer(n_neighbors=n_neighbors)
-        return pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
-    else:
-        raise ValueError(f"Unknown strategy: {strategy}")
+    
+    Args:
+        column_name: Name of the column to process.
+        strategy : The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean', 'knn'.
+        project_id: ID of the project to fetch the dataset.
+        value: The value to fill nulls with (if strategy is 'fill_value').
+        n_neighbors: Number of neighbors for KNN imputation (if strategy is 'knn').
+        
 
-# Tool for removing duplicates
+    Returns:
+        A tuple of three elements:
+        1. Function Name: A string representing the name of the function.
+        2. Transformer: An instance of FunctionTransformer configured with the appropriate outlier detection method. This transformer can be applied to new data to remove outliers based on the parameters derived from the training data.
+        3. Column Name: A list containing the name of the column that the transformer will process.
+    """
+    try:
+        data = await mainDatabase.fetch_dataset(project_id)
+        
+        if column_name not in data.columns:
+            raise ValueError(f"Column '{column_name}' not found in the dataset.")
+         
+        if strategy == "drop":
+            
+            def drop_transform(input_data):
+                input_data = input_data.copy()
+                try:
+                    input_data.dropna(inplace=True)
+                except:
+                    raise ValueError("Failed to drop null values.")
+                return input_data
+            
+        elif strategy == "fill_value":
+            
+            if value is None:
+                raise ValueError("A value must be provided for the 'fill_value' strategy.")
+            
+            def fill_value_transform(input_data):
+                input_data = input_data.copy()
+                try:
+                    input_data = input_data.fillna(value)
+                except:
+                    raise ValueError(f"Failed to fill null values with {value}.")
+                return input_data
+
+        elif strategy == "fill_mean":
+
+            def fill_mean_transform(input_data):
+                input_data = input_data.copy()
+                try:
+                    input_data = input_data.fillna(input_data.mean())
+                except:
+                    raise ValueError("Failed to fill null values with the mean.")
+                return input_data
+            
+        elif strategy == "knn":
+                return KNNImputer(n_neighbors=n_neighbors)
+            
+        else:
+            raise ValueError(f"Unknown strategy: {strategy}")
+    
+    except:
+        raise ValueError(f"Error in handle_null_values")
+
+    return ("handle_null_values", FunctionTransformer(drop_transform if strategy is "drop" else fill_value_transform if strategy is "fill_value" else fill_mean_transform if strategy is "fill_mean" else knn_transform), [column_name])
 
 @tool
 async def remove_duplicates(
-    df: Annotated[str, "The DataFrame to process"],
+    column_name: Annotated[str, 'column name to be processed'],
     strategy: Annotated[str, "The strategy to handle duplicates. Options: 'rows', 'columns'."],
+    project_id: str = None,
     subset: Annotated[Optional[str], "List of columns to consider for row duplicates (if strategy is 'rows')."] = None,
     keep: Annotated[Optional[str], "Whether to keep the 'first', 'last', or False (if strategy is 'rows' or 'columns')."] = "first",
-    project_id: str = None,
 ) -> tuple:
     """
     Remove duplicate rows or columns from a DataFrame using the specified strategy.
+
+    Args:
+        column_name: Name of the column to process.
+        strategy : The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean', 'knn'.
+        project_id: ID of the project to fetch the dataset.
+        subset: List of columns to consider for row duplicates (if strategy is 'rows').
+        keep: Whether to keep the 'first', 'last', or False (if strategy is 'rows' or 'columns').
+        
+    Returns:
+        A tuple of three elements:
+        1. Function Name: A string representing the name of the function.
+        2. Transformer: An instance of FunctionTransformer configured with the appropriate outlier detection method. This transformer can be applied to new data to remove outliers based on the parameters derived from the training data.
+        3. Column Name: A list containing the name of the column that the transformer will process.
     """
-    if strategy == "rows":
-        return df.drop_duplicates(subset=subset, keep=keep)
-    elif strategy == "columns":
-        return df.loc[:, ~df.columns.duplicated(keep=keep)]
-    else:
-        raise ValueError(f"Unknown strategy: {strategy}")
-    
+    try :
+        data = await mainDatabase.fetch_dataset(project_id)
+        
+        if column_name not in data.columns:
+            raise ValueError(f"Column '{column_name}' not found in the dataset.")
+         
+        if strategy == "rows":
+            def drop_rows_transform(input_data):
+                input_data = input_data.copy()
+                try:
+                    input_data = input_data.drop_duplicates(subset=subset, keep=keep)
+                except:
+                    raise ValueError("Failed to drop duplicate rows.")
+                return input_data
+            
+        elif strategy == "columns":
+            def drop_columns_transform(input_data):
+                input_data = input_data.copy()
+                try:
+                    input_data = input_data.loc[:, ~input_data.columns.duplicated(keep=keep)]
+                except:
+                    raise ValueError("Failed to drop duplicate columns.")
+                return input_data
+
+        else:
+            raise ValueError(f"Unknown strategy: {strategy}")
+    except:
+        raise ValueError(f"Error in remove_duplicates")
+    return ("remove_duplicates", FunctionTransformer(drop_rows_transform if strategy is "rows" else drop_columns_transform), [column_name])
 
 tools=[
     handle_outliers,
