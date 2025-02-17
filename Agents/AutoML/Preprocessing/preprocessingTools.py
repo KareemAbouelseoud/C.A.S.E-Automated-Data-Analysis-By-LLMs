@@ -4,17 +4,24 @@ from langchain_core.tools import tool
 from langchain_core.messages import ToolMessage
 from typing import Annotated
 import sys
+import os
 from pathlib import Path
 import numpy as np
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.impute import KNNImputer
-from typing import Annotated, Optional, List
-from Database import mainDatabase
+from typing import Annotated, Optional, List,Union
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+from Database import mainDatabase
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from functools import partial
+from helperFunctions import *
+
 
 @tool
 async def encode_categorical_feature(
-    column: Annotated[str, 'Column to encode.'],
+    column_name: Annotated[str, 'Column to encode.'],
     method: Annotated[str, 'Method: "onehot" or "label"'] = 'onehot',
     sparse: Annotated[bool, 'Whether to return a sparse matrix (for one-hot encoding ONLY).'] = True,
     project_id: str = None,
@@ -23,17 +30,17 @@ async def encode_categorical_feature(
     Encodes categorical features and returns a transformer to apply the same encoding to new data.
     """
     if method == 'onehot':
-        encoder = OneHotEncoder(sparse=sparse, handle_unknown='ignore')
+        encoder = OneHotEncoder(sparse_output=sparse, handle_unknown='ignore')
     elif method == 'label':
         encoder = LabelEncoder()
     else:
         raise ValueError(f"Unknown method: {method}")
 
-    return ("encode_categorical_feature",encoder,[column])
+    return ("encode_categorical_feature",encoder,[column_name])
 
 @tool
 async def normalize_continous_feature(
-    column: Annotated[str, 'Column to normalize.'],
+    column_name: Annotated[str, 'Column to normalize.'],
     method: Annotated[str, 'Method: "minmax" or "standard" or "log" or "robust"'] = 'minmax',
     project_id: str = None,
 ) -> tuple:
@@ -41,31 +48,22 @@ async def normalize_continous_feature(
     Normalizes continuous features and returns a transformer to apply the same normalization to new data.
     """
     if method == 'minmax':
-        def minmax_transform(input_data):
-            input_data = input_data.copy()
-            return (input_data - input_data.min()) / (input_data.max() - input_data.min())
+        transformer = FunctionTransformer(minmax_transform)
     elif method == 'standard':
-        def standard_transform(input_data):
-            input_data = input_data.copy()
-            return (input_data - input_data.mean()) / input_data.std()
+        transformer = FunctionTransformer(standard_transform)
     elif method == 'log':
-        def log_transform(input_data):
-            input_data = input_data.copy()
-            return np.log1p(input_data)
+        transformer = FunctionTransformer(log_transform)
     elif method == 'robust':
-        def robust_transform(input_data):
-            input_data = input_data.copy()
-            input_data = (input_data - input_data.median()) / (input_data.quantile(0.75) - input_data.quantile(0.25))
-            return input_data
+        transformer = FunctionTransformer(robust_transform)
     else:
         raise ValueError(f"Unknown method: {method}")
 
-    return ("normalize_continous_feature",FunctionTransformer(minmax_transform if method == 'minmax' else standard_transform if method == 'standard' else log_transform if method == 'log' else robust_transform),[column])
+    return ("normalize_continous_feature",transformer,[column_name])
 
 @tool
 async def handle_outliers(
     column_name: Annotated[str, 'column name to be processed'],
-    strategy: Annotated[str, "The strategy to handle outliers. Options: 'remove', 'impute_mean', 'impute_median','winsorize','knn'."],
+    strategy: Annotated[str, "The strategy to handle outliers. Options: 'remove', 'impute_mean', 'impute_median','winsorize','knn"],
     project_id: str = None,
     n_neighbors: Annotated[Optional[int], "Number of neighbors for KNN imputation (if strategy is 'knn')."] = 5, 
     method: Annotated[str, 'Method: "zscore" or "iqr"'] = 'iqr',
@@ -77,7 +75,7 @@ async def handle_outliers(
 
     Args:
         column_name: Name of the column to process.
-        strategy: The strategy to handle outliers. Options: 'remove', 'impute_mean', 'impute_median', 'log_transform', 'winsorize', 'cap', 'floor'.
+        strategy: The strategy to handle outliers. Options: 'remove', 'impute_mean', 'impute_median', 'log_transform', 'winsorize', 'knn'.
         project_id: ID of the project to fetch the dataset.
         n_neighbors: Number of neighbors for KNN imputation (if strategy is 'knn').
         method: Outlier detection method ("zscore" or "iqr").
@@ -89,7 +87,7 @@ async def handle_outliers(
         2. Transformer: An instance of FunctionTransformer configured with the appropriate outlier detection method. This transformer can be applied to new data to remove outliers based on the parameters derived from the training data.
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
-    data = await mainDatabase.fetch_dataset(project_id)
+    data = mainDatabase.fetch_dataset(project_id)
 
     try:
         if column_name not in data.columns:
@@ -99,24 +97,10 @@ async def handle_outliers(
         
         if strategy == 'remove':
             if method == 'iqr':
-                def outlier_transform_by_iqr(input_data):
-                    input_data = input_data.copy()
-                    Q1 = input_data.quantile(0.25)
-                    Q3 = input_data.quantile(0.75)
-                    IQR = Q3 - Q1
-                    lower = Q1 - threshold * IQR
-                    upper = Q3 + threshold * IQR
-                    mask = (input_data[column_name] >= lower) & (input_data[column_name]) <= upper
-                    return input_data[mask].reset_index(drop=True)  
+                transformer=FunctionTransformer(partial(remove_outlier_transform_by_iqr,threshold=threshold))
 
             elif method == 'zscore':
-                def outlier_transform_by_zscore(input_data):
-                    input_data = input_data.copy()
-                    mean = input_data[column_name].mean()
-                    std = input_data[column_name].std()
-                    z_scores = (input_data[column_name] - mean) / std
-                    mask = np.abs(z_scores) < threshold
-                    return input_data[mask].reset_index(drop=True)
+                transformer=FunctionTransformer(partial(remove_outlier_transform_by_zscore,threshold=threshold))
                 
             else: 
                 raise ValueError(f"Unknown method: {method}")
@@ -124,74 +108,30 @@ async def handle_outliers(
         
         elif strategy == 'impute_mean':
             if method == 'iqr':
-                def outlier_transform_by_iqr(input_data):
-                    input_data = input_data.copy()
-                    Q1 = input_data.quantile(0.25)
-                    Q3 = input_data.quantile(0.75)
-                    IQR = Q3 - Q1
-                    lower = Q1 - threshold * IQR
-                    upper = Q3 + threshold * IQR
-                    mask = (input_data[column_name] >= lower) & (input_data[column_name]) <= upper
-                    input_data.loc[~mask, column_name] = input_data[column_name].mean()
-                    return input_data  
+                transformer=FunctionTransformer(partial(impute_mean_outlier_transform_by_iqr,threshold=threshold))
 
             elif method == 'zscore':
-                def outlier_transform_by_zscore(input_data):
-                    input_data = input_data.copy()
-                    mean = input_data[column_name].mean()
-                    std = input_data[column_name].std()
-                    z_scores = (input_data[column_name] - mean) / std
-                    input_data.loc[np.abs(z_scores) >= threshold, column_name] = mean
-                    return input_data
+                transformer=FunctionTransformer(partial(impute_mean_outlier_transform_by_zscore,threshold=threshold))
             else: 
                 raise ValueError(f"Unknown method: {method}")
                 
         
-        elif strategy == 'median':
+        elif strategy == 'impute_median':
             if method == 'iqr':
-                def outlier_transform_by_iqr(input_data):
-                    input_data = input_data.copy()
-                    median = input_data[column_name].median()
-                    Q1 = input_data.quantile(0.25)
-                    Q3 = input_data.quantile(0.75)
-                    IQR = Q3 - Q1
-                    lower = Q1 - threshold * IQR
-                    upper = Q3 + threshold * IQR
-                    mask = (input_data[column_name] >= lower) & (input_data[column_name]) <= upper
-                    input_data.loc[~mask, column_name] = median
-                    return input_data  
+                transformer=FunctionTransformer(partial(impute_median_outlier_transform_by_iqr,threshold=threshold))
 
             elif method == 'zscore':
-                def outlier_transform_by_zscore(input_data):
-                    input_data = input_data.copy()
-                    mean = input_data[column_name].mean()
-                    std = input_data[column_name].std()
-                    z_scores = (input_data[column_name] - mean) / std
-                    input_data.loc[np.abs(z_scores) >= threshold, column_name] = median
-                    return input_data
+                transformer=FunctionTransformer(partial(impute_median_outlier_transform_by_zscore,threshold=threshold))
             else: 
                 raise ValueError(f"Unknown method: {method}")
                         
         
         elif strategy == 'winsorize':
             if method == "iqr":
-                def outlier_transform_by_iqr(input_data):
-                    input_data = input_data.copy()
-                    Q1 = input_data.quantile(0.25)
-                    Q3 = input_data.quantile(0.75)
-                    IQR = Q3 - Q1
-                    lower = Q1 - threshold * IQR
-                    upper = Q3 + threshold * IQR
-                    input_data[column_name] = np.clip(input_data[column_name], lower, upper)
-                    return input_data  
+                transformer = FunctionTransformer(partial(winsorize_outlier_transform_by_iqr, threshold=threshold))
 
             elif method == 'zscore':
-                def outlier_transform_by_zscore(input_data):
-                    input_data = input_data.copy()
-                    mean = input_data[column_name].mean()
-                    std = input_data[column_name].std()
-                    input_data[column_name] = np.clip(input_data[column_name], mean - threshold * std, mean + threshold * std)
-                    return input_data
+                transformer = FunctionTransformer(partial(winsorize_outlier_transform_by_zscore, threshold=threshold))
             
             else: 
                 raise ValueError(f"Unknown method: {method}")
@@ -201,7 +141,7 @@ async def handle_outliers(
             return KNNImputer(n_neighbors=n_neighbors)
     
         
-        return ("handle_outliers",FunctionTransformer(outlier_transform_by_iqr if method == "iqr" else outlier_transform_by_zscore),[column_name])
+        return ("handle_outliers",transformer,[column_name])
     
     except Exception as e:
         print(f"Error in handle_outliers: {e}") #can we make it more descriptive? LLM generated msg?
@@ -228,12 +168,6 @@ async def parse_datetime(
     try:
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
-        def datetime_transform(input_data):
-            input_data = input_data.copy()
-            input_data = pd.to_datetime(input_data, errors='coerce')
-            if input_data.isna().all():
-                raise ValueError(f"Column '{column_name}' doesn't contain any datetime string instances.")
-            return input_data
 
         return ("parse_datetime",FunctionTransformer(datetime_transform),[column_name])
 
@@ -243,9 +177,9 @@ async def parse_datetime(
 @tool
 async def handle_null_values(
     column_name: Annotated[str, 'column name to be processed'],
-    strategy: Annotated[str, "The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean', 'knn'."],
+    strategy: Annotated[str, "The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean', 'knn"],
     project_id: str = None,
-    value: Annotated[Optional[float], "The value to fill nulls with (if strategy is 'fill_value')."] = None,
+    value: Annotated[Optional[Union[float,str,int]], "The value to fill nulls with (if strategy is 'fill_value')."] = None,
     n_neighbors: Annotated[Optional[int], "Number of neighbors for KNN imputation (if strategy is 'knn')."] = 5,
 ) -> tuple:
     """
@@ -266,54 +200,33 @@ async def handle_null_values(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try:
-        data = await mainDatabase.fetch_dataset(project_id)
+        data = mainDatabase.fetch_dataset(project_id)
         
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
          
         if strategy == "drop":
-            
-            def drop_transform(input_data):
-                input_data = input_data.copy()
-                try:
-                    input_data.dropna(inplace=True)
-                except:
-                    raise ValueError("Failed to drop null values.")
-                return input_data
-            
+            transformer=FunctionTransformer(drop_transform)
         elif strategy == "fill_value":
             
             if value is None:
                 raise ValueError("A value must be provided for the 'fill_value' strategy.")
             
-            def fill_value_transform(input_data):
-                input_data = input_data.copy()
-                try:
-                    input_data = input_data.fillna(value)
-                except:
-                    raise ValueError(f"Failed to fill null values with {value}.")
-                return input_data
+            transformer = FunctionTransformer(partial(fill_value_transform, value=value))
 
         elif strategy == "fill_mean":
+            transformer = FunctionTransformer(fill_mean_transform)
 
-            def fill_mean_transform(input_data):
-                input_data = input_data.copy()
-                try:
-                    input_data = input_data.fillna(input_data.mean())
-                except:
-                    raise ValueError("Failed to fill null values with the mean.")
-                return input_data
-            
         elif strategy == "knn":
-                return KNNImputer(n_neighbors=n_neighbors)
+            return ("handle_null_values",KNNImputer(n_neighbors=n_neighbors),[column_name])
             
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
     
-    except:
-        raise ValueError(f"Error in handle_null_values")
+    except Exception as e:
+        raise e
 
-    return ("handle_null_values", FunctionTransformer(drop_transform if strategy is "drop" else fill_value_transform if strategy is "fill_value" else fill_mean_transform if strategy is "fill_mean" else knn_transform), [column_name])
+    return ("handle_null_values", transformer, [column_name])
 
 @tool
 async def remove_duplicates(
@@ -328,7 +241,7 @@ async def remove_duplicates(
 
     Args:
         column_name: Name of the column to process.
-        strategy : The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean', 'knn'.
+        strategy : The strategy to handle duplicates. Options: 'rows', 'columns'.
         project_id: ID of the project to fetch the dataset.
         subset: List of columns to consider for row duplicates (if strategy is 'rows').
         keep: Whether to keep the 'first', 'last', or False (if strategy is 'rows' or 'columns').
@@ -340,46 +253,35 @@ async def remove_duplicates(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try :
-        data = await mainDatabase.fetch_dataset(project_id)
+        data = mainDatabase.fetch_dataset(project_id)
         
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
          
         if strategy == "rows":
-            def drop_rows_transform(input_data):
-                input_data = input_data.copy()
-                try:
-                    input_data = input_data.drop_duplicates(subset=subset, keep=keep)
-                except:
-                    raise ValueError("Failed to drop duplicate rows.")
-                return input_data
+            transformer=FunctionTransformer(partial(drop_rows_transform, subset=subset, keep=keep))
             
         elif strategy == "columns":
-            def drop_columns_transform(input_data):
-                input_data = input_data.copy()
-                try:
-                    input_data = input_data.loc[:, ~input_data.columns.duplicated(keep=keep)]
-                except:
-                    raise ValueError("Failed to drop duplicate columns.")
-                return input_data
+            transformer=FunctionTransformer(partial(drop_columns_transform, keep=keep))
 
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
     except:
         raise ValueError(f"Error in remove_duplicates")
-    return ("remove_duplicates", FunctionTransformer(drop_rows_transform if strategy is "rows" else drop_columns_transform), [column_name])
+    return ("remove_duplicates", transformer, [column_name])
 
 tools=[
     handle_outliers,
     parse_datetime,
     handle_null_values,
     remove_duplicates,
+    encode_categorical_feature,
+    normalize_continous_feature
 ]
 
 async def tool_node(state):
     tools_by_name = {tool.name: tool for tool in tools}
     messages = state["preprocessing_messages"]
-    print("TOOL NODE:",messages)
     # get the last message of this state
     last_message = messages[-1]
     preprocessors = []
@@ -392,7 +294,7 @@ async def tool_node(state):
             preprocessors.append(tool_result)
             output_messages.append(
                 ToolMessage(
-                    content=f"Preprocessing step completed: {tool_call['name']}",
+                    content=f"Preprocessing step completed: {tool_call['name']} for column {tool_call['args']['column_name']} no need to call this function for this column again",
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
                 )
@@ -407,4 +309,11 @@ async def tool_node(state):
                     status="error",
                 )
             )
-    return {'preprocessing_messages':output_messages,'pipeline':preprocessors}
+    preprocessor=mainDatabase.fetch_pipeline(state["project_id"])
+    if preprocessor:
+        preprocessor.transformers.extend(preprocessors)
+    else:
+        preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
+    mainDatabase.save_pipeline(preprocessor,state["project_id"])
+    
+    return {'preprocessing_messages':output_messages}

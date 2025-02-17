@@ -8,6 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from AutoML.Splitting.splitter import splitter_node
 from AutoML.Preprocessing.pipeline import graph as preprocessor_graph
+from sklearn.compose import ColumnTransformer
 
 
 class State(TypedDict):
@@ -30,8 +31,7 @@ class State(TypedDict):
 
     #Preprocessing Pipeline
     preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
-    pipeline: Annotated[list[tuple], operator.add] # Preprocessing Pipeline
-
+    
     #Model
     model_names: NotRequired[list[str]] # Model Names Selected by LLM
     model_objects: NotRequired[list[object]] # Model Objects
@@ -53,3 +53,5 @@ async def automl(project_id,mode,label,features=None):
     response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'pipeline':[]})
     # This will contain everything needed. from steps taken by each agent to the final model(s) and their performance
     print(response)
+import asyncio
+asyncio.run(automl('1','Athena','Survived'))
