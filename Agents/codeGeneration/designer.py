@@ -39,7 +39,7 @@ load_dotenv()
 
 CONFIGURATIONS={
     'temperature':0.6,
-    'model':"gemini-1.5-flash",
+    'model':"gemini-2.0-flash",
 }
 
 # The Designer should respond with this sturcture of a List of json strings
@@ -47,7 +47,7 @@ class Designer(BaseModel):
     response: List[str]
 
 
-system_prompt = hub.pull("designer").messages[0].prompt.template
+system_prompt = hub.pull("viz-generation-designer").messages[0].prompt.template
 
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 

@@ -42,7 +42,7 @@ CONFIGURATIONS={
     'model':"gemini-2.0-flash",
 }
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
-system_prompt = hub.pull("chatter").messages[0].prompt.template
+system_prompt = hub.pull("chatbot-chatter").messages[0].prompt.template
 
 
 
@@ -59,7 +59,7 @@ async def chatter_node(state,config: RunnableConfig):
     
 
 
-def should_continue(state)->Literal['tools','__end__']:
+async def should_continue(state)->Literal['tools','__end__']:
     messages = state["messages"]
     last_message = messages[-1]
     if last_message.tool_calls!=[]:
