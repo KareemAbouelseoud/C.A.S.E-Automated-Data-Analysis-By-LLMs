@@ -16,7 +16,7 @@ CONFIGURATIONS={
 }
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 
-rec_sys=hub.pull("recommender").messages[0].prompt.template
+rec_sys=hub.pull("chatbot-recommender").messages[0].prompt.template
 class RECOMMENDER(BaseModel):
     rec: list[str]
 
