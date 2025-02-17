@@ -8,6 +8,8 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from Database import mainDatabase
+from Backend.services.project_service import ProjectService
+_project_service=ProjectService()
 
 load_dotenv()
 CONFIGURATIONS={
@@ -20,7 +22,7 @@ system_prompt = hub.pull("preprocessor").messages[0].prompt.template
 
 async def preprocessor_node(state):
     project_id = state["project_id"]
-    data_report=mainDatabase.fetch_data_report(project_id)
+    data_report=_project_service.fetch_data_report(project_id)
     if 'preprocessing_messages' not in state or state['preprocessing_messages'] is None:
         old_messages= []
     else:

@@ -165,5 +165,14 @@ class ProjectService:
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
         return project.data_report
+    async def fetch_dataset(self, project_id: str) -> Optional[str]:
+        try:
+            project = await self.project_repository.get_by_id(project_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            
+        if project==None:
+            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        return pd.read_json(project.Dataset)
 
     #endregion

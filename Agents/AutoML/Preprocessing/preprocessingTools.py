@@ -10,7 +10,9 @@ from sklearn.preprocessing import FunctionTransformer
 from sklearn.impute import KNNImputer
 from typing import Annotated, Optional, List
 from Database import mainDatabase
+from Backend.services.project_service import ProjectService
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+_project_service=ProjectService()
 
 @tool
 async def encode_categorical_feature(
@@ -85,7 +87,7 @@ async def handle_outliers(
         2. Transformer: An instance of FunctionTransformer configured with the appropriate outlier detection method. This transformer can be applied to new data to remove outliers based on the parameters derived from the training data.
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
-    data = await mainDatabase.fetch_dataset(project_id)
+    data = await _project_service.fetch_dataset(project_id)
 
     try:
         if column_name not in data.columns:
@@ -139,7 +141,7 @@ async def parse_datetime(
         2. Transformer: An instance of FunctionTransformer. This transformer can be applied to new data to parse datetime strings based on the parameters derived from the training data.
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
-    data = await mainDatabase.fetch_dataset(project_id)
+    data = await _project_service.fetch_dataset(project_id)
     try:
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")

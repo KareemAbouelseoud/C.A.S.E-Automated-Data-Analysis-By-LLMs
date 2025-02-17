@@ -29,7 +29,6 @@ async def get_model_history(project_id: str):
     Returns:
         dict: JSON with Streamlit chat history.
     """
-    # return {'data':mainDatabase.get_model_chat_history(project_id)}
     return json.dumps({'data':await project_service.get_model_chat_history(project_id)})
 
 @chatbot_router.get('/project/{project_id}/get_streamlit_history',tags=["Chat"])
@@ -43,7 +42,6 @@ async def get_streamlit_history(project_id: str):
     Returns:
         dict: JSON with Streamlit chat history.
     """
-    # return {'data':mainDatabase.get_model_chat_history(project_id)}
     return {'data':project_service.get_streamlit_chat_history(project_id)}
 
 
