@@ -79,14 +79,14 @@ class ModelRecommendation(BaseModel):
 
 class Selector(BaseModel):
     """Main structured output model"""
-    recommendations: List[ModelRecommendation] = Field(
+    models: List[ModelRecommendation] = Field(
         description="List of recommended models with explanations",
         min_items=1,
         max_items=5
     )
 
 
-async def selector_node(state):
+async def model_selector_node(state):
     print(f"Model Selection Started")
     llm = ChatGoogleGenerativeAI(
         model=CONFIGURATIONS["model"],
@@ -96,8 +96,8 @@ async def selector_node(state):
     project_id = state["project_id"]
     data_report = mainDatabase.fetch_data_report(project_id)
     problem_type = state['problem_type']
-    X_columns = data_report['X_columns']
-    y_column = data_report['y_column']
+    X_columns = state['X_columns']
+    y_column = state['y_column']
     mode = state['mode']
     
     model_list = classification_models if problem_type == 'classification' else regression_models
@@ -120,10 +120,11 @@ async def selector_node(state):
         }
     ]
     response = await llm.with_structured_output(Selector).ainvoke(messages)
+    
     return {
         "models": [
             {"model": rec.model, "reasoning": rec.reasoning}
-            for rec in response.recommendations
+            for rec in response.models
         ]
     }
 
