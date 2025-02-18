@@ -137,11 +137,12 @@ class Chatbot:
                     st.markdown(message["content"])
             if message['role'] == 'visualizer':
                 with st.chat_message(message["role"],avatar='📈'):
-                    self.get_visuals(message['content'])
+                    for visual in message['content']:
+                        self.get_visuals(visual)
             
     def get_visuals(self,visual):
-        
-        fig = go.Figure(data=visual[0]['data'], layout=visual[0]['layout'])
+        print(visual)
+        fig = go.Figure(data=visual['data'], layout=visual['layout'])
         st.plotly_chart(fig)
         
     def accept_user_input(self):

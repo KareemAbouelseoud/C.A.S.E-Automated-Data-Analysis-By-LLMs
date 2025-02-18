@@ -38,7 +38,7 @@ CONFIGURATIONS={
 
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 
-system_prompt = hub.pull("caller").messages[0].content
+system_prompt = hub.pull("viz-generation-caller").messages[0].content
 
 async def caller_node(state):
     messages = [

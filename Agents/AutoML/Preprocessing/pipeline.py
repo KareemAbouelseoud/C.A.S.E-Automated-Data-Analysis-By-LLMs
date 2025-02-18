@@ -7,8 +7,9 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 from preprocessingTools import tool_node
-from preprocessor import preprocessor_node,should_continue
-    
+from planner import planner_node
+from Agents.AutoML.Preprocessing.caller import caller_node,should_continue
+
 load_dotenv()
 class State(TypedDict):
     """
@@ -18,13 +19,16 @@ class State(TypedDict):
     X_columns: NotRequired[list[str]] # X Columns (user then LLM defined)
     y_column: NotRequired[str] # Y Column (user defined)
     preprocessing_messages: Annotated[list[AnyMessage], operator.add]
+    preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
 
 builder = StateGraph(State)
 
-builder.add_node("preprocessor_node", preprocessor_node) 
+builder.add_node("caller_node", caller_node) 
+builder.add_node("planner_node", planner_node) 
 builder.add_node("tools",tool_node)
 
-builder.add_edge(START, "preprocessor_node")
-builder.add_edge("preprocessor_node", "tools")
-builder.add_conditional_edges('tools', should_continue)
+builder.add_edge(START, "planner_node")
+builder.add_edge("planner_node", "caller_node")
+builder.add_conditional_edges("caller_node", should_continue)
+builder.add_edge('tools','caller_node')
 graph = builder.compile()

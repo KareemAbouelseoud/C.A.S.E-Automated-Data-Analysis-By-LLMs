@@ -44,7 +44,7 @@ CONFIGURATIONS={
     'model':"gemini-2.0-flash",
 }
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
-system_prompt = hub.pull("chatter").messages[0].prompt.template
+system_prompt = hub.pull("chatbot-chatter").messages[0].prompt.template
 
 
 

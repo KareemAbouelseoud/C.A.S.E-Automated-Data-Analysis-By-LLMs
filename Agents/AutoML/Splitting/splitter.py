@@ -1,6 +1,7 @@
 from typing import Literal
 from pydantic import BaseModel,Field
 from langchain_google_genai import ChatGoogleGenerativeAI
+
 from langchain import hub
 from dotenv import load_dotenv
 import sys
@@ -11,7 +12,7 @@ from Backend.services.project_service import ProjectService
 _project_service=ProjectService()
 load_dotenv()
 
-system_prompt = hub.pull("splitter").messages[0].prompt.template
+system_prompt = hub.pull("automl-splitter").messages[0].prompt.template
 CONFIGURATIONS={
     'temperature':0.7,
     'model':"gemini-2.0-flash",

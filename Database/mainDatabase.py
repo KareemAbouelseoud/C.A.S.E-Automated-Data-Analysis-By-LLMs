@@ -5,6 +5,8 @@ import shutil
 import csv
 import os
 import json
+from joblib import dump
+from joblib import load
 
 user_directory=r'Database\Users\users.csv' #temp until we create a real database
 project_directory=r'Database\Projects\projects.csv' #temp until we create a real database
@@ -12,7 +14,7 @@ raw_datasets_directory=r'Database\rawDatasets'
 processed_datasets_directory=r'Database\processedDatasets'
 data_reports_directory=r'Database\dataReports'
 chat_directory=r'Database\Users\Chats.csv'
-
+preprocessor_pipelines_directory=r'Database\preprocessorPipelines'
 def check_login(username,password):
     df=pd.read_csv(user_directory)
     row=df[(df['username'] == username)]
@@ -191,3 +193,13 @@ def update_st_chat_history(project_id,last_conv : list):
 
     df.to_csv(chat_directory, index=False)
 
+def save_pipeline(pipeline, project_id):
+    pipeline_path = os.path.join(preprocessor_pipelines_directory, f"pipeline_{project_id}.joblib")
+    dump(pipeline, pipeline_path)
+
+def fetch_pipeline(project_id):
+    pipeline_path = os.path.join(preprocessor_pipelines_directory, f"pipeline_{project_id}.joblib")
+    if os.path.exists(pipeline_path):
+        return load(pipeline_path)
+    else:
+        return None

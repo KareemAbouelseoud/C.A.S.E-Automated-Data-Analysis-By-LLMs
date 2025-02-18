@@ -47,7 +47,7 @@ class Designer(BaseModel):
     response: List[str]
 
 
-system_prompt = hub.pull("designer").messages[0].prompt.template
+system_prompt = hub.pull("viz-generation-designer").messages[0].prompt.template
 
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 
