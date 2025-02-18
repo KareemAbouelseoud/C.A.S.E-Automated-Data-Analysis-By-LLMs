@@ -39,6 +39,7 @@ def train_test_split(df, X_columns, y_column, test_size, shuffle, stratify):
 
 
 async def splitter_node(state):
+    print("Beginning Splitter Node")
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
     project_id = state["project_id"]
     data_report=mainDatabase.fetch_data_report(project_id)
