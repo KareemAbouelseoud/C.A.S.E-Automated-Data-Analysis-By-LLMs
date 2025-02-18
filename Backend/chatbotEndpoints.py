@@ -29,8 +29,8 @@ async def recommend(item: Recommender):
 
     prompt = item.prompt
     project_id = item.project_id
-
-    return {"data":json.dumps(recommender.recommender(json.loads(prompt),project_id))}
+    recommendations=await recommender.recommender(json.loads(prompt),project_id)
+    return {"data":json.dumps(recommendations)}
 
 
 @chatbot_router.get('/create_new_chat/{project_id}')

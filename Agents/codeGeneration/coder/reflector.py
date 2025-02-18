@@ -11,9 +11,9 @@ CONFIGURATIONS={
     'model':"gemini-2.0-flash",
 }
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
-system_prompt = hub.pull("reflector").messages[0].prompt.template
+system_prompt = hub.pull("viz-generation-coder-reflector").messages[0].prompt.template
 
-def reflector_node(state):
+async def reflector_node(state):
     """
     Reflect on errors
 
@@ -40,7 +40,7 @@ def reflector_node(state):
 )
     reflector_chain = (reflector_prompt_gemini | llm)
     # Add reflection
-    reflections = reflector_chain.invoke(
+    reflections = await reflector_chain.ainvoke(
         {"messages": messages}
     )
     return {"generation": code_solution, "messages": [("assistant", f"Here are reflections on the error: {reflections}")], "iterations": iterations}

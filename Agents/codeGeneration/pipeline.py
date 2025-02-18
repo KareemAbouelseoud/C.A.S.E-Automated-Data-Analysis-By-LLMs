@@ -36,7 +36,7 @@ Variables:
 import sys
 
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 
 from typing_extensions import TypedDict,Annotated,NotRequired
 import operator
@@ -49,7 +49,6 @@ from Agents.codeGeneration.coder.coderPipeline import coder
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
 import operator
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from Database import mainDatabase
 
 class State(TypedDict):
@@ -77,18 +76,18 @@ builder.add_conditional_edges('tools',tool_brancher)
 builder.add_edge('coder',END)
 viz_graph = builder.compile()
 
-def generate_visualizations(project_id):
+async def generate_visualizations(project_id):
     data_report=mainDatabase.fetch_data_report(project_id)
-    response=designer_chain.invoke({'data_report':data_report})
+    response=await designer_chain.ainvoke({'data_report':data_report})
+    print("Response from designer chain",response.response)
     visualizations=[]
-    print(len(response.response))
-    print(response.response)
     try:
         for idx,design in  enumerate(response.response):
-            graph_response=viz_graph.invoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
+            graph_response= await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
+            print("Graph response",graph_response)
             if graph_response['visualization']:
-                for viz in graph_response['visualization']:
-                    visualizations.append(viz)
+                visualizations.append(graph_response['visualization'])
+                
     except Exception as e:
         print(e)
     return visualizations     
