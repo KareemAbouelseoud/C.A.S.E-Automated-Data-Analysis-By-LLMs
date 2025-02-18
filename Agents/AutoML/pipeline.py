@@ -17,10 +17,10 @@ class State(TypedDict):
     """
     project_id:str # Project ID
     mode: str # Mode Selected by the User
-
     #Data Names
     X_columns: NotRequired[list[str]] # X Columns (user then LLM defined)
     y_column: NotRequired[str] # Y Column (user defined)
+    problem_type: NotRequired[str] # Problem Type Identified by the LLM
 
     #Splitting
     splitting_logic: NotRequired[str] # Splitting Steps Documented for the User and rest of Agents
@@ -33,7 +33,7 @@ class State(TypedDict):
     preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
     
     #Model
-    model_names: NotRequired[list[str]] # Model Names Selected by LLM
+    models: NotRequired[list[str]] # Model Names Selected by LLM
     model_objects: NotRequired[list[object]] # Model Objects
 
 

@@ -79,8 +79,6 @@ class ModelRecommendation(BaseModel):
 
 class Selector(BaseModel):
     """Main structured output model"""
-    mode: str = Field(description="Selected operation mode (Hermes, Athena, Hephaestus)")
-    problem_type: str = Field(description="Type of ML problem (classification/regression)")
     recommendations: List[ModelRecommendation] = Field(
         description="List of recommended models with explanations",
         min_items=1,
@@ -89,7 +87,7 @@ class Selector(BaseModel):
 
 
 async def selector_node(state):
-    print(f"state : {state}")
+    print(f"Model Selection Started")
     llm = ChatGoogleGenerativeAI(
         model=CONFIGURATIONS["model"],
         temperature=CONFIGURATIONS["temperature"]
@@ -98,47 +96,40 @@ async def selector_node(state):
     project_id = state["project_id"]
     data_report = mainDatabase.fetch_data_report(project_id)
     problem_type = state['problem_type']
+    X_columns = data_report['X_columns']
+    y_column = data_report['y_column']
     mode = state['mode']
     
     model_list = classification_models if problem_type == 'classification' else regression_models
 
-    if 'model_selection_messages' not in state or state['model_selection_messages'] is None:
-        old_messages= []
-    else:
-        old_messages = state["model_selection_messages"]
 
     messages = [
         {
             "role": "system",
-            "content": system_prompt + f"\n\nCurrent Mode: {mode}\nProblem Type: {problem_type}"
+            "content": system_prompt
         },
         {
             "role": "user",
             "content": 
+                f"\n\nCurrent Mode: {mode}\nProblem Type: {problem_type}"
                 f"this is the model list: {model_list}\n" 
                 f"this is the data report:{data_report}\n"
+                f"this is the X columns: {X_columns}\n And this is the y column: {y_column}\n"
+                f"This is the preprocessing steps that are going to be done: {state['preprocessing_logic']}\n"
                 "Please provide recommendations strictly following the format requirements."
         }
-    ]+old_messages
-    
+    ]
     response = await llm.with_structured_output(Selector).ainvoke(messages)
-    
     return {
-        "mode": response.mode,
-        "problem_type": response.problem_type,
-        "recommendations": [
+        "models": [
             {"model": rec.model, "reasoning": rec.reasoning}
             for rec in response.recommendations
         ]
     }
 
+
 async def should_continue(state) -> str:
     """Determine workflow continuation based on state validation"""
-    required_fields = ["project_id", "problem_type", "mode"]
-    for field in required_fields:
-        if field not in state:
-            raise ValueError(f"Missing required field: {field}")
-
     if "recommendations" in state:
         rec_count = len(state["recommendations"])
         mode = state["mode"]
@@ -154,9 +145,7 @@ async def should_continue(state) -> str:
         elif mode == "HEPHAESTUS" and rec_count != 5:
             print(f"Hephaestus mode requires 5 recommendations, got {rec_count}, returning to selector node")
             return "selector_node"
-
-    if state["model_selection_messages"] is None or state["model_selection_messages"] == []:
-        print("No response from model selector, returning to selector node")
+    else:
+        print("No recommendations found, returning to selector node")
         return "selector_node"
-
     return END
