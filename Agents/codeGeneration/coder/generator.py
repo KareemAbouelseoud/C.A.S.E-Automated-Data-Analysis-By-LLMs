@@ -4,13 +4,15 @@ from langchain import hub
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
+from Database import mainDatabase
 
 
 
 load_dotenv()
 CONFIGURATIONS={
-    'temperature':0.7,
+    'temperature':0.0,
     'model':"gemini-2.0-flash",
+    'number of retries':3
 }
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 system_prompt = hub.pull("viz-generation-coder-generator").messages[0].prompt.template
@@ -55,8 +57,15 @@ async def generator_node(state):
 
 
     messages = []
-    iterations = state["iterations"]
-    error = state["error"]
+    if 'iterations' in state:
+        iterations = state["iterations"]
+    else:
+        iterations = 0 
+
+    if 'error' in state:
+        error = state["error"]
+    else:
+        error=''
 
     # We have been routed back to generation with an error
     if error == "yes":
@@ -72,7 +81,8 @@ async def generator_node(state):
         )
     else:
         old_messages = state["messages"]
-        old_messages[-1][1]=old_messages[-1][1]+f"Here is the data report crucial for the plot: \n {state['data_report']}\n"
+        data_report= mainDatabase.fetch_data_report(state['project_id'])
+        old_messages[-1]['content']=old_messages[-1]['content']+f"Here is the data report crucial for the plot: \n {data_report}\n"
         # Solution
         code_solution = await code_gen_chain.ainvoke(
             {"messages":old_messages}

@@ -280,6 +280,7 @@ tools=[
 ]
 
 async def tool_node(state):
+    print("Executing Tool Calls")
     tools_by_name = {tool.name: tool for tool in tools}
     messages = state["preprocessing_messages"]
     # get the last message of this state

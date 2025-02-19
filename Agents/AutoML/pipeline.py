@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from AutoML.Splitting.splitter import splitter_node
 from AutoML.Preprocessing.pipeline import graph as preprocessor_graph
 from sklearn.compose import ColumnTransformer
-
+from ModelSelection.selector import model_selector_node
 
 class State(TypedDict):
     """
@@ -17,10 +17,10 @@ class State(TypedDict):
     """
     project_id:str # Project ID
     mode: str # Mode Selected by the User
-
     #Data Names
     X_columns: NotRequired[list[str]] # X Columns (user then LLM defined)
     y_column: NotRequired[str] # Y Column (user defined)
+    problem_type: NotRequired[str] # Problem Type Identified by the LLM
 
     #Splitting
     splitting_logic: NotRequired[str] # Splitting Steps Documented for the User and rest of Agents
@@ -33,7 +33,7 @@ class State(TypedDict):
     preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
     
     #Model
-    model_names: NotRequired[list[str]] # Model Names Selected by LLM
+    models: NotRequired[list] # Model Names Selected by LLM
     model_objects: NotRequired[list[object]] # Model Objects
 
 
@@ -42,16 +42,20 @@ class State(TypedDict):
 builder = StateGraph(State)
 builder.add_node('splitter_node', splitter_node)
 builder.add_node('preprocessor_node', preprocessor_graph)
+builder.add_node('model_selector', model_selector_node)
+
 builder.add_edge(START, 'splitter_node')
 builder.add_edge('splitter_node', 'preprocessor_node')
+builder.add_edge('preprocessor_node', 'model_selector')
 graph = builder.compile()
 
 
 
 
 async def automl(project_id,mode,label,features=None):
-    response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'pipeline':[]})
+    print("AUTOML STARTED")
+    response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'mode':'HERMES'})
     # This will contain everything needed. from steps taken by each agent to the final model(s) and their performance
     print(response)
-import asyncio
-asyncio.run(automl('1','Athena','Survived'))
+# import asyncio
+# asyncio.run(automl('1','Athena','Survived'))
