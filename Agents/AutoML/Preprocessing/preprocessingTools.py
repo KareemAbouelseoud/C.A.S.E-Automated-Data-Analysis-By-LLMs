@@ -21,6 +21,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from functools import partial
 from helperFunctions import *
+from Backend.services.project_service import ProjectService
+_project_service=ProjectService()
 
 
 @tool
@@ -204,7 +206,7 @@ async def handle_null_values(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try:
-        data = mainDatabase.fetch_dataset(project_id)
+        data = _project_service.fetch_dataset(project_id)
         
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
@@ -257,7 +259,7 @@ async def remove_duplicates(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try :
-        data = mainDatabase.fetch_dataset(project_id)
+        data = _project_service.fetch_dataset(project_id)
         
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
@@ -313,11 +315,11 @@ async def tool_node(state):
                     status="error",
                 )
             )
-    preprocessor=mainDatabase.fetch_pipeline(state["project_id"])
+    preprocessor=_project_service.fetch_pipeline(state["project_id"])
     if preprocessor:
         preprocessor.transformers.extend(preprocessors)
     else:
         preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
-    mainDatabase.save_pipeline(preprocessor,state["project_id"])
+    _project_service.save_pipeline(preprocessor,state["project_id"])
     
     return {'preprocessing_messages':output_messages}
