@@ -70,7 +70,6 @@ async def tool_node(state):
 
         except Exception as e:
             # Return the error if the tool call fails
-            raise e
             output_messages.append(
                 ToolMessage(
                     content=f"an error occurred while running the tool: {str(e)}",
