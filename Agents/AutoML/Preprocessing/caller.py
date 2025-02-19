@@ -24,6 +24,7 @@ llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURAT
 system_prompt = hub.pull("automl-preprocessor-caller").messages[0].prompt.template
 
 async def caller_node(state):
+    print("Calling Preprocessor Tools")
     project_id = state["project_id"]
     data_report=mainDatabase.fetch_data_report(project_id)
     if 'preprocessing_messages' not in state or state['preprocessing_messages'] is None:
