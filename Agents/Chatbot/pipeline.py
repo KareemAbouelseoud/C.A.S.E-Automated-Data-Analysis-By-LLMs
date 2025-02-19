@@ -36,6 +36,7 @@ class State(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
     visual: Annotated[list[AnyMessage], operator.add]
 
+
 builder = StateGraph(State)
 
 builder.add_node("chatter_node", chatter_node) 
@@ -48,7 +49,6 @@ graph = builder.compile()
 
 
 async def chat(user_input,project_id,messages=None):
-    print(user_input)
     if not messages:
         # New Chat
         messages=[]
@@ -60,8 +60,7 @@ async def chat(user_input,project_id,messages=None):
                 if chunk[1][0].content:
                     yield chunk[1][0].content
         elif chunk[0] == 'values':
-            print(chunk[1])
-
+            pass
         elif chunk[0] == 'updates':
             if 'tools' in chunk[1]:
                 if 'visual' in chunk[1]['tools']:
