@@ -109,7 +109,7 @@ class Chatbot:
         """, unsafe_allow_html=True)
 
         if st.sidebar.button('Clear History'):
-            chatbotRequests.clear_history(st.session_state.user_id)
+            chatbotRequests.clear_history(st.session_state['Project'])
             del st.session_state.messages
             del st.session_state.new
             if 'recommendation' in st.session_state:
@@ -136,11 +136,26 @@ class Chatbot:
                 with st.chat_message(message["role"],avatar='📈'):
                     for visual in message['content']:
                         self.get_visuals(visual)
-            
-    def get_visuals(self,visual):
-        print(visual)
-        fig = go.Figure(data=visual['data'], layout=visual['layout'])
-        st.plotly_chart(fig)
+    def save_plot(self,fig):
+        pass  
+    def get_visuals(self,visuals):
+        if isinstance(visuals,list):
+            for v in visuals:
+                self.get_visuals(v)
+                return
+        try:
+            fig = go.Figure(data=visuals['data'], layout=visuals['layout'])
+            st.plotly_chart(fig)
+            st.button("Save Plot in Dashboard",on_click=self.save_plot,args=[fig],key=f"plot_{str(uuid.uuid4())}")
+        except:
+            for key,value in visuals.items():
+                if isinstance(value,dict):
+                    self.get_visuals(value)
+                elif isinstance(value,list):
+                    for v in value:
+                        self.get_visuals(v)
+                
+
         
     def accept_user_input(self):
         """
@@ -239,7 +254,7 @@ class Chatbot:
                 for visual in visuals:
                     for v in visual:
                         self.get_visuals(v)
-                        st.session_state.messages.append({'role':'visualizer','content':visual})
+                        st.session_state.messages.append({'role':'visualizer','content':v})
             
     
 

@@ -1,3 +1,4 @@
+from Database import mainDatabase
 def checker_node(state):
     """
     Check code
@@ -36,7 +37,11 @@ def checker_node(state):
 
     # Check execution
     try:
-        globals_dict={}
+        df=mainDatabase.fetch_dataset(state['project_id'])
+        globals_dict={'mainDatabase':mainDatabase,
+                      'project_id':state['project_id'],
+                      'df':df}
+        print("CODE:", imports + "\n" + code)
         exec(imports + "\n" + code,globals_dict)
         if 'fig_dict' in  globals_dict:
             if not isinstance(globals_dict['fig_dict'],dict):
