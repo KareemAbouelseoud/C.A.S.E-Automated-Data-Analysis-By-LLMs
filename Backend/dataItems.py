@@ -30,5 +30,4 @@ class Recommender(BaseModel):
 
 class Chat(BaseModel):
     prompt:str
-    messages:Optional[str]=None
     project_id:str

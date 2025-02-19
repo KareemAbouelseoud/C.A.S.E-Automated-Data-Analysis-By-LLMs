@@ -48,3 +48,11 @@ class Project(BaseModel):
         """Convert MongoDB document to Project model with string ID."""
         document["id"] = ObjectId(document["_id"])  # Convert ObjectId to string
         return cls(**document)
+    
+    @classmethod
+    def from_dict(cls, document):
+        """Convert MongoDB document to Project model with string ID."""
+        document["id"] = ObjectId(document["id"])  # Convert ObjectId to string
+        document["created_Date"] = datetime.strptime(document["created_Date"],"%d %B %Y")  # Convert ObjectId to string
+        return cls(**document)
+    

@@ -69,6 +69,7 @@ class ProjectService:
             raise HTTPException(status_code=500, detail=f"Error Retrving user from MongoDB: {e}")
         try:
             project = await self.get_project(project_id) 
+            project = Project.from_dict(project)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
         try:
@@ -84,8 +85,8 @@ class ProjectService:
             raise HTTPException(status_code=400, detail="Project Visualization is not created in MongoDB")
         
         
-        project.model_Chat=None
-        project.streamlit_Chat=None
+        project.model_Chat=Chat()
+        project.streamlit_Chat=Chat()
         project_viz.Chat_visualizations=[]
 
         try:
@@ -105,7 +106,8 @@ class ProjectService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Retrving user from MongoDB: {e}")
         try:
-            project = await self.get_project(project_id) 
+            project = await self.get_project(project_id)
+            project= Project.from_dict(project)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
             
@@ -119,7 +121,8 @@ class ProjectService:
             hist_dict['st_history'].append({'role':message['role'],'content':message['content']})
             if 'visualizer'!=message['role']:
                 hist_dict['model_history'].append({'role':message['role'],'content':message['content']})
-        
+        project.model_Chat=Chat()
+        project.streamlit_Chat=Chat()
         project.model_Chat.messages=json.dumps(hist_dict['model_history'])
         project.streamlit_Chat.messages=json.dumps(hist_dict['st_history'])
         

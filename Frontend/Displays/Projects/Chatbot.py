@@ -112,7 +112,7 @@ class Chatbot:
         """, unsafe_allow_html=True)
 
         if st.sidebar.button('Clear History'):
-            chatbotRequests.clear_history(controller.get("user_id"))
+            chatbotRequests.clear_history(st.session_state.Project,controller.get("user_id"))
             del st.session_state.messages
             del st.session_state.new
             if 'recommendation' in st.session_state:
@@ -158,19 +158,19 @@ class Chatbot:
             with st.chat_message("user"):
                 st.markdown(prompt)
             
-            if len(st.session_state.messages)<=2:
-                 chatbotRequests.create_new_chat(st.session_state['Project'])
+            # if len(st.session_state.messages)<=2:
+            #      chatbotRequests.create_new_chat(st.session_state['Project'])
 
             st.session_state.messages.append({"role": "user", "content": sanitized_input,})
 
             self.generate_response(sanitized_input)
             self.recommend(sanitized_input)
             try:
-                chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages)
+                chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
             except:
                 messages=st.session_state.messages[-1:]
                 messages.append({"role": "assistant", "content": 'news_dataframe'})
-                chatbotRequests.update_user_st_history(str(st.session_state['Project']),messages)
+                chatbotRequests.update_user_st_history(str(st.session_state['Project']),messages,controller.get("user_id"))
                 
 
         if 'recommendation' in st.session_state:
@@ -178,12 +178,12 @@ class Chatbot:
                 st.markdown(st.session_state.recommendation)
             st.session_state.new=False
             
-            if len(st.session_state.messages)<=2:
-                chatbotRequests.create_new_chat(st.session_state['Project'])
+            # if len(st.session_state.messages)<=2:
+            #     chatbotRequests.create_new_chat(st.session_state['Project'])
                 
             st.session_state.messages.append({"role": "user", "content": st.session_state.recommendation})
             self.generate_response(st.session_state.recommendation)
-            chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages)
+            chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
             self.recommend(st.session_state.recommendation)
             del st.session_state.recommendation
 
@@ -200,7 +200,7 @@ class Chatbot:
         """
         with st.spinner("Generating response..."):
             try:
-
+                
                 response =chatbotRequests.chat(user_input,project_id=st.session_state.Project)
                 self.display_assistant_response(response)
 

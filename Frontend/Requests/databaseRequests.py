@@ -134,7 +134,6 @@ def create_project(user_id,name,uploaded_file):
 #region User Project API CALLS
 def read_projects(user_id):
      response=requests.get(url+f'/project/GetProjects/{str(user_id)}')
-     print(response.json())
      projects=json.loads(response.json())['data']
      return projects
 

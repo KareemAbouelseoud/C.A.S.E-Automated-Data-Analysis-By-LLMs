@@ -5,10 +5,10 @@ project_service = ProjectService()
 chatbot_router = APIRouter()
 
 @chatbot_router.post('/chat',tags=["Chat"])
-async def chat(project_id:str,prompt:str):
-    messages=await project_service.get_model_chat_history(project_id)
-    messages.append({"role": "user", "content": prompt})
-    return StreamingResponse(chatbot_pipeline.chat(prompt,project_id,messages),media_type="text/event-stream")
+async def chat(body:Chat):
+    messages=await project_service.get_model_chat_history(body.project_id)
+    messages.append({"role": "user", "content": body.prompt})
+    return StreamingResponse(chatbot_pipeline.chat(body.project_id,messages),media_type="text/event-stream")
     
 @chatbot_router.post("/recommend",tags=["Chat"])
 async def recommend(item: Recommender):
@@ -65,4 +65,4 @@ async def clearChatHistory(project_id:str,user_id:str):
     """
     if project_id=="" or user_id=="":
         raise HTTPException(status_code=400, detail="Project Id and user Id Can not be null")
-    return {'Updated':await project_service.clearChatHistory(project_id)}
+    return {'Updated':await project_service.clearChatHistory(project_id=project_id,user_id=user_id)}
