@@ -44,13 +44,11 @@ from langgraph.graph import StateGraph, START, END
 from Agents.codeGeneration.caller import caller_node
 from Agents.codeGeneration.planner import planner_node,planner_brancher,tool_brancher
 from Agents.codeGeneration.mainTools import tool_node
-from Agents.codeGeneration.designer import designer_chain
+from Agents.codeGeneration.designer import designer_node
 from Agents.codeGeneration.coder.coderPipeline import coder
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
 import operator
-from Database import mainDatabase
-
 class State(TypedDict):
     """
     A class to represent the state of the application.
@@ -77,12 +75,11 @@ builder.add_edge('coder',END)
 viz_graph = builder.compile()
 
 async def generate_visualizations(project_id):
-    data_report=mainDatabase.fetch_data_report(project_id)
-    response=await designer_chain.ainvoke({'data_report':data_report})
-    print("Response from designer chain",response.response)
+    response= await designer_node(project_id)
+    print("Response from designer chain",response)
     visualizations=[]
     try:
-        for idx,design in  enumerate(response.response):
+        for idx,design in  enumerate(response):
             graph_response= await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
             print("Graph response",graph_response)
             if graph_response['visualization']:

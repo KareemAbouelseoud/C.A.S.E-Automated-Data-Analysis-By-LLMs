@@ -44,7 +44,6 @@ async def caller_node(state):
 
 
 async def should_continue(state)->Literal['tools','__end__']:
-    print(state['preprocessing_messages'])
     messages = state["preprocessing_messages"][-1]
     if messages.tool_calls!=[]:
         return "tools"

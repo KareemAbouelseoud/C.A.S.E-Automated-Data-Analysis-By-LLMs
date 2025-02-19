@@ -53,5 +53,5 @@ async def automl(project_id,mode,label,features=None):
     response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'pipeline':[]})
     # This will contain everything needed. from steps taken by each agent to the final model(s) and their performance
     print(response)
-import asyncio
-asyncio.run(automl('1','Athena','Survived'))
+# import asyncio
+# asyncio.run(automl('1','Athena','Survived'))

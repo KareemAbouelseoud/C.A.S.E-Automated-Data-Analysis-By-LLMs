@@ -13,6 +13,11 @@ from .checker import checker_node
 from .reflector import reflector_node
 from typing import Literal
 
+CONFIGURATIONS={
+    'FLAG':'do not reflect',
+    'MAX_ITERATIONS': 3
+}
+
 
 class CoderState(TypedDict):
     """
@@ -25,20 +30,14 @@ class CoderState(TypedDict):
         iterations : Number of tries
     """
 
-    error: str
     messages: Annotated[list[AnyMessage], operator.add]
     generation: str
-    iterations: int
+    iterations: NotRequired[int] = 0
+    error: NotRequired[str] = ''
     project_id:str
     data_report: NotRequired[str]
     visualization: NotRequired[Annotated[list[dict], operator.add]]
 
-
-
-CONFIGURATIONS={
-    'FLAG':'do not reflect',
-    'MAX_ITERATIONS': 3
-}
 
     
 def decide_to_finish(state)->Literal["generator",'reflector', "__end__"]:
@@ -52,7 +51,10 @@ def decide_to_finish(state)->Literal["generator",'reflector', "__end__"]:
         str: Next node to call
     """
     error = state["error"]
-    iterations = state["iterations"]
+    if 'iterations' in state:
+        iterations = state["iterations"]
+    else:
+        iterations = 0 
 
     if error == "no" or iterations == CONFIGURATIONS["MAX_ITERATIONS"]:
         print("---DECISION: FINISH---")
