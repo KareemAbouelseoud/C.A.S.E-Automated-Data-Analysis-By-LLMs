@@ -18,5 +18,5 @@ app.include_router(user_router, prefix="")
 app.include_router(Project_router, prefix="")
 
 if __name__ == "__main__":
-    uvicorn.run("mainRouter:app", host="127.0.0.1", port=8000,reload=True)
+    uvicorn.run("mainRouter:app", host="127.0.0.1", port=8000,reload=True,reload_dirs=["Backend"])
     
