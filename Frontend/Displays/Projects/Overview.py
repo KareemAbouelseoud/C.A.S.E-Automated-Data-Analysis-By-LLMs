@@ -1,17 +1,13 @@
 import sys
 import os
-import pandas as pd
-from io import StringIO
-
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import streamlit as st
-from Requests import databaseRequests,visualizationRequests
-from Objects import Dashboard,Plot
-from streamlit_elements import elements,event,sync,lazy
-from types import SimpleNamespace
+from Requests import databaseRequests
 from Projects.Chatbot import Chatbot
+from Projects.AutoML import AutoML
+from Projects.Visualizations import Visualizations
 class Projects:
 
     def __init__(self) -> None:
@@ -36,6 +32,7 @@ class Projects:
         st.session_state['Project']=str(project_id)
   
     def backtooverview(self):
+        st.session_state['training']=False
         st.session_state['Project']=None
         st.session_state['Visualization']=None
         st.session_state["newProject"] = False
@@ -46,10 +43,7 @@ class Projects:
             st.session_state['board']=None
         if "w"  in st.session_state:
             del st.session_state['w']
-        
-    
-    def visualizationShown(self):
-        st.session_state['Visualization']=True
+
 
     def selectedProject(self):
         project=databaseRequests.get_project_details(st.session_state['Project'])
@@ -113,12 +107,13 @@ class Projects:
 """,unsafe_allow_html=True)
         tabs=st.tabs(['Raw Dataset','Processed Dataset','Insights','Visualizations','AutoML'])
         with tabs[0]:
-            # with st.container(border=True):
-            #     st.dataframe(pd.read_json(StringIO(project['raw_dataset'])),use_container_width=True,)
             Chatbot()
         
         with tabs[3]:
-            self.visualizationsPage()
+            Visualizations()
+
+        with tabs[-1]:
+            AutoML()
     
     def projectOverview(self):
         st.title("My Projects")
@@ -233,76 +228,6 @@ class Projects:
                                 st.toast('Please choose a unique name for the project')
                         else:
                             st.toast('Please upload a dataset')
-    
-    def create(self,fig_dict):
-        plot=Plot.Plots(st.session_state.board, 12,  7, w=5, h=7, minW=2, minH=4,fig=fig_dict)
-        return plot
-      
-    def visualizationsPage(self):
-        cols=st.columns(3)
-        with cols[1]:
-            st.markdown(
-                """
-                <style>
-                .element-container:has(#button-after) + div button {
-                    justify-content: center;
-                    align-items: center;
-                    width: 100%; /* Ensure the container takes up full width */
-                    height: 100%; /* Optional: to ensure vertical centering */
-                    border-radius: 16px;
-                    background: rgba(0, 0, 0, 0.4);
-                    z-index: 2;
-                    box-shadow: 
-                        0 0 6px rgba(255, 255, 255, 0.3), 
-                        0 0 12px rgba(255, 255, 255, 0.2), 
-                        0 0 18px rgba(255, 255, 255, 0.2);
-                    color: white;
-                    padding: 30px;
-                    font-size: 50px;
-                    text-align: center;
-                    cursor: pointer;
-                    justify-content: center;
-                    align-items: center;
-                    margin-bottom: 20px; /* Adds vertical space if wrapping occurs */
-                    transition: box-shadow 0.3s ease; /* Smooth transition */
-                    border: none; /* Explicitly remove any border */
-
-                    }
-                    .element-container:has(#button-after) + div button:hover {
-                    box-shadow: 
-                        0 0 10px rgba(255, 255, 255, 0.6), 
-                        0 0 20px rgba(255, 255, 255, 0.5), 
-                        0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
-                }
-                </style>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-            if not st.session_state['Visualization']:
-                st.button("Begin Generation",on_click=self.visualizationShown)
-            
-        if st.session_state['Visualization']:
-            if "w" not in st.session_state:
-                st.session_state.board = Dashboard.Dashboard()
-                w = SimpleNamespace(
-                    visualizations=[]
-                )
-                st.session_state.w = w
-
-            else:
-                w = st.session_state.w
-            with elements("demo"):
-                event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
-                vizs=visualizationRequests.fetch_visualizations(1)
-                for i in vizs:
-                    w.visualizations.append(self.create((i)))
-                
-
-                with st.session_state.board(rowHeight=57):
-                    for i in w.visualizations:
-                        i()
-
                                                       
     def projectsPage(self):
         if not st.session_state['Project']:
