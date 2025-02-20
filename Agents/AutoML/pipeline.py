@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from AutoML.Splitting.splitter import splitter_node
 from AutoML.Preprocessing.pipeline import graph as preprocessor_graph
 from sklearn.compose import ColumnTransformer
-from ModelSelection.selector import model_selector_node
+from AutoML.ModelSelection.selector import model_selector_node
 
 class State(TypedDict):
     """
