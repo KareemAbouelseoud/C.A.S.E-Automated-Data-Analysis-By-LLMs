@@ -6,6 +6,7 @@ from Requests import visualizationRequests
 
 class Visualizations:
     def __init__(self):
+        st.markdown("<h1 style='text-align: center; font-size: 50px;'>IRIS</h1>", unsafe_allow_html=True)
         self.run()
 
     def create(self,fig_dict):
