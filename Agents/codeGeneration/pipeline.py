@@ -82,7 +82,7 @@ async def generate_visualizations(project_id):
         for idx,design in  enumerate(response):
             graph_response= await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
             print("Graph response",graph_response)
-            if graph_response['visualization']:
+            if 'visualization' in graph_response and graph_response['visualization']:
                 visualizations.append(graph_response['visualization'])
                 
     except Exception as e:
