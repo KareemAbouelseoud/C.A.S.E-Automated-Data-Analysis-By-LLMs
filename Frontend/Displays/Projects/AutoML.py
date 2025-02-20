@@ -50,10 +50,10 @@ class AutoML:
             with c[0]:
                 if df is not None:
                     if feature_selection_mode == 'Include':
-                        features = st.multiselect('Select the features to include', [col for col in df.columns.tolist() if col != st.session_state['target_feature']])
+                        features = st.multiselect('Select the features to include', [col for col in df.columns.tolist() if col != target_feature])
                     else:
-                        features = st.multiselect('Select the features to exclude', [col for col in df.columns.tolist() if col != st.session_state['target_feature']])
-                        features = [feature for feature in df.columns.tolist() if feature not in features and feature != st.session_state['target_feature']]
+                        features = st.multiselect('Select the features to exclude', [col for col in df.columns.tolist() if col != target_feature])
+                        features = [feature for feature in df.columns.tolist() if feature not in features and feature != target_feature]
         with cols[2]:
             mode = st.selectbox('Select the mode', ['⚡HERMES', '⚖️ ATHENA', '🔨 HEPHAESTUS'])
             st.session_state['mode'] = mode
