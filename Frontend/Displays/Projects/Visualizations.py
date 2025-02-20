@@ -10,8 +10,12 @@ class Visualizations:
         self.run()
 
     def create(self,fig_dict):
-        plot=Plot.Plots(st.session_state.board, 12,  7, w=5, h=7, minW=2, minH=4,fig=fig_dict)
-        return plot
+        if isinstance(fig_dict,dict):
+            plot=Plot.Plots(st.session_state.board, 12,  7, w=5, h=7, minW=2, minH=4,fig=fig_dict)
+            return plot
+        else:
+            for i in fig_dict:
+                return self.create(i)
     
     def visualizationShown(self):
         st.session_state['Visualization']=True
@@ -59,7 +63,7 @@ class Visualizations:
             st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
             if not st.session_state['Visualization']:
                 st.button("Begin Generation",on_click=self.visualizationShown)
-            
+        print(st.session_state['Visualization'])
         if st.session_state['Visualization']:
             if "w" not in st.session_state:
                 st.session_state.board = Dashboard.Dashboard()

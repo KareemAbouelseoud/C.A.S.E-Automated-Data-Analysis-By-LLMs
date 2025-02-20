@@ -148,12 +148,16 @@ class Chatbot:
             st.plotly_chart(fig)
             st.button("Save Plot in Dashboard",on_click=self.save_plot,args=[fig],key=f"plot_{str(uuid.uuid4())}")
         except:
-            for key,value in visuals.items():
-                if isinstance(value,dict):
-                    self.get_visuals(value)
-                elif isinstance(value,list):
-                    for v in value:
-                        self.get_visuals(v)
+            if isinstance(visuals,dict):
+                for key,value in visuals.items():
+                    if isinstance(value,dict):
+                        self.get_visuals(value)
+                    elif isinstance(value,list):
+                        for v in value:
+                            self.get_visuals(v)
+            else:
+                if isinstance(visuals,str):
+                    json.loads(visuals)
                 
 
         
