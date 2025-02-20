@@ -17,6 +17,7 @@ class State(TypedDict):
     """
     project_id:str # Project ID
     mode: str # Mode Selected by the User
+    user_preferences: NotRequired[str] # User Preferences
     #Data Names
     X_columns: NotRequired[list[str]] # X Columns (user then LLM defined)
     y_column: NotRequired[str] # Y Column (user defined)
@@ -52,9 +53,9 @@ graph = builder.compile()
 
 
 
-async def automl(project_id,mode,label,features=None):
+async def automl(project_id,mode,label,features=None,user_preferences=None):
     print("AUTOML STARTED")
-    response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'mode':'HERMES'})
+    response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'user_preferences':user_preferences})
     # This will contain everything needed. from steps taken by each agent to the final model(s) and their performance
     print(response)
 # import asyncio

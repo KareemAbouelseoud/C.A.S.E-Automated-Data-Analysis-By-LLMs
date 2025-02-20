@@ -31,3 +31,9 @@ class Chat(BaseModel):
     prompt:str
     messages:Optional[str]=None
     project_id:str
+
+class Train(BaseModel):
+    target_feature:str
+    training_features:List[str]
+    mode:str
+    user_input:Optional[str]=None
