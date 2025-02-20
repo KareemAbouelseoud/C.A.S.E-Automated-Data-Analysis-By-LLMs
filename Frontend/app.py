@@ -150,10 +150,9 @@ if __name__=='__main__':
     st.set_page_config(layout='wide')   
     controller = CookieController()
     full_app = MultiPageApp(controller=controller)
-    # full_app.add_page("pages/About/about.py", title='Home')
     full_app.add_page('Displays/Login.py',title='Login')
     full_app.add_page('Displays/Signup.py',title='Signup')
-    full_app.add_page("Displays/Projects/Projects.py",title='Projects') 
+    full_app.add_page("Displays/Projects/Overview.py",title='Overview') 
     full_app.add_page("Displays/About.py",title='About') 
     full_app.run()
 
