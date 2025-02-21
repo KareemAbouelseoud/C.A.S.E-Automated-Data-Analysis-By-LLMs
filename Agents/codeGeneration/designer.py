@@ -27,34 +27,47 @@ Variables:
 - prompt: A ChatPromptTemplate created from the system and user messages.
 - designer_chain: A chain that combines the prompt and the language model with structured output.
 """
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.prompts import ChatPromptTemplate
 from langchain import hub
 from pydantic import BaseModel
 from typing import List
-
+from Database import mainDatabase
 from dotenv import load_dotenv
+import json
 load_dotenv()
 
 
 CONFIGURATIONS={
-    'temperature':0.6,
-    'model':"gemini-2.0-flash",
+    'temperature':0.7,
+    'model':"deepseek-ai/deepseek-r1",
 }
 
 # The Designer should respond with this sturcture of a List of json strings
-class Designer(BaseModel):
-    response: List[str]
 
 
 system_prompt = hub.pull("viz-generation-designer").messages[0].prompt.template
 
-llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
+async def designer_node(project_id):
+    print("Designing visualizations")
+    llm=ChatNVIDIA(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'],max_tokens=4096)
 
-prompt = ChatPromptTemplate.from_messages([
+    prompt = ChatPromptTemplate.from_messages([
     ("system", system_prompt),
     ("user", "Here is the data report, based on it write the visualizations needed by following the system instruction:\n\n {data_report}"),
-])
+    ])
 
-designer_chain = prompt | llm.with_structured_output(Designer)
+    designer_chain = prompt | llm
+    data_report=mainDatabase.fetch_data_report(project_id)
+    response=await designer_chain.ainvoke({'data_report':data_report})
+    try:
+        start = response.content.find('[')
+        end = response.content.rfind(']') + 1
+        json_string = response.content[start:end]
+        visualizations = json.loads(json_string)
+        print("Visualizations generated",visualizations)
+    except Exception as e:
 
+        visualizations = []
+        print("Failed to parse the response. Please check the format of the response.")
+    return visualizations

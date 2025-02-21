@@ -121,6 +121,12 @@ async def getProject(project_id:str):
 
 
 
+@db_router.get("/fetchDataset/{project_id}")
+async def getProject(project_id:str):
+    """
+    API endpoint to receive and save uploaded files.
+    """
+    return {'data':mainDatabase.fetch_dataset(project_id).to_json()}
 
 
 

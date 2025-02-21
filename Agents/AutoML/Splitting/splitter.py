@@ -24,6 +24,7 @@ class Splitter(BaseModel):
     shuffle: bool = Field(description="Whether to shuffle the data before splitting")
     stratify: bool = Field(description="Whether to stratify the data before splitting")
     logic: str = Field(description="The logic used to split the data")
+    problem_type: Literal["classification", "regression"] = Field(description="The problem type of the data")
 
 def train_test_split(df, X_columns, y_column, test_size, shuffle, stratify):
     """ Split the data into training and testing sets. """
@@ -41,6 +42,7 @@ def train_test_split(df, X_columns, y_column, test_size, shuffle, stratify):
 
 
 async def splitter_node(state):
+    print("Beginning Splitter Node")
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
     project_id = state["project_id"]
     data_report=await _project_service.fetch_data_report(project_id)
@@ -64,4 +66,5 @@ async def splitter_node(state):
             "y_train": y_train,
             "y_test": y_test, 
             "splitting_logic": response.logic,
-            'X_columns':X_columns}
+            'X_columns':X_columns,
+            "problem_type": response.problem_type}

@@ -26,6 +26,7 @@ llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURAT
 system_prompt = hub.pull("automl-preprocessor-caller").messages[0].prompt.template
 
 async def caller_node(state):
+    print("Calling Preprocessor Tools")
     project_id = state["project_id"]
     data_report=await _project_service.fetch_data_report(project_id)
     if 'preprocessing_messages' not in state or state['preprocessing_messages'] is None:
@@ -46,7 +47,6 @@ async def caller_node(state):
 
 
 async def should_continue(state)->Literal['tools','__end__']:
-    print(state['preprocessing_messages'])
     messages = state["preprocessing_messages"][-1]
     if messages.tool_calls!=[]:
         return "tools"

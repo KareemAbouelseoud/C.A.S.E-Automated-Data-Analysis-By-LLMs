@@ -1,7 +1,7 @@
 """
 This file contains the data items used in the application.
 """
-from typing import  Optional
+from typing import  Optional,List
 from pydantic import BaseModel
 
 
@@ -30,4 +30,11 @@ class Recommender(BaseModel):
 
 class Chat(BaseModel):
     prompt:str
+    messages:Optional[str]=None
     project_id:str
+
+class Train(BaseModel):
+    target_feature:str
+    training_features:List[str]
+    mode:str
+    user_input:Optional[str]=None

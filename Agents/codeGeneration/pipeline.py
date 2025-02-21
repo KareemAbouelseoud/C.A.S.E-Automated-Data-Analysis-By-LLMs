@@ -43,8 +43,8 @@ import operator
 from langgraph.graph import StateGraph, START, END
 from Agents.codeGeneration.caller import caller_node
 from Agents.codeGeneration.planner import planner_node,planner_brancher,tool_brancher
-from Agents.codeGeneration.maintools import tool_node
-from Agents.codeGeneration.designer import designer_chain
+from Agents.codeGeneration.mainTools import tool_node
+from Agents.codeGeneration.designer import designer_node
 from Agents.codeGeneration.coder.coderPipeline import coder
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
@@ -79,15 +79,14 @@ viz_graph = builder.compile()
 
 async def generate_visualizations(project_id):
     _project_service=ProjectService()
-    data_report=await _project_service.fetch_data_report(project_id)
-    response=await designer_chain.ainvoke({'data_report':data_report})
-    print("Response from designer chain",response.response)
+    response= await designer_node(project_id)
+    print("Response from designer chain",response)
     visualizations=[]
     try:
-        for idx,design in  enumerate(response.response):
+        for idx,design in  enumerate(response):
             graph_response= await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
             print("Graph response",graph_response)
-            if graph_response['visualization']:
+            if 'visualization' in graph_response and graph_response['visualization']:
                 visualizations.append(graph_response['visualization'])
                 
     except Exception as e:

@@ -36,6 +36,7 @@ class State(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
     visual: Annotated[list[AnyMessage], operator.add]
 
+
 builder = StateGraph(State)
 
 builder.add_node("chatter_node", chatter_node) 

@@ -139,11 +139,30 @@ class Chatbot:
                 with st.chat_message(message["role"],avatar='📈'):
                     for visual in message['content']:
                         self.get_visuals(visual)
-            
-    def get_visuals(self,visual):
-        print(visual)
-        fig = go.Figure(data=visual['data'], layout=visual['layout'])
-        st.plotly_chart(fig)
+    def save_plot(self,fig):
+        pass  
+    def get_visuals(self,visuals):
+        if isinstance(visuals,list):
+            for v in visuals:
+                self.get_visuals(v)
+                return
+        try:
+            fig = go.Figure(data=visuals['data'], layout=visuals['layout'])
+            st.plotly_chart(fig)
+            st.button("Save Plot in Dashboard",on_click=self.save_plot,args=[fig],key=f"plot_{str(uuid.uuid4())}")
+        except:
+            if isinstance(visuals,dict):
+                for key,value in visuals.items():
+                    if isinstance(value,dict):
+                        self.get_visuals(value)
+                    elif isinstance(value,list):
+                        for v in value:
+                            self.get_visuals(v)
+            else:
+                if isinstance(visuals,str):
+                    json.loads(visuals)
+                
+
         
     def accept_user_input(self):
         """

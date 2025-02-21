@@ -1,6 +1,8 @@
 import requests
 import streamlit as st
 import json
+import pandas as pd
+from io import StringIO
 
 url = 'http://127.0.0.1:8000'
 #region User API CALLS
@@ -144,3 +146,10 @@ def get_project_details(project_id):
      project=json.loads(response.json())['data']
      return project
 #endregion
+
+
+def fetch_dataset(project_id):
+    response=requests.get(url+f'/fetchDataset/{str(project_id)}')
+    df=pd.read_json(StringIO(response.json()['data']))
+    return df
+

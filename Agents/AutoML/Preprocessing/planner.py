@@ -17,7 +17,7 @@ llm = ChatNVIDIA(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temp
 system_prompt = hub.pull("automl-preprocessor-planner").messages[0].prompt.template
 
 async def planner_node(state):
-
+    print("Planning Preprocessing") 
     project_id = state["project_id"]
     data_report=await _project_service.fetch_data_report(project_id)
     messages=[

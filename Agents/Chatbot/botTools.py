@@ -7,10 +7,11 @@ import pandas as pd
 from io import StringIO
 from langchain_core.tools import tool
 from langchain_core.messages import ToolMessage
-from ..codeGeneration.pipeline import viz_graph
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from codeGeneration.pipeline import viz_graph
 import json
 from typing import Annotated
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 @tool
 async def visualizer(
@@ -26,6 +27,8 @@ async def visualizer(
         list: A list containing a message and the visualization data. If the visualization is generated, the message informs the user and includes the visualization data. Otherwise, the message informs the user that no visualization was generated and suggests trying again later.
 
     """
+    print(f"VISUALIZER IS BEING CALLED WITH request: {visualization_request} and {project_id}") 
+
     graph_response=await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":visualization_request}]})
     if graph_response['visualization']:
         return ['YOU MUST Inform the user that the visualization has been generated',graph_response['visualization']]

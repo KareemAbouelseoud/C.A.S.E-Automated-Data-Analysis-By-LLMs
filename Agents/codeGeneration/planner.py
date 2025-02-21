@@ -38,7 +38,7 @@ from langchain import hub
 from dotenv import load_dotenv
 load_dotenv()
 
-system_prompt = hub.pull("viz-generation-planner").messages[0]
+system_prompt = hub.pull("viz-generation-planner").messages[0].prompt.template
 class Planner(BaseModel):
     next: Literal["coder", "caller"]
 
