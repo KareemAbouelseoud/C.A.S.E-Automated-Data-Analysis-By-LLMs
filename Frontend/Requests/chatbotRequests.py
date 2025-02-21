@@ -5,21 +5,19 @@ import requests
 import json
 url='http://127.0.0.1:8000'
 
-def chat(prompt,project_id,messages=None):
-    if messages:
-        response=requests.post(url + "/chat", json={"prompt": prompt, 'messages': json.dumps(messages), 'project_id': project_id},stream=True)
-    else:
-        response=requests.post(url + "/chat", json={"prompt": prompt, 'project_id': project_id},stream=True)
-        
+def chat(prompt,project_id):
+    
+    response=requests.post(url + "/chat", json={"prompt": prompt,'project_id': project_id},stream=True)    
     return response
 
 def recommender(prompt,project_id):
     response=requests.post(url+"/recommend", json={"prompt": json.dumps(prompt),'project_id':project_id})
-    return json.loads(response.json()['data'])
+    ## This is the response and it is a dict like that => {'data': '["Summarize data", "Show correlations", "Find outliers"]'}
+    return eval(response.json()['data'])
 
 
 
-def get_model_history(project_id):
+def get_streamlit_chat_history(project_id):
     """
     Retrieves Streamlit chat history for a specific chat ID.
 
@@ -33,8 +31,9 @@ def get_model_history(project_id):
     list
         The Streamlit chat history.
     """
-    response=requests.get(url+f"/get_model_history/{project_id}")
-    return response.json()['data']
+    response=requests.get(url+f"/project/{project_id}/get_streamlit_history")
+    
+    return eval(response.json()['data'])
 
 def create_new_chat(user_id):
     """
@@ -52,7 +51,7 @@ def create_new_chat(user_id):
     response=requests.get(url+f"/create_new_chat/{user_id}")
     return response
 
-def update_user_st_history(project_id,last_conv):
+def update_user_st_history(project_id,last_conv,user_id):
     """
     Updates Streamlit chat history for a specific chat ID.
 
@@ -67,19 +66,16 @@ def update_user_st_history(project_id,last_conv):
     -------
     None
     """
-    response=requests.post(url+"/update_user_st_history",json={'project_id':project_id,'last_conv':json.dumps(last_conv)})
-
-    # print("CONV: ",last_conv)
-    # requests.post(url+f"/update_st_history/{chat_id}",json={'conv':last_conv})
+    response=requests.post(url+f"/project/{project_id}/chat_streamlit/?user_id={user_id}",json={'project_id':project_id,'last_conv':json.dumps(last_conv)})
 
 
-def clear_history(user_id):
+def clear_history(project_id,user_id):
     """
-    Updates Streamlit chat history for a specific chat ID.
+    Clear chat history for a specific chat ID.
 
     Parameters
     ----------
-    chat_id : str
+    Project_id: str
         The chat ID to update history for.
     last_conv : str
         The last conversation to update.
@@ -88,7 +84,7 @@ def clear_history(user_id):
     -------
     None
     """
-    requests.get(url+f"/clear_history/{user_id}")
+    requests.get(url+f"/project/{project_id}/chat/clear?user_id={user_id}")
 
 
 

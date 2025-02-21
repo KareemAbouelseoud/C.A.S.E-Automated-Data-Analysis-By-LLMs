@@ -8,6 +8,8 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from Database import mainDatabase
+from Backend.services.project_service import ProjectService
+_project_service=ProjectService()
 load_dotenv()
 
 system_prompt = hub.pull("automl-splitter").messages[0].prompt.template
@@ -43,8 +45,8 @@ async def splitter_node(state):
     print("Beginning Splitter Node")
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
     project_id = state["project_id"]
-    data_report=mainDatabase.fetch_data_report(project_id)
-    df = mainDatabase.fetch_dataset(project_id)
+    data_report=await _project_service.fetch_data_report(project_id)
+    df = await _project_service.fetch_dataset(project_id)
     if 'X_columns' not in state or state['X_columns'] is None:
         X_columns = df.columns.tolist()
     else:

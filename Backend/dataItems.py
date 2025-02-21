@@ -1,8 +1,8 @@
 """
 This file contains the data items used in the application.
 """
-from pydantic import BaseModel,  Field
-from typing import Optional,List
+from typing import  Optional,List
+from pydantic import BaseModel
 
 
 class LoginRequest(BaseModel):
@@ -10,11 +10,12 @@ class LoginRequest(BaseModel):
     password: str
 
 class SignUpRequest(BaseModel):
-    first_name:str
+    first_name:str 
     last_name:str
     email:str
-    username: str
-    password: str
+    username:str
+    password:str
+    
 class StHistory(BaseModel):
     project_id:str
     last_conv:str

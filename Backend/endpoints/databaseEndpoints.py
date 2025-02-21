@@ -1,13 +1,4 @@
-import sys
-import os
-
-# Add the parent directory to the sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from fastapi import APIRouter,Form,File,UploadFile
-from Database import mainDatabase
-from dataItems import SignUpRequest,LoginRequest
-import json
+from config import *
 db_router = APIRouter()
 
 

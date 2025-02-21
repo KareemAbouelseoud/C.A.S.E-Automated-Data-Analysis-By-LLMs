@@ -6,6 +6,8 @@ from langchain import hub
 from dotenv import load_dotenv
 import sys
 import os
+from Backend.services.project_service import ProjectService
+_project_service=ProjectService()
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from Database import mainDatabase
 load_dotenv()
@@ -94,7 +96,7 @@ async def model_selector_node(state):
     )
     
     project_id = state["project_id"]
-    data_report = mainDatabase.fetch_data_report(project_id)
+    data_report = await _project_service.fetch_data_report(project_id)
     problem_type = state['problem_type']
     X_columns = state['X_columns']
     y_column = state['y_column']

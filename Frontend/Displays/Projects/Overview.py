@@ -6,6 +6,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
 from Requests import databaseRequests
 from Projects.Chatbot import Chatbot
+from streamlit_cookies_controller import CookieController
+controller=CookieController()
 from Projects.AutoML import AutoML
 from Projects.Visualizations import Visualizations
 class Projects:
@@ -21,7 +23,7 @@ class Projects:
             st.session_state['PLOT_WIDTH'] = 6  # Full width of the dashboard in grid units
             st.session_state['PLOT_HEIGHT'] = 4  # Full width of the dashboard in grid units
         
-        self.projects=databaseRequests.read_projects(st.session_state.user_id)
+        self.projects=databaseRequests.read_projects(controller.get("user_id"))
         self.max_columns = 3
         self.columns = None
     
@@ -117,7 +119,7 @@ class Projects:
     
     def projectOverview(self):
         st.title("My Projects")
-        for idx,(project_id, project_data) in enumerate(self.projects.items()):
+        for idx,project in enumerate(self.projects):
             
             if idx % self.max_columns == 0:  # Create a new row every 3 projects
                 columns = st.columns(self.max_columns)
@@ -158,7 +160,7 @@ class Projects:
                             """,
                             unsafe_allow_html=True)
                 st.markdown(f'<span id="button-after-{idx}"></span>', unsafe_allow_html=True)
-                st.button(f"{project_data['name']}\n\n{project_data['date']}",on_click=self.project_clicked,args=[project_id])
+                st.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project["id"]])
         
         cols=st.columns(3)
         with cols[1]:
@@ -220,7 +222,7 @@ class Projects:
                             if project_name:
                                 # Save or process the uploaded file
                                 st.toast(f"Project '{project_name}' has been created!")
-                                databaseRequests.create_project(st.session_state['user_id'],project_name,uploaded_file)
+                                databaseRequests.create_project(controller.get('user_id'),project_name,uploaded_file)
                                 st.session_state['newProject']=False
                                 st.rerun()
                             

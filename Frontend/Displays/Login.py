@@ -40,8 +40,10 @@ class Login:
         if self.__username and self.__password:
             if databaseRequests.check_login(self.__username,self.__password)=='True':
                 st.session_state['loggedIn']=True
-                st.session_state['user_id']=databaseRequests.get_user_id(self.__username)
-                controller.set(f"user_{st.session_state['user_id']}_session", st.session_state['user_id'])  # set expiration date as needed
+                user =databaseRequests.get_user_by_username(self.__username)
+                controller.set("user",user)
+                controller.set(f"user_id", user["id"])  # set expiration date as needed
+                
 
             else:
                 st.error('Incorrect Username or Password.')

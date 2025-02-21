@@ -10,6 +10,7 @@ import os
 import json
 import asyncio
 import plotly.graph_objects as go
+from dataModels.visualization import ChatViz
 
 modules_path = Path("/home/robo/Modules")
 
@@ -24,6 +25,8 @@ st.empty()
 #This chatbot assists users with financial queries using a conversational interface.
 #It maintains chat history, and responds with financial insights.
 ###
+from streamlit_cookies_controller import CookieController
+controller=CookieController()
 
 
 class Chatbot:
@@ -109,7 +112,7 @@ class Chatbot:
         """, unsafe_allow_html=True)
 
         if st.sidebar.button('Clear History'):
-            chatbotRequests.clear_history(st.session_state['Project'])
+            chatbotRequests.clear_history(st.session_state.Project,controller.get("user_id"))
             del st.session_state.messages
             del st.session_state.new
             if 'recommendation' in st.session_state:
@@ -174,19 +177,19 @@ class Chatbot:
             with st.chat_message("user"):
                 st.markdown(prompt)
             
-            if len(st.session_state.messages)<=2:
-                 chatbotRequests.create_new_chat(st.session_state['Project'])
+            # if len(st.session_state.messages)<=2:
+            #      chatbotRequests.create_new_chat(st.session_state['Project'])
 
             st.session_state.messages.append({"role": "user", "content": sanitized_input,})
 
             self.generate_response(sanitized_input)
             self.recommend(sanitized_input)
             try:
-                chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages)
+                chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
             except:
                 messages=st.session_state.messages[-1:]
                 messages.append({"role": "assistant", "content": 'news_dataframe'})
-                chatbotRequests.update_user_st_history(str(st.session_state['Project']),messages)
+                chatbotRequests.update_user_st_history(str(st.session_state['Project']),messages,controller.get("user_id"))
                 
 
         if 'recommendation' in st.session_state:
@@ -194,12 +197,12 @@ class Chatbot:
                 st.markdown(st.session_state.recommendation)
             st.session_state.new=False
             
-            if len(st.session_state.messages)<=2:
-                chatbotRequests.create_new_chat(st.session_state['Project'])
+            # if len(st.session_state.messages)<=2:
+            #     chatbotRequests.create_new_chat(st.session_state['Project'])
                 
             st.session_state.messages.append({"role": "user", "content": st.session_state.recommendation})
             self.generate_response(st.session_state.recommendation)
-            chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages)
+            chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
             self.recommend(st.session_state.recommendation)
             del st.session_state.recommendation
 
@@ -216,15 +219,10 @@ class Chatbot:
         """
         with st.spinner("Generating response..."):
             try:
-                if len(st.session_state.messages)==2:
-                    response =chatbotRequests.chat(user_input,project_id=st.session_state.Project)
-                else:
-                    response=chatbotRequests.chat(user_input,messages=chatbotRequests.get_model_history(st.session_state['Project']),project_id=st.session_state.Project)
+                
+                response =chatbotRequests.chat(user_input,project_id=st.session_state.Project)
                 self.display_assistant_response(response)
-                
-                # else:
-                #     self.display_assistant_response("Sorry, Security Layer Intervention. Can't provide an answer.\n Ask another question please.")
-                
+
             except Exception as e:
                 raise e
                 error_message = f"An error occurred: {str(e)}"
@@ -253,12 +251,18 @@ class Chatbot:
                 escaped_response=response
                 st.write(escaped_response)
         st.session_state.messages.append({"role": "assistant", "content": escaped_response})
+
         if len(visuals)>0:
             with st.chat_message('visualizer',avatar='📈'):
                 for visual in visuals:
-                    for v in visual:
-                        self.get_visuals(v)
-                        st.session_state.messages.append({'role':'visualizer','content':v})
+                    self.get_visuals(visual)
+                    ##TODO: SAVE TO MONGODB CAHT GENERATED VIZ
+                    viz_id=uuid.uuid4()
+                    new_chat_viz=ChatViz(id=viz_id,viz=visual)
+                    
+                    ##TODO: HANDLE THE RETRIVAL ON INTIAIALZING
+                    st.session_state.messages.append({'role':'visualizer','content':viz_id})
+        chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
             
     
 
@@ -267,13 +271,22 @@ class Chatbot:
         """
         Called at the beginning of any chat
         """
+        chat_history = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
+        if chat_history!=[]:
+            ## TODO: HANDLE THE VISUALIAZTION ON INTIAIALZING (Replace the visualization ID with the visualization)
+            st.session_state.messages = chat_history
+            st.session_state['conv_change']=''
+            st.session_state['new']=False
+            st.session_state['Bot_Clicked']=False
+            welcome_message = "Welcome back. How can I assist you today?"
+            st.session_state.messages.append({"role": "assistant", "content": welcome_message})
         if "messages" not in st.session_state:
             st.session_state['conv_change']=''
             st.session_state['new']=True
             st.session_state.messages = []
             st.session_state['Bot_Clicked']=False
             # Add greeting message to chat history
-            first_message = "Zeus: Good Morning. I am Zeus, a Smart Assistant for C.A.S.E. How can I assist you today?"
+            first_message = "Good Morning. I am Zeus, a Smart Assistant for C.A.S.E. How can I assist you today?"
             st.session_state.messages.append({"role": "assistant", "content": first_message})
 
     def stream_ans(self,response,visuals):
@@ -322,10 +335,10 @@ class Chatbot:
         Provides personalized prompt recommendations based on the user's input.
         """
         if prompt:
-            if chatbotRequests.get_model_history(st.session_state['Project']):
-                new_hist=chatbotRequests.get_model_history(st.session_state['Project'])
-                new_hist.extend([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}])
-                recommendations=chatbotRequests.recommender(new_hist,project_id=st.session_state.Project)
+            chat_hist = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
+            if len(chat_hist)>0:
+                chat_hist.extend([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}])
+                recommendations=chatbotRequests.recommender(chat_hist,project_id=st.session_state.Project)
             else:
                 recommendations=chatbotRequests.recommender([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}],st.session_state.Project)
         else:

@@ -48,11 +48,7 @@ builder.add_edge('tools', 'chatter_node')
 graph = builder.compile()
 
 
-async def chat(user_input,project_id,messages=None):
-    if not messages:
-        # New Chat
-        messages=[]
-    messages.append({"role": "user", "content": user_input})
+async def chat(project_id,messages):
     visuals=[]
     async for chunk in graph.astream({"messages": messages,'project_id':project_id}, stream_mode=["messages",'updates','values']):
         if chunk[0] == 'messages':
@@ -61,6 +57,8 @@ async def chat(user_input,project_id,messages=None):
                     yield chunk[1][0].content
         elif chunk[0] == 'values':
             pass
+            #print(chunk[1])
+
         elif chunk[0] == 'updates':
             if 'tools' in chunk[1]:
                 if 'visual' in chunk[1]['tools']:

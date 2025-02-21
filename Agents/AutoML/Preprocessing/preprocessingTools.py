@@ -9,14 +9,20 @@ from pathlib import Path
 import numpy as np
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.impute import KNNImputer
+from typing import Annotated, Optional, List
+from Database import mainDatabase
+from Backend.services.project_service import ProjectService
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+_project_service=ProjectService()
 from typing import Annotated, Optional, List,Union
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Database import mainDatabase
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from functools import partial
 from helperFunctions import *
+from Backend.services.project_service import ProjectService
+_project_service=ProjectService()
 
 
 @tool
@@ -87,7 +93,7 @@ async def handle_outliers(
         2. Transformer: An instance of FunctionTransformer configured with the appropriate outlier detection method. This transformer can be applied to new data to remove outliers based on the parameters derived from the training data.
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
-    data = mainDatabase.fetch_dataset(project_id)
+    data = await _project_service.fetch_dataset(project_id)
 
     try:
         if column_name not in data.columns:
@@ -164,7 +170,7 @@ async def parse_datetime(
         2. Transformer: An instance of FunctionTransformer. This transformer can be applied to new data to parse datetime strings based on the parameters derived from the training data.
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
-    data = await mainDatabase.fetch_dataset(project_id)
+    data = await _project_service.fetch_dataset(project_id)
     try:
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
@@ -200,7 +206,7 @@ async def handle_null_values(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try:
-        data = mainDatabase.fetch_dataset(project_id)
+        data =await _project_service.fetch_dataset(project_id)
         
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
@@ -253,7 +259,7 @@ async def remove_duplicates(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try :
-        data = mainDatabase.fetch_dataset(project_id)
+        data = await _project_service.fetch_dataset(project_id)
         
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
@@ -310,11 +316,12 @@ async def tool_node(state):
                     status="error",
                 )
             )
-    preprocessor=mainDatabase.fetch_pipeline(state["project_id"])
+    ## TODO: Fetching & saving the pipeline to the database
+    preprocessor=await _project_service.fetch_pipeline(state["project_id"])
     if preprocessor:
         preprocessor.transformers.extend(preprocessors)
     else:
         preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
-    mainDatabase.save_pipeline(preprocessor,state["project_id"])
+    _project_service.save_pipeline(preprocessor,state["project_id"])
     
     return {'preprocessing_messages':output_messages}
