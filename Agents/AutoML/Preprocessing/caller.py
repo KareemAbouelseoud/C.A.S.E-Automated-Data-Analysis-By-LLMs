@@ -27,7 +27,7 @@ system_prompt = hub.pull("automl-preprocessor-caller").messages[0].prompt.templa
 
 async def caller_node(state):
     project_id = state["project_id"]
-    data_report=_project_service.fetch_data_report(project_id)
+    data_report=await _project_service.fetch_data_report(project_id)
     if 'preprocessing_messages' not in state or state['preprocessing_messages'] is None:
         old_messages= []
     else:

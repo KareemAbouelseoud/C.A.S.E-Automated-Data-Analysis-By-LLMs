@@ -55,7 +55,8 @@ async def chat(project_id,messages):
                 if chunk[1][0].content:
                     yield chunk[1][0].content
         elif chunk[0] == 'values':
-            print(chunk[1])
+            pass
+            #print(chunk[1])
 
         elif chunk[0] == 'updates':
             if 'tools' in chunk[1]:

@@ -28,8 +28,8 @@ from datetime import datetime
 #         )
 
 class Chat(BaseModel):
-    last_date:datetime
-    messages:Optional[str]=None
+    last_update:datetime = Field(default=datetime.now(), alias="last_update")
+    messages:Optional[str]=Field(default=None, alias="messages")
 
 class Project(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True,populate_by_name=True) #Add this line
@@ -53,6 +53,8 @@ class Project(BaseModel):
     def from_dict(cls, document):
         """Convert MongoDB document to Project model with string ID."""
         document["id"] = ObjectId(document["id"])  # Convert ObjectId to string
-        document["created_Date"] = datetime.strptime(document["created_Date"],"%d %B %Y")  # Convert ObjectId to string
+        document["created_Date"] = datetime.strptime(document["created_Date"],"%d %B %Y")  # Convert ObjectId to string 
+        document["model_Chat"]["last_update"] = datetime.strptime(document["model_Chat"]["last_update"],"%d %B %Y")  # Convert ObjectId to string 
+        document["streamlit_Chat"]["last_update"] = datetime.strptime(document["streamlit_Chat"]["last_update"],"%d %B %Y")  # Convert ObjectId to string 
         return cls(**document)
     

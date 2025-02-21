@@ -49,7 +49,7 @@ logger=loggerModule.setup_logging()
 _project_service=ProjectService()
 
 @tool
-def create_line_plot(x: str, y: str, color: str = None,x_label: str=None,y_label: str=None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_line_plot(x: str, y: str, color: str = None,x_label: str=None,y_label: str=None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
     """
     Generates a line plot using Plotly Express and returns the figure as a dictionary.
 
@@ -95,7 +95,7 @@ def create_line_plot(x: str, y: str, color: str = None,x_label: str=None,y_label
         print(f"Error creating line plot: {e}")
 
 @tool
-def create_scatter_plot(x: str, y: str, color: Optional[str] = None,x_label: str=None,y_label: str=None, marginal_x: Optional[str] = None, marginal_y: Optional[str] = None, trendline: Optional[str] = None, trendline_scope: Optional[str] = None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_scatter_plot(x: str, y: str, color: Optional[str] = None,x_label: str=None,y_label: str=None, marginal_x: Optional[str] = None, marginal_y: Optional[str] = None, trendline: Optional[str] = None, trendline_scope: Optional[str] = None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
     """
     Generates a scatter plot using Plotly Express and returns the figure as a dictionary.
 
@@ -148,7 +148,7 @@ def create_scatter_plot(x: str, y: str, color: Optional[str] = None,x_label: str
         print(f"Error creating scatter plot: {e}")
 
 @tool
-def create_bubble_plot(x: str, y: str, color: Optional[str] = None, size: Optional[str] = None, x_label: str=None,y_label: str=None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_bubble_plot(x: str, y: str, color: Optional[str] = None, size: Optional[str] = None, x_label: str=None,y_label: str=None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
     """
     Generates a bubble plot using Plotly Express and returns the figure as a dictionary.
 
@@ -196,7 +196,7 @@ def create_bubble_plot(x: str, y: str, color: Optional[str] = None, size: Option
         print(f"Error creating bubble plot: {e}")
 
 @tool
-def create_swarm_plot(x: str, y: str, color: Optional[str] = None,  x_label: str=None,y_label: str=None, stripmode: Optional[str] = "group", title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_swarm_plot(x: str, y: str, color: Optional[str] = None,  x_label: str=None,y_label: str=None, stripmode: Optional[str] = "group", title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
     """
     Creates a swarm plot (approximated using scatter plot) using Plotly Express and returns the figure as a dictionary.
 
@@ -244,7 +244,7 @@ def create_swarm_plot(x: str, y: str, color: Optional[str] = None,  x_label: str
         print(f"Error creating swarm plot: {e}")
 
 @tool
-def grouped_bar_plot(x: str, y: str, color: Optional[str] = None, title: Optional[str] = "Grouped Bar Plot", project_id: Optional[str] = None) -> Dict:
+async def grouped_bar_plot(x: str, y: str, color: Optional[str] = None, title: Optional[str] = "Grouped Bar Plot", project_id: Optional[str] = None) -> Dict:
     """
     Creates a grouped bar plot using Plotly Express and returns the plot as a dictionary.
 
@@ -286,7 +286,7 @@ def grouped_bar_plot(x: str, y: str, color: Optional[str] = None, title: Optiona
         print(f"Error creating grouped bar plot: {e}")
 
 @tool
-def create_pairplot(color: Optional[str] = None, dimensions: List[str] = None, diagonal_visible: Optional[bool] = True, title: Optional[str] = 'Pair Plot', project_id: Optional[str] = None) -> Dict:
+async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = None, diagonal_visible: Optional[bool] = True, title: Optional[str] = 'Pair Plot', project_id: Optional[str] = None) -> Dict:
     """
     Create a pairplot using Plotly and returns the plot as a dictionary.
 
@@ -323,7 +323,7 @@ def create_pairplot(color: Optional[str] = None, dimensions: List[str] = None, d
         logger.error(f"An error occurred: {e}")
 
 @tool
-def create_radar_chart(category_column: str, value_columns: List[str] = None, title: Optional[str] = "Radar Chart", color_column: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_radar_chart(category_column: str, value_columns: List[str] = None, title: Optional[str] = "Radar Chart", color_column: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
     """
     Generates a radar chart using Plotly Express and returns the plot as a dictionary.
 
@@ -386,7 +386,7 @@ def create_radar_chart(category_column: str, value_columns: List[str] = None, ti
         return None
 
 @tool
-def create_treemap(path_columns: List[str], value_column: Optional[str] = None, color_column: Optional[str] = None, title: Optional[str] = "Treemap", color_scale: Optional[str] = "Viridis", project_id: Optional[str] = None) -> Dict:
+async def create_treemap(path_columns: List[str], value_column: Optional[str] = None, color_column: Optional[str] = None, title: Optional[str] = "Treemap", color_scale: Optional[str] = "Viridis", project_id: Optional[str] = None) -> Dict:
     """
     Generates a treemap using Plotly Express and returns the plot as a dictionary.
 
@@ -454,7 +454,7 @@ def create_treemap(path_columns: List[str], value_column: Optional[str] = None, 
         return None
 
 @tool
-def create_correlation_heatmap(columns: List[str] = None, color_scale: Optional[str] = "Viridis", title: Optional[str] = "Correlation Heatmap", show_values: Optional[bool] = True, project_id: Optional[str] = None) -> Dict:
+async def create_correlation_heatmap(columns: List[str] = None, color_scale: Optional[str] = "Viridis", title: Optional[str] = "Correlation Heatmap", show_values: Optional[bool] = True, project_id: Optional[str] = None) -> Dict:
     """
     Generates a heatmap of correlations between numerical columns in the dataset and returns it as a dictionary.
 
@@ -497,7 +497,7 @@ def create_correlation_heatmap(columns: List[str] = None, color_scale: Optional[
         return None
 
 @tool
-def create_faceted_bar_chart(x: str, y: str, color: Optional[str] = None, barmode: Optional[str] = "group", facet_row: Optional[str] = None, facet_col: Optional[str] = None, title: Optional[str] = "Faceted Bar Chart", project_id: Optional[str] = None) -> Dict:
+async def create_faceted_bar_chart(x: str, y: str, color: Optional[str] = None, barmode: Optional[str] = "group", facet_row: Optional[str] = None, facet_col: Optional[str] = None, title: Optional[str] = "Faceted Bar Chart", project_id: Optional[str] = None) -> Dict:
     """
     Generates a faceted bar chart using Plotly Express and returns it as a dictionary.
 
@@ -542,7 +542,7 @@ def create_faceted_bar_chart(x: str, y: str, color: Optional[str] = None, barmod
         return None
 
 @tool
-def create_histogram(x: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: str = None) -> Dict:
+async def create_histogram(x: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: str = None) -> Dict:
     """
     Creates a histogram using Plotly Express and returns it as a dictionary.
 
@@ -568,7 +568,7 @@ def create_histogram(x: str, color: Optional[str] = None, x_label: Optional[str]
         return None
 
 @tool
-def create_pie_chart(values: str, names: str, color: Optional[str] = None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_pie_chart(values: str, names: str, color: Optional[str] = None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
     """
     Creates a pie chart using Plotly Express and returns it as a dictionary.
 
@@ -595,7 +595,7 @@ def create_pie_chart(values: str, names: str, color: Optional[str] = None, title
         return None
 
 @tool
-def create_area_chart(x: str, y: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_area_chart(x: str, y: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
     """
     Creates an area chart using Plotly Express and returns it as a dictionary.
 
@@ -624,7 +624,7 @@ def create_area_chart(x: str, y: str, color: Optional[str] = None, x_label: Opti
         return None
 
 @tool
-def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
     """
     Creates a box plot using Plotly Express and returns it as a dictionary.
 
@@ -657,7 +657,7 @@ def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color: Opti
         return None
 
 @tool
-def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, points: Optional[str] = None, hover_data: List[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, points: Optional[str] = None, hover_data: List[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
     """
     Creates a violin plot using Plotly Express and returns it as a dictionary.
 

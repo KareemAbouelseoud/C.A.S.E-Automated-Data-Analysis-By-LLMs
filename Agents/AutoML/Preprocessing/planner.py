@@ -19,7 +19,7 @@ system_prompt = hub.pull("automl-preprocessor-planner").messages[0].prompt.templ
 async def planner_node(state):
 
     project_id = state["project_id"]
-    data_report=_project_service.fetch_data_report(project_id)
+    data_report=await _project_service.fetch_data_report(project_id)
     messages=[
         {"role": "system", "content":system_prompt+f"\n\n Data Report:\n {data_report}" },
         {"role": "user", "content": f"Train Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']}"},

@@ -232,6 +232,7 @@ class Chatbot:
                 escaped_response=response
                 st.write(escaped_response)
         st.session_state.messages.append({"role": "assistant", "content": escaped_response})
+
         if len(visuals)>0:
             with st.chat_message('visualizer',avatar='📈'):
                 for visual in visuals:
@@ -242,6 +243,7 @@ class Chatbot:
                     
                     ##TODO: HANDLE THE RETRIVAL ON INTIAIALZING
                     st.session_state.messages.append({'role':'visualizer','content':viz_id})
+        
             
     
 

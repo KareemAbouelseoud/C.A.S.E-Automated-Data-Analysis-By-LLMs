@@ -66,12 +66,12 @@ class ProjectService:
         try:
             user = await self.userRepository.get_by_id(user_id)  
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Retrving user from MongoDB: {e}")
+            raise HTTPException(status_code=500, detail=f"Error Retrving user from MongoDB: {e} Maybe the user is deleted or not created yet")
         try:
             project = await self.get_project(project_id) 
             project = Project.from_dict(project)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e} Maybe the project is deleted or not created yet")
         try:
             project_viz = await self.vizRepository.get_by_project_id(project_id) 
         except Exception as e:
@@ -85,8 +85,8 @@ class ProjectService:
             raise HTTPException(status_code=400, detail="Project Visualization is not created in MongoDB")
         
         
-        project.model_Chat=Chat()
-        project.streamlit_Chat=Chat()
+        project.model_Chat=projectChat(last_update=datetime.now())
+        project.streamlit_Chat=projectChat(last_update=datetime.now())
         project_viz.Chat_visualizations=[]
 
         try:
@@ -121,8 +121,8 @@ class ProjectService:
             hist_dict['st_history'].append({'role':message['role'],'content':message['content']})
             if 'visualizer'!=message['role']:
                 hist_dict['model_history'].append({'role':message['role'],'content':message['content']})
-        project.model_Chat=Chat()
-        project.streamlit_Chat=Chat()
+        project.model_Chat=projectChat()
+        project.streamlit_Chat=projectChat()
         project.model_Chat.messages=json.dumps(hist_dict['model_history'])
         project.streamlit_Chat.messages=json.dumps(hist_dict['st_history'])
         
@@ -143,7 +143,7 @@ class ProjectService:
             
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
-        if project.model_Chat==None:
+        if project.model_Chat.messages==None:
             return []
         return json.loads(project.model_Chat.messages)
     

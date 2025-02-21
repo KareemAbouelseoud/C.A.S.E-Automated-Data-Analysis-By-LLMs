@@ -12,8 +12,8 @@ def chat(prompt,project_id):
 
 def recommender(prompt,project_id):
     response=requests.post(url+"/recommend", json={"prompt": json.dumps(prompt),'project_id':project_id})
-    # print(response)
-    return json.loads(response.json())['data']
+    ## This is the response and it is a dict like that => {'data': '["Summarize data", "Show correlations", "Find outliers"]'}
+    return eval(response.json()['data'])
 
 
 

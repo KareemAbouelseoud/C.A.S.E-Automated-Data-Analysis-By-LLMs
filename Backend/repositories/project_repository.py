@@ -16,6 +16,8 @@ class ProjectRepository(BaseRepository[Project]):
             project=Project.from_mongo(document)
             project.id=str(project.id)
             project.created_Date=project.created_Date.strftime("%d %B %Y")
+            project.model_Chat.last_update=project.model_Chat.last_update.strftime("%d %B %Y")
+            project.streamlit_Chat.last_update=project.streamlit_Chat.last_update.strftime("%d %B %Y")
             return project
         return None
 
@@ -26,6 +28,8 @@ class ProjectRepository(BaseRepository[Project]):
             project=Project.from_mongo(document)
             project.id=str(project.id)
             project.created_Date=project.created_Date.strftime("%d %B %Y")
+            project.model_Chat.last_update=project.model_Chat.last_update.strftime("%d %B %Y")
+            project.streamlit_Chat.last_update=project.streamlit_Chat.last_update.strftime("%d %B %Y")
             filtered_Items.append(project.model_dump())  # Convert ObjectId
         return filtered_Items
 
@@ -36,6 +40,8 @@ class ProjectRepository(BaseRepository[Project]):
             project=Project.from_mongo(document)
             project.id=str(project.id)
             project.created_Date=project.created_Date.strftime("%d %B %Y")
+            project.model_Chat.last_update=project.model_Chat.last_update.strftime("%d %B %Y")
+            project.streamlit_Chat.last_update=project.streamlit_Chat.last_update.strftime("%d %B %Y")
             projects.append(project)
         return projects
 

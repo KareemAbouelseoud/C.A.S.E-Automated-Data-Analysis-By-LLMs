@@ -41,6 +41,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from dataItems import Chat, Recommender, StHistory, SignUpRequest, LoginRequest
 from dataModels.project import Project
+from dataModels.project import Chat as projectChat
 from dataModels.user import User
 from dataModels.visualization import visualizations,ChatViz
 from repositories.base_repository import BaseRepository

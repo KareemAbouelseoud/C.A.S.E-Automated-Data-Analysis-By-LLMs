@@ -51,7 +51,7 @@ system_prompt = hub.pull("chatbot-chatter").messages[0].prompt.template
 async def chatter_node(state,config: RunnableConfig):
     _project_service=ProjectService()
     project_id = state["project_id"]
-    data_report=_project_service.fetch_data_report(project_id)
+    data_report=await _project_service.fetch_data_report(project_id)
     old_messages = state["messages"]
     messages=[
         {"role": "system", "content":system_prompt+f"\n\n Data Report:\n {data_report}" }

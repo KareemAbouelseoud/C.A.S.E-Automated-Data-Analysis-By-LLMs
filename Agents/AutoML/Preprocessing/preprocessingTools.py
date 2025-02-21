@@ -206,7 +206,7 @@ async def handle_null_values(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try:
-        data = _project_service.fetch_dataset(project_id)
+        data =await _project_service.fetch_dataset(project_id)
         
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
@@ -259,7 +259,7 @@ async def remove_duplicates(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try :
-        data = _project_service.fetch_dataset(project_id)
+        data = await _project_service.fetch_dataset(project_id)
         
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
@@ -315,7 +315,8 @@ async def tool_node(state):
                     status="error",
                 )
             )
-    preprocessor=_project_service.fetch_pipeline(state["project_id"])
+    ## TODO: Fetching & saving the pipeline to the database
+    preprocessor=await _project_service.fetch_pipeline(state["project_id"])
     if preprocessor:
         preprocessor.transformers.extend(preprocessors)
     else:
