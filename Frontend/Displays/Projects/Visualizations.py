@@ -77,6 +77,7 @@ class Visualizations:
             with elements("demo"):
                 event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
                 vizs=visualizationRequests.fetch_visualizations(st.session_state.Project)
+                print(vizs) 
                 for i in vizs:
                     w.visualizations.append(self.create((i)))
                 

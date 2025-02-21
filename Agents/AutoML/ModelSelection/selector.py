@@ -96,7 +96,7 @@ async def model_selector_node(state):
     )
     
     project_id = state["project_id"]
-    data_report = _project_service.fetch_data_report(project_id)
+    data_report = await _project_service.fetch_data_report(project_id)
     problem_type = state['problem_type']
     X_columns = state['X_columns']
     y_column = state['y_column']

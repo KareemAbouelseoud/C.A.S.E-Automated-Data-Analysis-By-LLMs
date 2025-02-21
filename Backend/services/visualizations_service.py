@@ -76,8 +76,10 @@ class visualizationsService:
     async def update_Auto_Gen_Viz(self, project_id: str) -> Tuple[bool, List[str]]:
         #BUG:pipeline generate visualization is still making errors
         visualizations = await pipeline.generate_visualizations(project_id)
-        print("THIS IS VISUALIZATION IN VIZ SERVICE",visualizations)
+        # print("THIS IS VISUALIZATION IN VIZ SERVICE",visualizations)
         serializable_visualizations = [make_serializable(v) for v in visualizations]
+        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",len(serializable_visualizations))
+        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",type(serializable_visualizations))
         try:
             project = await self.project_repository.get_by_id(project_id) 
         except Exception as e:

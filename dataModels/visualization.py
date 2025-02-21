@@ -10,7 +10,7 @@ class visualizations(BaseModel):
     id: Optional[ObjectId] = Field(default=None, alias="_id")
     user_id:str
     project_id:str
-    Auto_generated_viz:Optional[List[str]]= Field(default=[], alias="Auto_generated_viz")
+    Auto_generated_viz:Optional[List[List]]= Field(default=[], alias="Auto_generated_viz")
     Chat_visualizations:Optional[List[ChatViz]]= Field(default=[], alias="Chat_visualizations")
     
     @classmethod

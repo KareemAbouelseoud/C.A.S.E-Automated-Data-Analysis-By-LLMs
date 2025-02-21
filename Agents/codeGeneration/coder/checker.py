@@ -40,7 +40,7 @@ async def checker_node(state):
     # Check execution
     try:
         df= await _project_service.fetch_dataset(state['project_id'])
-        globals_dict={'mainDatabase':mainDatabase,
+        globals_dict={'_project_service':_project_service,
                       'project_id':state['project_id'],
                       'df':df}
         print("CODE:", imports + "\n" + code)

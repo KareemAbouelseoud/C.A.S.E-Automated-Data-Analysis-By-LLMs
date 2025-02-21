@@ -82,7 +82,7 @@ async def generator_node(state):
         )
     else:
         old_messages = state["messages"]
-        data_report= _project_service.fetch_data_report(state['project_id'])
+        data_report= await _project_service.fetch_data_report(state['project_id'])
         old_messages[-1]['content']=old_messages[-1]['content']+f"Here is the data report crucial for the plot: \n {data_report}\n"
         # Solution
         code_solution = await code_gen_chain.ainvoke(
