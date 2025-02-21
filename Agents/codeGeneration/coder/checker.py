@@ -1,5 +1,7 @@
 from Database import mainDatabase
-def checker_node(state):
+from Backend.services.project_service import ProjectService
+_project_service=ProjectService()
+async def checker_node(state):
     """
     Check code
 
@@ -37,7 +39,7 @@ def checker_node(state):
 
     # Check execution
     try:
-        df=mainDatabase.fetch_dataset(state['project_id'])
+        df= await _project_service.fetch_dataset(state['project_id'])
         globals_dict={'mainDatabase':mainDatabase,
                       'project_id':state['project_id'],
                       'df':df}

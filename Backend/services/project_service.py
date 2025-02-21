@@ -1,3 +1,4 @@
+
 from config import *
 def get_repo():
     repo = ProjectRepository()
@@ -117,8 +118,10 @@ class ProjectService:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
         
         hist_dict={'st_history':[],'model_history':[]}
-        for message in last_conv:
+        for i,message in enumerate(last_conv):
             hist_dict['st_history'].append({'role':message['role'],'content':message['content']})
+            if i==0:
+                continue
             if 'visualizer'!=message['role']:
                 hist_dict['model_history'].append({'role':message['role'],'content':message['content']})
         project.model_Chat=projectChat()
@@ -170,6 +173,7 @@ class ProjectService:
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
         return project.data_report
+    
     async def fetch_dataset(self, project_id: str) -> Optional[str]:
         try:
             project = await self.project_repository.get_by_id(project_id)
@@ -178,6 +182,6 @@ class ProjectService:
             
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
-        return pd.read_json(project.Dataset)
+        return pd.read_json(StringIO(project.Dataset))
 
     #endregion

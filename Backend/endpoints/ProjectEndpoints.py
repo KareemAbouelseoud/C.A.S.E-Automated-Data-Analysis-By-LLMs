@@ -45,3 +45,16 @@ async def getProject(project_id:str):
     API endpoint to receive and save uploaded files.
     """
     return json.dumps({'data':await project_service.get_project(project_id)})
+
+@Project_router.get('/project/{project_id}/AutoML/train/',tags=["Project"])
+async def train(project_id:str,item: Train):
+    return {'data':automl_pipeline.automl(project_id,item.mode,item.target_feature,item.training_features,item.user_input)}
+
+@Project_router.get("/project/{project_id}/fetchDataset",tags=["Project"])
+async def getProject(project_id:str):
+    """
+    API endpoint to receive and save uploaded files.
+    """
+    df = await project_service.fetch_dataset(project_id)
+    
+    return {'data':df.to_json()}

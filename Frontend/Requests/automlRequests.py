@@ -6,7 +6,7 @@ import json
 
 
 def train(project_id,target_feature,training_features,mode,user_input=None):
-    url = f'http://127.0.0.1:8000/train/{project_id}'
+    url = f'http://127.0.0.1:8000/project/{project_id}/AutoML/train/'
     response = requests.post(url,json={'project_id':project_id,
                                        'target_feature':target_feature,
                                        'training_features':training_features,

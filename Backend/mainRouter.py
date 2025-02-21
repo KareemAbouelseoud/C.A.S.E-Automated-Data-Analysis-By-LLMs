@@ -8,7 +8,7 @@ from endpoints.chatbotEndpoints import chatbot_router
 from endpoints.userEndpoints import user_router
 from endpoints.ProjectEndpoints import Project_router
 
-from automlEndpoints import automl_router
+
 import uvicorn
 
 app = FastAPI()
@@ -18,7 +18,7 @@ app.include_router(viz_router, prefix="")
 app.include_router(chatbot_router, prefix="")
 app.include_router(user_router, prefix="")
 app.include_router(Project_router, prefix="")
-app.include_router(automl_router, prefix="")
+
 
 if __name__ == "__main__":
     uvicorn.run("mainRouter:app", host="127.0.0.1", port=8000,reload=True,reload_dirs=["Backend"])

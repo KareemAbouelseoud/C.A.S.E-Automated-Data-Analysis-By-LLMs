@@ -34,6 +34,8 @@ from pydantic import BaseModel
 from typing import List
 from Database import mainDatabase
 from dotenv import load_dotenv
+from Backend.services.project_service import ProjectService
+_project_service=ProjectService()
 import json
 load_dotenv()
 
@@ -58,7 +60,7 @@ async def designer_node(project_id):
     ])
 
     designer_chain = prompt | llm
-    data_report=mainDatabase.fetch_data_report(project_id)
+    data_report=await _project_service.fetch_data_report(project_id)
     response=await designer_chain.ainvoke({'data_report':data_report})
     try:
         start = response.content.find('[')

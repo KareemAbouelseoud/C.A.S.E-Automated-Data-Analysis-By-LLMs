@@ -7,6 +7,7 @@ import bcrypt
 import time
 from datetime import datetime
 from typing import List, Literal, Optional, Dict,Tuple
+from io import StringIO
 
 import numpy as np
 import pandas as pd
@@ -39,7 +40,7 @@ def make_serializable(obj):
 # Add the parent directory to the sys.path (do this ONLY ONCE)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from dataItems import Chat, Recommender, StHistory, SignUpRequest, LoginRequest
+from dataItems import Chat, Recommender, StHistory, SignUpRequest, LoginRequest, Train
 from dataModels.project import Project
 from dataModels.project import Chat as projectChat
 from dataModels.user import User
@@ -53,6 +54,7 @@ from services.user_service import UserService
 from services.visualizations_service import visualizationsService
 from Agents.codeGeneration import pipeline 
 from Agents.Chatbot import pipeline as chatbot_pipeline, recommender
+from Agents.AutoML import pipeline as automl_pipeline
 from Database import mainDatabase
 
 # from repositories.dataset_repository import DatasetRepository

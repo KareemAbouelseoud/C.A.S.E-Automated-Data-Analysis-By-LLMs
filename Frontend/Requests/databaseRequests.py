@@ -149,7 +149,8 @@ def get_project_details(project_id):
 
 
 def fetch_dataset(project_id):
-    response=requests.get(url+f'/fetchDataset/{str(project_id)}')
-    df=pd.read_json(StringIO(response.json()['data']))
+    response=requests.get(url+f'/project/{project_id}/fetchDataset')
+    _df=json.loads(response.json()["data"])
+    df=pd.DataFrame(_df)
     return df
 

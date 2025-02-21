@@ -75,16 +75,16 @@ builder.add_conditional_edges("planner", planner_brancher)
 builder.add_edge('caller','tools')
 builder.add_conditional_edges('tools',tool_brancher)
 builder.add_edge('coder',END)
+
 viz_graph = builder.compile()
 
 async def generate_visualizations(project_id):
-    _project_service=ProjectService()
     response= await designer_node(project_id)
-    print("Response from designer chain",response)
     visualizations=[]
     try:
         for idx,design in  enumerate(response):
-            graph_response= await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
+            print(f"Design {idx}",design,"type",type(design))  
+            graph_response= await viz_graph.ainvoke({'project_id':project_id,'messages':[{"role":"human","content":str(design)}]})
             print("Graph response",graph_response)
             if 'visualization' in graph_response and graph_response['visualization']:
                 visualizations.append(graph_response['visualization'])
