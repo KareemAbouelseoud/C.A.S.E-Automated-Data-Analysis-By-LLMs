@@ -17,7 +17,7 @@ def recommender(prompt,project_id):
 
 
 
-def get_model_history(project_id):
+def get_streamlit_chat_history(project_id):
     """
     Retrieves Streamlit chat history for a specific chat ID.
 
@@ -31,8 +31,9 @@ def get_model_history(project_id):
     list
         The Streamlit chat history.
     """
-    response=requests.get(url+f"/project/{project_id}/get_model_history")
-    return json.loads(response.json())['data']
+    response=requests.get(url+f"/project/{project_id}/get_streamlit_history")
+    
+    return eval(response.json()['data'])
 
 def create_new_chat(user_id):
     """
@@ -67,9 +68,6 @@ def update_user_st_history(project_id,last_conv,user_id):
     """
     response=requests.post(url+f"/project/{project_id}/chat_streamlit/?user_id={user_id}",json={'project_id':project_id,'last_conv':json.dumps(last_conv)})
 
-    # print("CONV: ",last_conv)
-    # requests.post(url+f"/update_st_history/{chat_id}",json={'conv':last_conv})
-
 
 def clear_history(project_id,user_id):
     """
@@ -86,7 +84,7 @@ def clear_history(project_id,user_id):
     -------
     None
     """
-    requests.get(url+f"/project/{project_id}/chat/clear/?user_id={user_id}")
+    requests.get(url+f"/project/{project_id}/chat/clear?user_id={user_id}")
 
 
 

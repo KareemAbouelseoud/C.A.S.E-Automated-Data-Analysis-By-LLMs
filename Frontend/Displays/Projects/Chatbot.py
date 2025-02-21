@@ -243,7 +243,7 @@ class Chatbot:
                     
                     ##TODO: HANDLE THE RETRIVAL ON INTIAIALZING
                     st.session_state.messages.append({'role':'visualizer','content':viz_id})
-        
+        chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
             
     
 
@@ -252,13 +252,22 @@ class Chatbot:
         """
         Called at the beginning of any chat
         """
+        chat_history = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
+        if chat_history!=[]:
+            ## TODO: HANDLE THE VISUALIAZTION ON INTIAIALZING (Replace the visualization ID with the visualization)
+            st.session_state.messages = chat_history
+            st.session_state['conv_change']=''
+            st.session_state['new']=False
+            st.session_state['Bot_Clicked']=False
+            welcome_message = "Welcome back. How can I assist you today?"
+            st.session_state.messages.append({"role": "assistant", "content": welcome_message})
         if "messages" not in st.session_state:
             st.session_state['conv_change']=''
             st.session_state['new']=True
             st.session_state.messages = []
             st.session_state['Bot_Clicked']=False
             # Add greeting message to chat history
-            first_message = "Zeus: Good Morning. I am Zeus, a Smart Assistant for C.A.S.E. How can I assist you today?"
+            first_message = "Good Morning. I am Zeus, a Smart Assistant for C.A.S.E. How can I assist you today?"
             st.session_state.messages.append({"role": "assistant", "content": first_message})
 
     def stream_ans(self,response,visuals):
@@ -307,10 +316,10 @@ class Chatbot:
         Provides personalized prompt recommendations based on the user's input.
         """
         if prompt:
-            if chatbotRequests.get_model_history(st.session_state['Project']):
-                new_hist=chatbotRequests.get_model_history(st.session_state['Project'])
-                new_hist.extend([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}])
-                recommendations=chatbotRequests.recommender(new_hist,project_id=st.session_state.Project)
+            chat_hist = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
+            if len(chat_hist)>0:
+                chat_hist.extend([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}])
+                recommendations=chatbotRequests.recommender(chat_hist,project_id=st.session_state.Project)
             else:
                 recommendations=chatbotRequests.recommender([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}],st.session_state.Project)
         else:

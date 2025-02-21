@@ -126,11 +126,11 @@ class ProjectService:
         project.model_Chat.messages=json.dumps(hist_dict['model_history'])
         project.streamlit_Chat.messages=json.dumps(hist_dict['st_history'])
         
-        project.model_Chat.last_date=datetime.now()
-        project.streamlit_Chat.last_date=datetime.now()
+        project.model_Chat.last_update=datetime.now()
+        project.streamlit_Chat.last_update=datetime.now()
         
         try:
-            await self.project_repository.update(id, project)
+            await self.project_repository.update(project.id, project)
             return True
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project's chat to MongoDB: {e}")
@@ -155,7 +155,9 @@ class ProjectService:
             
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
-        return json.loads(project.streamlit_Chat.messages)
+        if project.streamlit_Chat.messages==None:
+            return '[]'
+        return project.streamlit_Chat.messages
     #endregion
 
     #region other fetches

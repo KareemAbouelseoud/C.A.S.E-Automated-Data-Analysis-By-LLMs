@@ -40,9 +40,9 @@ async def get_streamlit_history(project_id: str):
         project_id (str): Chat ID to retrieve Streamlit chat history for.
 
     Returns:
-        dict: JSON with Streamlit chat history.
+        str : Streamlit chat history.
     """
-    return {'data':project_service.get_streamlit_chat_history(project_id)}
+    return {'data':await project_service.get_streamlit_chat_history(project_id)}
 
 
 @chatbot_router.post("/project/{project_id}/chat_streamlit",tags=["Chat"])

@@ -120,6 +120,10 @@ def get_name(user_id):
 
 
 #endregion
+
+
+
+#region User Project API CALLS
 def create_project(user_id,name,uploaded_file):
         
         files = {"file": uploaded_file}
@@ -130,8 +134,6 @@ def create_project(user_id,name,uploaded_file):
 
         # Send the POST request
         response = requests.post(url+'/project', files=files,data=data)
-
-#region User Project API CALLS
 def read_projects(user_id):
      response=requests.get(url+f'/project/GetProjects/{str(user_id)}')
      projects=json.loads(response.json())['data']
