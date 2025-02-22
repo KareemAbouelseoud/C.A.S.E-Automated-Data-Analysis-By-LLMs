@@ -74,7 +74,6 @@ class visualizationsService:
             raise HTTPException(status_code=500, detail=f"Error Updating project Visualizations and data to MongoDB: {e}")
     
     async def update_Auto_Gen_Viz(self, project_id: str) -> Tuple[bool, List[str]]:
-        #BUG:pipeline generate visualization is still making errors
         visualizations = await pipeline.generate_visualizations(project_id)
         
         serializable_visualizations = [make_serializable(v) for v in visualizations]
