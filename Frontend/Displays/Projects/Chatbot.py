@@ -10,15 +10,16 @@ import os
 import json
 import asyncio
 import plotly.graph_objects as go
-from dataModels.visualization import ChatViz
 
 modules_path = Path("/home/robo/Modules")
 
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+
 # from req import clear_history,get_st_history,create_new_chat,update_user_st_history,get_model_history,chat,recommender
-from Requests import chatbotRequests,databaseRequests
+from Requests import chatbotRequests,databaseRequests,visualizationRequests
+from dataModels.visualization import visualizations,ChatViz
 st.empty()
 
 #GenRobo class for creating and managing the Robo Advisor application.
@@ -27,7 +28,7 @@ st.empty()
 ###
 from streamlit_cookies_controller import CookieController
 controller=CookieController()
-
+viz_count=0
 
 class Chatbot:
     def __init__(self):
@@ -145,7 +146,7 @@ class Chatbot:
         if isinstance(visuals,list):
             for v in visuals:
                 self.get_visuals(v)
-                return
+                pass
         try:
             fig = go.Figure(data=visuals['data'], layout=visuals['layout'])
             st.plotly_chart(fig)
@@ -256,12 +257,10 @@ class Chatbot:
             with st.chat_message('visualizer',avatar='📈'):
                 for visual in visuals:
                     self.get_visuals(visual)
-                    ##TODO: SAVE TO MONGODB CAHT GENERATED VIZ
-                    viz_id=uuid.uuid4()
-                    new_chat_viz=ChatViz(id=viz_id,viz=visual)
                     
-                    ##TODO: HANDLE THE RETRIVAL ON INTIAIALZING
-                    st.session_state.messages.append({'role':'visualizer','content':viz_id})
+                    new_chat_viz=ChatViz(viz=visual)
+                    visualizationRequests.save_chat_visualizations(st.session_state['Project'],new_chat_viz)
+                    st.session_state.messages.append({'role':'visualizer','content':viz_count})
         chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
             
     
@@ -271,9 +270,8 @@ class Chatbot:
         """
         Called at the beginning of any chat
         """
-        chat_history = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
+        chat_history,viz_count = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
         if chat_history!=[]:
-            ## TODO: HANDLE THE VISUALIAZTION ON INTIAIALZING (Replace the visualization ID with the visualization)
             st.session_state.messages = chat_history
             st.session_state['conv_change']=''
             st.session_state['new']=False
@@ -335,7 +333,7 @@ class Chatbot:
         Provides personalized prompt recommendations based on the user's input.
         """
         if prompt:
-            chat_hist = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
+            chat_hist,viz_count = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
             if len(chat_hist)>0:
                 chat_hist.extend([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}])
                 recommendations=chatbotRequests.recommender(chat_hist,project_id=st.session_state.Project)

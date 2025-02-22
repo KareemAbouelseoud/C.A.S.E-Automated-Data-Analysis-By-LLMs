@@ -38,6 +38,21 @@ async def get_Auto_Gen_Viz(project_id:str):
         serializable_visualizations = await viz_service.update_Auto_Gen_Viz(project_id=project_id)
     return json.dumps({'visualizations': serializable_visualizations}, allow_nan=True)
 
+@viz_router.get('/project/{project_id}/visualization/get_Chat_Viz',tags=["Visualizations"])
+async def get_Chat_Viz(project_id:str):
+    """
+    Endpoint to retrieve visualization data for a project.
+
+    Args:
+        project_id (str): Project ID to retrieve visualization data for.
+
+    Returns:
+        dict: JSON with visualization data.
+    """ 
+    
+    serializable_visualizations=await viz_service.get_Chat_Viz(project_id=project_id)
+    return json.dumps({'visualizations': serializable_visualizations}, allow_nan=True)
+
 @viz_router.post('/project/{project_id}/visualization/Chat_viz',tags=["Visualizations"])
 async def Save_Chat_Viz(project_id:str,new_chat_viz:ChatViz):
     """
