@@ -279,7 +279,8 @@ class Chatbot:
             welcome_message = "Welcome back. How can I assist you today?"
             st.session_state.messages.append({"role": "assistant", "content": welcome_message})
         else:
-            del st.session_state.messages
+            if 'messages' in st.session_state:
+                del st.session_state.messages
         if "messages" not in st.session_state:
             st.session_state['conv_change']=''
             st.session_state['new']=True
