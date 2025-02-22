@@ -1,5 +1,6 @@
 import sys
 import os
+import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 import requests
 import json
@@ -19,5 +20,25 @@ def fetch_chat_visualizations(project_id:str):
 
 def save_chat_visualizations(project_id:str,new_viz:ChatViz):
     url = f'http://127.0.0.1:8000/project/{project_id}/visualization/Chat_viz'
+    
     response = requests.post(url,json=new_viz.model_dump())
     return response.status_code==200
+
+def make_serializable(obj):
+    """
+    Convert an object to a serializable format.
+    """
+    if isinstance(obj, dict):
+        return {k: make_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [make_serializable(i) for i in obj]
+    elif isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
+        return int(obj)
+    elif isinstance(obj, (np.float64, np.float32, np.float16)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
+        return None
+    else:
+        return obj
