@@ -316,7 +316,6 @@ async def tool_node(state):
                     status="error",
                 )
             )
-    ## TODO: Fetching & saving the pipeline to the database
     preprocessor=await _project_service.fetch_pipeline(state["project_id"])
     if preprocessor:
         preprocessor.transformers.extend(preprocessors)

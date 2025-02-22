@@ -2,8 +2,7 @@ from typing import List, Optional
 from bson.objectid import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
 class ChatViz(BaseModel):
-    id:str
-    viz:str
+    viz:List
 
 class visualizations(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True,populate_by_name=True) #Add this line
@@ -11,7 +10,7 @@ class visualizations(BaseModel):
     user_id:str
     project_id:str
     Auto_generated_viz:Optional[List[List]]= Field(default=[], alias="Auto_generated_viz")
-    Chat_visualizations:Optional[List[ChatViz]]= Field(default=[], alias="Chat_visualizations")
+    Chat_visualizations:Optional[List[List]]= Field(default=[], alias="Chat_visualizations")
     
     @classmethod
     def from_mongo(cls, document):

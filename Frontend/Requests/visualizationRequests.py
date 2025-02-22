@@ -11,6 +11,12 @@ def fetch_visualizations(project_id:str):
     response = requests.get(url)
     return json.loads(response.json())['visualizations']
 
+def fetch_chat_visualizations(project_id:str):
+    url = f'http://127.0.0.1:8000/project/{project_id}/visualization/get_Chat_Viz'
+    response = requests.get(url)
+    return json.loads(response.json())['visualizations']
+
+
 def save_chat_visualizations(project_id:str,new_viz:ChatViz):
     url = f'http://127.0.0.1:8000/project/{project_id}/visualization/Chat_viz'
     response = requests.post(url,json=new_viz.model_dump())

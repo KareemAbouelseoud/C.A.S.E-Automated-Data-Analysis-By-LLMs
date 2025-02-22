@@ -1,6 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from .visualizationRequests import fetch_chat_visualizations
 import requests
 import json
 url='http://127.0.0.1:8000'
@@ -32,8 +33,13 @@ def get_streamlit_chat_history(project_id):
         The Streamlit chat history.
     """
     response=requests.get(url+f"/project/{project_id}/get_streamlit_history")
-    
-    return eval(response.json()['data'])
+    chat_viz=fetch_chat_visualizations(project_id)
+    streamlit_chat=eval(response.json()['data'])
+    for message in streamlit_chat:
+        if message['role']=='visualizer':
+            message['content']=chat_viz[int(message['content'])]
+            
+    return streamlit_chat,len(chat_viz)
 
 def create_new_chat(user_id):
     """
