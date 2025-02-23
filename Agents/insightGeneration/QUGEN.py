@@ -57,7 +57,7 @@ class QUGEN:
 Schema: {state["schema"]}
 Numeric Columns: {numeric_cols}
 Description: {state["description"]}
-Basic Statistics:\n{state["basic_stats"].to_string()}
+Basic Statistics:\n{"basic_stats"}
 
 **Previous Insights**
 {example_context}
@@ -78,6 +78,33 @@ MEASURE: <categorical/temporal_column>
 
         response = self.model.generate_content(prompt)
         return self._parse_insight_cards(response.text, state["schema"], numeric_cols)
+
+    def _format_basic_stats(self, basic_stats):
+        """Safely format basic statistics for prompts"""
+        stats_str = []
+
+        if "numerical" in basic_stats and not basic_stats["numerical"].empty:
+            stats_str.append(
+                "Numerical Statistics:\n" + basic_stats["numerical"].to_string()
+            )
+
+        if "categorical" in basic_stats and not basic_stats["categorical"].empty:
+            stats_str.append(
+                "Categorical Statistics:\n" + basic_stats["categorical"].to_string()
+            )
+
+        return "\n\n".join(stats_str) if stats_str else "No statistics available"
+
+    def _insight_to_text(self, insight):
+        """Convert insight card to text format"""
+        return "\n".join(
+            [
+                f"REASON: {insight['reason']}",
+                f"QUESTION: {insight['question']}",
+                f"BREAKDOWN: {insight['breakdown']}",
+                f"MEASURE: {insight['measure']}",
+            ]
+        )
 
     def _parse_insight_cards(self, text, schema, numeric_cols):
         """Robust parsing with regex validation"""
@@ -167,11 +194,10 @@ MEASURE: <categorical/temporal_column>
                 {
                     **insight,
                     "score": score,
-                    "complexity": self._calculate_complexity(insight),
                 }
             )
 
-        return sorted(filtered, key=lambda x: (-x["score"], -x["complexity"]))
+        return sorted(filtered, key=lambda x: -x["score"])
 
     def _calculate_insight_score(self, insight, df):
         try:

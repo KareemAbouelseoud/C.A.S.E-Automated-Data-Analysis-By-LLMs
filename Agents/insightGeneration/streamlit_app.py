@@ -7,6 +7,7 @@ from data_description_generator import AgentGraphState, data_description_generat
 from QUGEN import QUGEN
 from genai_config import model
 import scoringFunction
+from report_generator import generate_report
 
 sys.path.append(os.getcwd())
 
@@ -58,11 +59,23 @@ def main():
 
     if uploaded_file is not None:
         try:
+            original_name = os.path.splitext(uploaded_file.name)[0]
+            clean_name = "".join(
+                c if c.isalnum() else " " for c in original_name
+            ).title()
             df = pd.read_csv(uploaded_file)
-            state = AgentGraphState({"df": df})
+            ###
+            object_cols = df.select_dtypes(include=["object"]).columns
+            df[object_cols] = df[object_cols].astype(str)
 
+            category_cols = df.select_dtypes(include=["category"]).columns
+            df[category_cols] = df[category_cols].astype("category")
+
+            ###
+            state = AgentGraphState({"df": df, "dataset_name": clean_name})
             with st.spinner("🔍 Analyzing dataset structure..."):
                 state = data_description_generator_node(state, model)
+                state = generate_report(state)
 
             col1, col2 = st.columns([1, 2])
 
@@ -81,7 +94,7 @@ def main():
                     """)
 
                     st.markdown("**Sample Data**")
-                    st.dataframe(df.head(3), height=150)
+                    st.dataframe(df.head(5), height=150)
 
                 with st.expander("🔑 Dataset Schema"):
                     schema = state.get("schema", [])
@@ -89,10 +102,32 @@ def main():
                     st.write(", ".join(schema))
 
                 with st.expander("🧮 Basic Statistics"):
-                    stats = state.get("basic_stats", pd.DataFrame())
-                    st.dataframe(
-                        stats.style.format(precision=2), use_container_width=True
-                    )
+                    stats = state.get("basic_stats", {})
+
+                    st.subheader("Numerical Statistics")
+                    if "numerical" in stats:
+                        numerical_df = (
+                            pd.DataFrame(stats["numerical"])
+                            if isinstance(stats["numerical"], dict)
+                            else stats["numerical"]
+                        )
+                        st.dataframe(
+                            numerical_df.style.format(precision=2),
+                            use_container_width=True,
+                        )
+                    else:
+                        st.warning("No numerical columns found")
+
+                    st.subheader("Categorical Statistics")
+                    if "categorical" in stats:
+                        categorical_df = (
+                            pd.DataFrame(stats["categorical"])
+                            if isinstance(stats["categorical"], dict)
+                            else stats["categorical"]
+                        )
+                        st.dataframe(categorical_df, use_container_width=True)
+                    else:
+                        st.warning("No categorical columns found")
 
             with col2:
                 st.markdown(
@@ -164,28 +199,30 @@ def create_visualization(df, card):
 
     if "score" in card:
         score = card["score"]
-        if agg_func != "COUNT" and score > 0.5:
+        if agg_func != "COUNT":
+            if score > 0.5:
+                fig.add_annotation(
+                    x=0.95,
+                    y=0.95,
+                    xref="paper",
+                    yref="paper",
+                    text=f"🚩Attribution Alert ({score:.0%}\n the largest value in a set is more than 50% of the total)",
+                    showarrow=False,
+                    bgcolor="#ffcccc",
+                    font=dict(size=14),
+                )
+    elif agg_func == "COUNT":
+        if score > 0.2:
             fig.add_annotation(
                 x=0.95,
-                y=0.95,
+                y=0.85,
                 xref="paper",
                 yref="paper",
-                text=f"🚩 Attribution Alert ({score:.0%})",
+                text=f"🌐 Distribution Shift ({score:.2f} JSD)",
                 showarrow=False,
-                bgcolor="#ffcccc",
+                bgcolor="#cce5ff",
                 font=dict(size=14),
             )
-    elif agg_func == "COUNT" and score > 0.2:
-        fig.add_annotation(
-            x=0.95,
-            y=0.85,
-            xref="paper",
-            yref="paper",
-            text=f"🌐 Distribution Shift ({score:.2f} JSD)",
-            showarrow=False,
-            bgcolor="#cce5ff",
-            font=dict(size=14),
-        )
 
     fig.update_layout(
         hovermode="x unified",

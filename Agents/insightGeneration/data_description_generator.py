@@ -2,11 +2,14 @@ import pandas as pd
 from typing import Dict
 import google.generativeai as genai
 
-class AgentGraphState(Dict):
 
+class AgentGraphState(Dict):
     pass
 
-def data_description_generator_node(state: AgentGraphState, model, temperature=0) -> AgentGraphState:
+
+def data_description_generator_node(
+    state: AgentGraphState, model, temperature=0
+) -> AgentGraphState:
     """
     A node in the graph that generates a description of the dataset, its schema, and basic statistics.
 
@@ -17,23 +20,26 @@ def data_description_generator_node(state: AgentGraphState, model, temperature=0
     Returns:
         The updated state with the description, schema, and basic statistics.
     """
-    # Check if the dataset is provided in the state
     if "df" not in state:
         raise ValueError("No dataset provided in state.")
 
     df = state["df"]
 
     schema = df.columns.tolist()
+    numerical_stats = df.describe(include=["number"]).reset_index()
+    categorical_stats = df.describe(include=["object", "category"]).reset_index()
 
-    basic_stats = df.describe(include='all').reset_index()
-
+    basic_stats = {"numerical": numerical_stats, "categorical": categorical_stats}
     prompt = f"""
     Given the dataset:
-    {df.head()}
+    {df.head().to_markdown()}
 
     Provide the following:
     1. A detailed explanation of each column in bullet points.
     2. An overview description of the dataset.
+    3. Key patterns in the data distribution
+    4. Notable data quality issues
+
     """
 
     response = model.generate_content(prompt)
@@ -43,4 +49,3 @@ def data_description_generator_node(state: AgentGraphState, model, temperature=0
     state["basic_stats"] = basic_stats
 
     return state
-    #The updated state with the description, schema, and basic statistics.
