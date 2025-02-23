@@ -47,8 +47,13 @@ def main():
             df = pd.read_csv(uploaded_file)
             state = AgentGraphState({"df": df})
             
-            with st.spinner("🔍 Analyzing dataset structure..."):
-                state = data_description_generator_node(state, model)
+            if "description" not in st.session_state:
+                with st.spinner("🔍 Analyzing dataset structure..."):
+                    state = data_description_generator_node(state, model)
+                    st.session_state["description"] = state["description"]
+                    st.session_state["feedback"] = ""
+                    st.session_state["accepted"] = False
+                    st.session_state["rejected"] = False  
             
             col1, col2 = st.columns([1, 2])
             
@@ -76,13 +81,37 @@ def main():
                     st.dataframe(stats.style.format(precision=2), use_container_width=True)
             
             with col2:
-
                 st.markdown("<h2 class='section-header'>AI Analysis Results</h2>", unsafe_allow_html=True)
                 
-
                 with st.expander("📄 Dataset Description", expanded=True):
-                    desc = state.get("description", "No description generated")
-                    st.write(desc)
+                    st.write(st.session_state["description"])
+                    
+                st.markdown("**Feedback & Actions**")
+                
+                if not st.session_state["accepted"]:
+                    col_accept, col_reject = st.columns(2)
+                    with col_accept:
+                        if st.button("✅ Accept", key="accept_desc"):
+                            st.session_state["accepted"] = True
+                            st.session_state["rejected"] = False  
+                            st.success("🎉 Description accepted!")
+                    
+                    with col_reject:
+                        if st.button("❌ Reject", key="reject_desc"):
+                            st.session_state["rejected"] = True  
+                            st.session_state["feedback"] = ""
+                
+                if st.session_state["rejected"]:
+                    st.session_state["feedback"] = st.text_area("🔄 Provide feedback to improve the description (optional):", value=st.session_state["feedback"])
+                    
+                    if st.button("🔁 Regenerate Description", key="regen_desc"):
+                        feedback_text = st.session_state["feedback"].strip()
+                        
+                        state = data_description_generator_node(state, model, user_feedback=feedback_text if feedback_text else None)
+                        st.session_state["description"] = state["description"]
+                        st.session_state["feedback"] = ""
+                        st.session_state["rejected"] = False  
+                        st.rerun()
                 
                 if analysis_mode == "Advanced":
                     with st.spinner("🧠 Generating intelligent insights..."):
