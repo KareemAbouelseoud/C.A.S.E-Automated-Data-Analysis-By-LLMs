@@ -64,7 +64,7 @@ def main():
                 c if c.isalnum() else " " for c in original_name
             ).title()
             df = pd.read_csv(uploaded_file)
-            state = AgentGraphState({"df": df})
+           
 
             ###
             object_cols = df.select_dtypes(include=["object"]).columns
@@ -104,12 +104,16 @@ def main():
                     st.dataframe(df.head(5), height=150)
 
                 with st.expander("🔑 Dataset Schema"):
-                    schema = state.get("schema", [])
+                    # BUG : Take Care of state is cleared when rerun
+                    schema = df.columns.tolist()
                     st.write("**Column Names:**")
                     st.write(", ".join(schema))
                 
                 with st.expander("🧮 Basic Statistics"):
-                    stats = state.get("basic_stats", {})
+                    numerical_stats = df.describe(include=["number"]).reset_index()
+                    categorical_stats = df.describe(include=["object", "category"]).reset_index()
+
+                    stats = {"numerical": numerical_stats, "categorical": categorical_stats}
 
                     st.subheader("Numerical Statistics")
                     if "numerical" in stats:
@@ -141,9 +145,8 @@ def main():
                 
                 with st.expander("📄 Dataset Description", expanded=True):
                     st.write(st.session_state["description"])
+                    st.markdown("**Feedback & Actions**")
                     
-                st.markdown("**Feedback & Actions**")
-                
                 if not st.session_state["accepted"]:
                     col_accept, col_reject = st.columns(2)
                     with col_accept:
@@ -151,6 +154,10 @@ def main():
                             st.session_state["accepted"] = True
                             st.session_state["rejected"] = False  
                             st.success("🎉 Description accepted!")
+                            state['df'] = df
+                            state['description'] = st.session_state["description"]
+                            state['schema'] = schema
+                            state['basic_stats'] = stats
                     
                     with col_reject:
                         if st.button("❌ Reject", key="reject_desc"):
@@ -162,15 +169,28 @@ def main():
                     
                     if st.button("🔁 Regenerate Description", key="regen_desc"):
                         feedback_text = st.session_state["feedback"].strip()
-                        
                         state = data_description_generator_node(state, model, user_feedback=feedback_text if feedback_text else None)
                         st.session_state["description"] = state["description"]
                         st.session_state["feedback"] = ""
                         st.session_state["rejected"] = False  
+                        st.write(st.session_state["description"])
+                        ## BUG: Solve the issue of the buttons
                         st.rerun()
                 
                 if analysis_mode == "Advanced":
                     with st.spinner("🧠 Generating intelligent insights..."):
+                        # Create state with required information
+                        state = AgentGraphState({
+                            "df": df,
+                            "dataset_name": clean_name,
+                            "schema": df.columns.tolist(),
+                            "description": st.session_state.get("description", ""),
+                            "basic_stats": {
+                                "numerical": df.describe(include=["number"]).reset_index(),
+                                "categorical": df.describe(include=["object", "category"]).reset_index()
+                            }
+                        })
+                        
                         qugen = QUGEN(model=model)
                         state = qugen.invoke(state)
 

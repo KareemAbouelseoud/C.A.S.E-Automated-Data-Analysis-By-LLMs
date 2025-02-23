@@ -28,7 +28,7 @@ def data_description_generator_node(state: AgentGraphState, model, user_feedback
     1. A detailed explanation of each column in bullet points.
     2. An overview description of the dataset.
     3. Key patterns in the data distribution
-    ~~4. Notable data quality issues
+    4. Notable data quality issues
 
     {f'Consider the following user feedback for improvement: {user_feedback}' if user_feedback else ''}
 

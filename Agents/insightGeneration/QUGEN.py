@@ -14,29 +14,45 @@ class QUGEN:
         self.temperature = temperature
 
     def invoke(self, state: AgentGraphState) -> AgentGraphState:
-        # Validate input state
-        required_keys = ["schema", "description", "df", "basic_stats"]
-        if any(key not in state for key in required_keys):
-            raise ValueError("Missing required dataset information in state")
+        # Modified validation to only require df
+        if "df" not in state:
+            raise ValueError("Missing required dataset (df) in state")
 
         df = state["df"]
+        
+        # Ensure schema exists or create it
+        if "schema" not in state:
+            state["schema"] = df.columns.tolist()
+            
+        # Ensure basic_stats exists or create it
+        if "basic_stats" not in state:
+            numerical_stats = df.describe(include=["number"]).reset_index()
+            categorical_stats = df.describe(include=["object", "category"]).reset_index()
+            state["basic_stats"] = {
+                "numerical": numerical_stats,
+                "categorical": categorical_stats
+            }
+            
+        # Ensure description exists or create a simple one
+        if "description" not in state:
+            raise ValueError("Missing required dataset description in state")
+
         numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
 
         insights = []
         for iteration in range(self.iterations):
             new_insights = self._generate_insights(
                 state,
-                previous_insights=insights[-self.questions_per_iter :],
+                previous_insights=insights[-self.questions_per_iter:],
                 numeric_cols=numeric_cols,
             )
             insights.extend(new_insights)
 
-        # Pass the df parameter here
         state["insight_cards"] = self._filter_insights(
             insights,
             state["schema"],
             numeric_cols,
-            df,  # Added df argument
+            df,
         )[:10]
 
         return state
