@@ -1,16 +1,11 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from typing import List
 from typing_extensions import TypedDict
 from typing_extensions import TypedDict,Annotated,NotRequired
 from langchain_core.messages import AnyMessage
 import operator
-from langgraph.graph import END, StateGraph, START
-from .generator import generator_node
-from .checker import checker_node
-from .reflector import reflector_node
+from langgraph.graph import StateGraph, START
+from generator import generator_node
+from checker import checker_node
+from reflector import reflector_node
 from typing import Literal
 
 CONFIGURATIONS={
@@ -34,7 +29,7 @@ class CoderState(TypedDict):
     generation: str
     iterations: NotRequired[int] = 0
     error: NotRequired[str] = ''
-    project_id:str
+    dataframe:object
     data_report: NotRequired[str]
     visualization: NotRequired[Annotated[list[dict], operator.add]]
 

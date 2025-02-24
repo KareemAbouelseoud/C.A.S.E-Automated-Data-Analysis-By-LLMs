@@ -36,27 +36,27 @@ Variables:
 import sys
 
 import os
+import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 
 from typing_extensions import TypedDict,Annotated,NotRequired
 import operator
 from langgraph.graph import StateGraph, START, END
-from Agents.codeGeneration.caller import caller_node
-from Agents.codeGeneration.planner import planner_node,planner_brancher,tool_brancher
-from Agents.codeGeneration.mainTools import tool_node
-from Agents.codeGeneration.designer import designer_node
-from Agents.codeGeneration.coder.coderPipeline import coder
+from Agents.vizGeneration.caller import caller_node
+from Agents.vizGeneration.planner import planner_node,planner_brancher,tool_brancher
+from Agents.vizGeneration.mainTools import tool_node
+from Agents.vizGeneration.designer import designer_node
+from Agents.vizGeneration.coder.coderPipeline import coder
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
 import operator
-from Database import mainDatabase
-from Backend.services.project_service import ProjectService
 
 class State(TypedDict):
     """
     A class to represent the state of the application.
     """
-    project_id:str
+    data_report:str
+    dataframe: NotRequired[object]
     messages: Annotated[list[AnyMessage], operator.add]
     visualization: NotRequired[Annotated[list[dict], operator.add]]
     next: NotRequired[str]
@@ -78,12 +78,32 @@ builder.add_edge('coder',END)
 
 viz_graph = builder.compile()
 
-async def generate_visualizations(project_id):
-    response= await designer_node(project_id)
+
+def make_serializable(obj):
+    """
+    Convert an object to a serializable format.
+    """
+    if isinstance(obj, dict):
+        return {k: make_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [make_serializable(i) for i in obj]
+    elif isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
+        return int(obj)
+    elif isinstance(obj, (np.float64, np.float32, np.float16)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
+        return None
+    else:
+        return obj
+    
+async def generate_visualizations(data_report,dataframe):
+    response= await designer_node(data_report)
     visualizations=[]
     for idx,design in  enumerate(response):
         try:
-            graph_response= await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":str(design)}]})
+            graph_response= await viz_graph.ainvoke({'data_report':str(data_report),'messages':[{"role":"human","content":str(design)}],'dataframe':dataframe})
             print("Graph response",graph_response)
             if 'visualization' in graph_response and graph_response['visualization']:
                 visualizations.append(graph_response['visualization'])    

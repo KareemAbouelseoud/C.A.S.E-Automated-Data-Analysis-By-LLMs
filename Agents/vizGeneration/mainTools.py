@@ -27,29 +27,19 @@ Variables:
 """
 import plotly.express as px
 from typing import Dict, Optional,List
-from typing_extensions import TypedDict
 import pandas as pd
-import numpy as np
 from typing import Literal
 import sys
 import os
 import pandas as pd
-from io import StringIO
 from langchain_core.tools import tool
 from langchain_core.messages import ToolMessage
-import json
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
 from Agents import loggerModule
 
-from Database import mainDatabase
-from Backend.services.project_service import ProjectService
-
 logger=loggerModule.setup_logging()
-_project_service=ProjectService()
 
 @tool
-async def create_line_plot(x: str, y: str, color: str = None,x_label: str=None,y_label: str=None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_line_plot(x: str, y: str,title: str , color: str = None,x_label: str=None,y_label: str=None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Generates a line plot using Plotly Express and returns the figure as a dictionary.
 
@@ -58,14 +48,13 @@ async def create_line_plot(x: str, y: str, color: str = None,x_label: str=None,y
     y (str): Column for the y-axis.
     color (str, optional): Column to color the lines.
     labels: A dictionary where keys and values are strings. Example: {"key1": "value1", "key2": "value2"}
-    title (str, optional): Title of the plot.
+    title (str): Title of the plot.
 
     Returns:
     - dict: The generated line plot as a dictionary.
     """
     try:
         
-        df = await _project_service.fetch_dataset(project_id)
         # Check if provided column names exist in the dataset
         for col in [x, y, color]:
             if col and col not in df.columns:
@@ -95,7 +84,7 @@ async def create_line_plot(x: str, y: str, color: str = None,x_label: str=None,y
         print(f"Error creating line plot: {e}")
 
 @tool
-async def create_scatter_plot(x: str, y: str, color: Optional[str] = None,x_label: str=None,y_label: str=None, marginal_x: Optional[str] = None, marginal_y: Optional[str] = None, trendline: Optional[str] = None, trendline_scope: Optional[str] = None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_scatter_plot(x: str, y: str,title: str, color: Optional[str] = None,x_label: str=None,y_label: str=None, marginal_x: Optional[str] = None, marginal_y: Optional[str] = None, trendline: Optional[str] = None, trendline_scope: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Generates a scatter plot using Plotly Express and returns the figure as a dictionary.
 
@@ -108,16 +97,15 @@ async def create_scatter_plot(x: str, y: str, color: Optional[str] = None,x_labe
     - marginal_y (str, optional): Type of marginal plot for y (e.g., 'box', 'violin').
     - trendline (str, optional): Type of trendline to draw (e.g., 'ols', 'lowess').
     - trendline_scope (str, optional): Whether trendlines are fit per trace or across traces (default: 'trace').
-    - title (str, optional): The title of the plot.
+    - title (str): The title of the plot.
 
     Returns:
     - dict: The generated scatter plot as a dictionary.
     """
     try:
-        data = await _project_service.fetch_dataset(project_id)
         # Check if provided column names exist in the dataset
         for col in [x, y, color]:
-            if col and col not in data.columns:
+            if col and col not in df.columns:
                 raise ValueError(f"The specified '{col}' column is not found in the dataset.")
                 
         # Check if the specified columns are the same
@@ -126,10 +114,10 @@ async def create_scatter_plot(x: str, y: str, color: Optional[str] = None,x_labe
         
         # Drop rows with missing values in the relevant columns 
         relevant_columns = [col for col in [x, y, color] if col is not None]
-        data = data.dropna(subset=relevant_columns)
+        df = df.dropna(subset=relevant_columns)
 
         fig = px.scatter(
-            data_frame=data,
+            data_frame=df,
             x=x,
             y=y,
             color=color,
@@ -148,7 +136,7 @@ async def create_scatter_plot(x: str, y: str, color: Optional[str] = None,x_labe
         print(f"Error creating scatter plot: {e}")
 
 @tool
-async def create_bubble_plot(x: str, y: str, color: Optional[str] = None, size: Optional[str] = None, x_label: str=None,y_label: str=None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_bubble_plot(x: str, y: str, title: str, color: Optional[str] = None, size: Optional[str] = None, x_label: str=None,y_label: str=None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Generates a bubble plot using Plotly Express and returns the figure as a dictionary.
 
@@ -158,14 +146,12 @@ async def create_bubble_plot(x: str, y: str, color: Optional[str] = None, size: 
     - color (str, optional): Column name to differentiate points by color (e.g., groups or categories).
     - size (str, optional): Column name representing the size of the bubbles.
     - labels (dict, optional): Dictionary of axis label mappings for x and y.
-    - title (str, optional): The title of the plot.
+    - title (str,): The title of the plot.
 
     Returns:
     - dict: The generated bubble plot as a dictionary.
     """
     try:
-        df = await _project_service.fetch_dataset(project_id)
-
         # Check if provided column names exist in the dataset
         for col in [x, y, color, size]:
             if col and col not in df.columns:
@@ -196,7 +182,7 @@ async def create_bubble_plot(x: str, y: str, color: Optional[str] = None, size: 
         print(f"Error creating bubble plot: {e}")
 
 @tool
-async def create_swarm_plot(x: str, y: str, color: Optional[str] = None,  x_label: str=None,y_label: str=None, stripmode: Optional[str] = "group", title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_swarm_plot(x: str, y: str,title: str , color: Optional[str] = None,  x_label: str=None,y_label: str=None, stripmode: Optional[str] = "group", df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Creates a swarm plot (approximated using scatter plot) using Plotly Express and returns the figure as a dictionary.
 
@@ -206,13 +192,12 @@ async def create_swarm_plot(x: str, y: str, color: Optional[str] = None,  x_labe
         color (str, optional): Column name to group points by color.
         labels (dict, optional): Dictionary of axis or legend labels.
         stripmode (str, optional): Mode for strip plot, e.g., "group".
-        title (str, optional): Title of the plot.
+        title (str): Title of the plot.
 
     Returns:
         dict: The generated swarm plot as a dictionary.
     """
     try:
-        df = await _project_service.fetch_dataset(project_id)
         # Check if provided column names exist in the dataset
         for col in [x, y, color]:
             if col and col not in df.columns:
@@ -244,7 +229,7 @@ async def create_swarm_plot(x: str, y: str, color: Optional[str] = None,  x_labe
         print(f"Error creating swarm plot: {e}")
 
 @tool
-async def grouped_bar_plot(x: str, y: str, color: Optional[str] = None, title: Optional[str] = "Grouped Bar Plot", project_id: Optional[str] = None) -> Dict:
+async def grouped_bar_plot(x: str, y: str,title:str, color: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Creates a grouped bar plot using Plotly Express and returns the plot as a dictionary.
 
@@ -252,13 +237,12 @@ async def grouped_bar_plot(x: str, y: str, color: Optional[str] = None, title: O
         x (str): Column name for the x-axis.
         y (str): Column name for the y-axis.
         color (str, optional): Column name to group bars by color.
-        title (str, optional): Title of the plot (default is "Grouped Bar Plot").
+        title (str): Title of the plot.
 
     Returns:
         dict: The generated grouped bar plot as a dictionary.
     """
     try:
-        df=await _project_service.fetch_dataset(project_id)
 
         # Check if provided column names exist in the dataset
         for col in [x, y, color]:
@@ -286,7 +270,7 @@ async def grouped_bar_plot(x: str, y: str, color: Optional[str] = None, title: O
         print(f"Error creating grouped bar plot: {e}")
 
 @tool
-async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = None, diagonal_visible: Optional[bool] = True, title: Optional[str] = 'Pair Plot', project_id: Optional[str] = None) -> Dict:
+async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = None, diagonal_visible: Optional[bool] = True, title: Optional[str] = 'Pair Plot', df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Create a pairplot using Plotly and returns the plot as a dictionary.
 
@@ -299,8 +283,6 @@ async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = N
     dict: The generated pairplot as a dictionary.
     """
     try:
-        df=await _project_service.fetch_dataset(project_id)
-
         # Check if DataFrame has more than one column
         if df.shape[1] < 2:
             raise ValueError("DataFrame must have at least two columns for a pairplot.")
@@ -323,7 +305,7 @@ async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = N
         logger.error(f"An error occurred: {e}")
 
 @tool
-async def create_radar_chart(category_column: str, value_columns: List[str] = None, title: Optional[str] = "Radar Chart", color_column: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_radar_chart(category_column: str,title: str, value_columns: List[str] = None, color_column: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Generates a radar chart using Plotly Express and returns the plot as a dictionary.
 
@@ -331,7 +313,7 @@ async def create_radar_chart(category_column: str, value_columns: List[str] = No
         category_column (str): The column name that defines the categories (radial axis).
         value_columns (list, optional): List of column names to plot as radar lines.
                                          If None, all numerical columns except the category column will be used.
-        title (str, optional): The title of the radar chart. Default is "Radar Chart".
+        title (str): The title of the radar chart.
         color_column (str, optional): Column name for grouping different lines (optional).
                                        If None, no grouping is applied.
 
@@ -341,7 +323,6 @@ async def create_radar_chart(category_column: str, value_columns: List[str] = No
     # Example dataset
 
     try:
-        df=await _project_service.fetch_dataset(project_id)
         if category_column not in df.columns:
             raise ValueError(f"Category column '{category_column}' is not in the DataFrame.")
 
@@ -386,7 +367,7 @@ async def create_radar_chart(category_column: str, value_columns: List[str] = No
         return None
 
 @tool
-async def create_treemap(path_columns: List[str], value_column: Optional[str] = None, color_column: Optional[str] = None, title: Optional[str] = "Treemap", color_scale: Optional[str] = "Viridis", project_id: Optional[str] = None) -> Dict:
+async def create_treemap(path_columns: List[str],title: str, value_column: Optional[str] = None, color_column: Optional[str] = None, color_scale: Optional[str] = "Viridis", df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Generates a treemap using Plotly Express and returns the plot as a dictionary.
 
@@ -394,14 +375,13 @@ async def create_treemap(path_columns: List[str], value_column: Optional[str] = 
         path_columns (list): A list of columns defining the hierarchy for the treemap.
         value_column (str, optional): The column to determine the size of the segments. If None, all segments will be of equal size.
         color_column (str, optional): The column to determine the color of the segments. If None, no color mapping is applied.
-        title (str, optional): Title of the treemap. Default is "Treemap".
+        title (str): Title of the treemap. Default is "Treemap".
         color_scale (str, optional): Color scale to use for the treemap. Default is "Viridis".
 
     Returns:
         dict: The generated treemap as a dictionary.
     """
     try:  
-        df=await _project_service.fetch_dataset(project_id)
 
         valid_path_columns = [col for col in path_columns if col in df.columns]
         if len(valid_path_columns) < len(path_columns):
@@ -454,7 +434,7 @@ async def create_treemap(path_columns: List[str], value_column: Optional[str] = 
         return None
 
 @tool
-async def create_correlation_heatmap(columns: List[str] = None, color_scale: Optional[str] = "Viridis", title: Optional[str] = "Correlation Heatmap", show_values: Optional[bool] = True, project_id: Optional[str] = None) -> Dict:
+async def create_correlation_heatmap(columns: List[str] = None,title: Optional[str] = "Correlation Heatmap", color_scale: Optional[str] = "Viridis", show_values: Optional[bool] = True, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Generates a heatmap of correlations between numerical columns in the dataset and returns it as a dictionary.
 
@@ -463,13 +443,11 @@ async def create_correlation_heatmap(columns: List[str] = None, color_scale: Opt
         color_scale (str, optional): Color scale to use for the heatmap. Default is "Viridis".
         title (str, optional): Title of the heatmap. Default is "Correlation Heatmap".
         show_values (bool, optional): Whether to overlay correlation values on the heatmap. Default is True.
-        project_id (str, optional): Project ID to fetch the dataset.
 
     Returns:
         dict: The generated correlation heatmap in dictionary format.
     """
     try:
-        df = await _project_service.fetch_dataset(project_id)
         numerical_data = df.select_dtypes(include=["number"])
 
         if columns:
@@ -497,7 +475,7 @@ async def create_correlation_heatmap(columns: List[str] = None, color_scale: Opt
         return None
 
 @tool
-async def create_faceted_bar_chart(x: str, y: str, color: Optional[str] = None, barmode: Optional[str] = "group", facet_row: Optional[str] = None, facet_col: Optional[str] = None, title: Optional[str] = "Faceted Bar Chart", project_id: Optional[str] = None) -> Dict:
+async def create_faceted_bar_chart(x: str, y: str,title: str, color: Optional[str] = None, barmode: Optional[str] = "group", facet_row: Optional[str] = None, facet_col: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Generates a faceted bar chart using Plotly Express and returns it as a dictionary.
 
@@ -508,14 +486,12 @@ async def create_faceted_bar_chart(x: str, y: str, color: Optional[str] = None, 
         barmode (str, optional): Bar mode. Options: 'group', 'overlay', 'relative'. Default is 'group'.
         facet_row (str, optional): Column name for facet rows. Default is None.
         facet_col (str, optional): Column name for facet columns. Default is None.
-        title (str, optional): Title of the chart. Default is "Faceted Bar Chart".
-        project_id (str): Project ID to fetch the dataset.
+        title (str): Title of the chart.
 
     Returns:
         dict: The generated faceted bar chart in dictionary format.
     """
     try:
-        df = await _project_service.fetch_dataset(project_id)
         relevant_columns = [col for col in [x, y, color, facet_row, facet_col] if col]
         df = df.dropna(subset=relevant_columns)
 
@@ -542,7 +518,7 @@ async def create_faceted_bar_chart(x: str, y: str, color: Optional[str] = None, 
         return None
 
 @tool
-async def create_histogram(x: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: str = None) -> Dict:
+async def create_histogram(x: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df:Optional[pd.DataFrame] = None) -> Dict:
     """
     Creates a histogram using Plotly Express and returns it as a dictionary.
 
@@ -551,13 +527,11 @@ async def create_histogram(x: str, color: Optional[str] = None, x_label: Optiona
         color (str, optional): The column name to be used for color encoding. Default is None.
         x_label (str, optional): Label for the x-axis. Default is None.
         y_label (str, optional): Label for the y-axis. Default is None.
-        project_id (str, optional): Project ID to fetch the dataset.
 
     Returns:
         dict: The generated histogram in dictionary format.
     """
     try:
-        df = await _project_service.fetch_dataset(project_id)
         if x not in df.columns:
             raise ValueError(f"Column '{x}' not found in the dataset.")
 
@@ -568,7 +542,7 @@ async def create_histogram(x: str, color: Optional[str] = None, x_label: Optiona
         return None
 
 @tool
-async def create_pie_chart(values: str, names: str, color: Optional[str] = None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_pie_chart(values: str, names: str,title: str, color: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Creates a pie chart using Plotly Express and returns it as a dictionary.
 
@@ -576,14 +550,12 @@ async def create_pie_chart(values: str, names: str, color: Optional[str] = None,
         values (str): The column name for the values.
         names (str): The column name for the names (labels).
         color (str, optional): The column name to be used for color encoding. Default is None.
-        title (str, optional): The title of the pie chart. Default is None.
-        project_id (str, optional): Project ID to fetch the dataset.
+        title (str): The title of the pie chart. Default is None.
 
     Returns:
         dict: The generated pie chart in dictionary format.
     """
     try:
-        df = await _project_service.fetch_dataset(project_id)
 
         if values not in df.columns or names not in df.columns:
             raise ValueError("Specified columns not found in the dataset.")
@@ -595,7 +567,7 @@ async def create_pie_chart(values: str, names: str, color: Optional[str] = None,
         return None
 
 @tool
-async def create_area_chart(x: str, y: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, title: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_area_chart(x: str, y: str, title: str,color: Optional[str] = None,  x_label: Optional[str] = None, y_label: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Creates an area chart using Plotly Express and returns it as a dictionary.
 
@@ -605,14 +577,12 @@ async def create_area_chart(x: str, y: str, color: Optional[str] = None, x_label
         color (Optional[str], optional): The column name to be used for color encoding. Default is None.
         x_label (Optional[str], optional): Label for the x-axis. Default is None.
         y_label (Optional[str], optional): Label for the y-axis. Default is None.
-        title (Optional[str], optional): Title of the area chart. Default is None.
-        project_id (Optional[str], optional): Project ID to fetch the dataset.
+        title (str): Title of the area chart. Default is None.
 
     Returns:
         dict: The generated area chart in dictionary format.
     """
     try:
-        df = await _project_service.fetch_dataset(project_id)
 
         if x not in df.columns or y not in df.columns:
             raise ValueError("Specified columns not found in the dataset.")
@@ -624,7 +594,7 @@ async def create_area_chart(x: str, y: str, color: Optional[str] = None, x_label
         return None
 
 @tool
-async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Creates a box plot using Plotly Express and returns it as a dictionary.
 
@@ -634,13 +604,11 @@ async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color
         color (Optional[str], optional): The column name to be used for color encoding. Default is None.
         x_label (Optional[str], optional): Label for the x-axis. Default is None.
         y_label (Optional[str], optional): Label for the y-axis. Default is None.
-        project_id (Optional[str], optional): Project ID to fetch the dataset.
 
     Returns:
         dict: The generated box plot in dictionary format.
     """
     try:
-        df = await _project_service.fetch_dataset(project_id)
 
         if y not in df.columns or (x and x not in df.columns) or (color and color not in df.columns):
             raise ValueError("Specified columns not found in the dataset.")
@@ -657,7 +625,7 @@ async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color
         return None
 
 @tool
-async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, points: Optional[str] = None, hover_data: List[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: Optional[str] = None) -> Dict:
+async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, points: Optional[str] = None, hover_data: List[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
     """
     Creates a violin plot using Plotly Express and returns it as a dictionary.
 
@@ -669,14 +637,12 @@ async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, c
         hover_data (Optional[list], optional): Additional data to display when hovering over points. Default is None.
         x_label (Optional[str], optional): Label for the x-axis. Default is None.
         y_label (Optional[str], optional): Label for the y-axis. Default is None.
-        project_id (Optional[str]): Project ID to fetch the dataset.
 
     Returns:
         dict: The generated violin plot in dictionary format.
     """
     try:
-        df = await _project_service.fetch_dataset(project_id)
-
+        
         if y not in df.columns or (x and x not in df.columns) or (color and color not in df.columns):
             raise ValueError("Specified columns not found in the dataset.")
 
@@ -715,10 +681,11 @@ async def tool_node(state)->Literal["caller", "__end__"]:
     # get the last message of this state
     last_message = messages[-1]
     output_messages = []
+    df = state['dataframe']
     for tool_call in last_message.tool_calls:
         try:
             # Invoke the tool based on the tool call
-            tool_call["args"]["project_id"] = state["project_id"]
+            tool_call["args"]["df"] = df
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             return {"next": "__end__",'visualization':tool_result}
         except Exception as e:

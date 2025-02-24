@@ -1,6 +1,3 @@
-from Database import mainDatabase
-from Backend.services.project_service import ProjectService
-_project_service=ProjectService()
 async def checker_node(state):
     """
     Check code
@@ -39,10 +36,9 @@ async def checker_node(state):
 
     # Check execution
     try:
-        df= await _project_service.fetch_dataset(state['project_id'])
-        globals_dict={'_project_service':_project_service,
-                      'project_id':state['project_id'],
-                      'df':df}
+        df= state['dataframe']
+        globals_dict={'df':df}
+        
         print("CODE:", imports + "\n" + code)
         exec(imports + "\n" + code,globals_dict)
         if 'fig_dict' in  globals_dict:
