@@ -14,7 +14,7 @@ async def chat(body:Chat):
 
     data_report=await project_service.fetch_data_report(body.project_id)
 
-    response = requests.post(url+"/chat",json={"messages":json.dumps(messages),"data_report":data_report})
+    response = requests.post(url+"/chat",json={"messages":json.dumps(messages),"data_report":data_report},stream=True)
 
     return StreamingResponse(response.iter_content(chunk_size=4096), media_type="text/event-stream")
     
