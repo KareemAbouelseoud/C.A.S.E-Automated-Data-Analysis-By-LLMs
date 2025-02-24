@@ -75,7 +75,7 @@ class visualizationsService:
     
     async def update_Auto_Gen_Viz(self, project_id: str) -> Tuple[bool, List[str]]:
         visualizations = await pipeline.generate_visualizations(project_id)
-        
+        visualizations = [ [v] if isinstance(v,dict) else v  for v in visualizations ]
         serializable_visualizations = [make_serializable(v) for v in visualizations]
         print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",len(serializable_visualizations))
         print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",type(serializable_visualizations))

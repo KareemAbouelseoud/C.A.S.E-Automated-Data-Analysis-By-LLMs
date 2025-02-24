@@ -28,10 +28,10 @@ st.empty()
 ###
 from streamlit_cookies_controller import CookieController
 controller=CookieController()
-viz_count=0
 
 class Chatbot:
     def __init__(self):
+        self.viz_count=0
         st.markdown(
     """
     <style>
@@ -116,6 +116,7 @@ class Chatbot:
             chatbotRequests.clear_history(st.session_state.Project,controller.get("user_id"))
             del st.session_state.messages
             del st.session_state.new
+            self.viz_count=0
             if 'recommendation' in st.session_state:
                 del st.session_state.recommendation
             self.intialize_chat_history()
@@ -142,25 +143,36 @@ class Chatbot:
                         self.get_visuals(visual)
     def save_plot(self,fig):
         pass  
-    def get_visuals(self,visuals):
-        if isinstance(visuals,list):
+    
+    
+    def get_visuals(self, visuals,save=False):
+        if isinstance(visuals, list):
             for v in visuals:
-                self.get_visuals(v)
+                self.get_visuals(v,save)
                 pass
         try:
             fig = go.Figure(data=visuals['data'], layout=visuals['layout'])
             st.plotly_chart(fig)
-            st.button("Save Plot in Dashboard",on_click=self.save_plot,args=[fig],key=f"plot_{str(uuid.uuid4())}")
-        except:
-            if isinstance(visuals,dict):
-                for key,value in visuals.items():
-                    if isinstance(value,dict):
-                        self.get_visuals(value)
-                    elif isinstance(value,list):
+            st.button("Save Plot in Dashboard", on_click=self.save_plot, args=[fig], key=f"plot_{str(uuid.uuid4())}")
+            
+            # Convert the visuals to serializable format before saving
+            if save:
+                serializable_visuals = visualizationRequests.make_serializable(visuals)
+                new_chat_viz = ChatViz(viz=[serializable_visuals])
+                visualizationRequests.save_chat_visualizations(st.session_state['Project'], new_chat_viz)
+                st.session_state.messages.append({'role':'visualizer','content':self.viz_count})
+                self.viz_count+=1
+        except Exception as e:
+            print(f"Error in get_visuals: {str(e)}")
+            if isinstance(visuals, dict):
+                for key, value in visuals.items():
+                    if isinstance(value, dict):
+                        self.get_visuals(value,save)
+                    elif isinstance(value, list):
                         for v in value:
-                            self.get_visuals(v)
+                            self.get_visuals(v,save)
             else:
-                if isinstance(visuals,str):
+                if isinstance(visuals, str):
                     json.loads(visuals)
                 
 
@@ -244,7 +256,7 @@ class Chatbot:
         """
         Display the output of claude
         """
-        with st.chat_message("assistant", avatar='👸🏼'):
+        with st.chat_message("assistant", avatar=''):
             visuals=[]
             if stream:
                 escaped_response=st.write_stream((self.stream_ans(response,visuals)))
@@ -256,11 +268,8 @@ class Chatbot:
         if len(visuals)>0:
             with st.chat_message('visualizer',avatar='📈'):
                 for visual in visuals:
-                    self.get_visuals(visual)
+                    self.get_visuals(visual,save=True)
                     
-                    new_chat_viz=ChatViz(viz=visual)
-                    visualizationRequests.save_chat_visualizations(st.session_state['Project'],new_chat_viz)
-                    st.session_state.messages.append({'role':'visualizer','content':viz_count})
         chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
             
     
@@ -270,14 +279,14 @@ class Chatbot:
         """
         Called at the beginning of any chat
         """
-        chat_history,viz_count = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
+        chat_history,self.viz_count = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
         if chat_history!=[]:
             st.session_state.messages = chat_history
             st.session_state['conv_change']=''
             st.session_state['new']=False
             st.session_state['Bot_Clicked']=False
-            welcome_message = "Welcome back. How can I assist you today?"
-            st.session_state.messages.append({"role": "assistant", "content": welcome_message})
+            # welcome_message = "Welcome back. How can I assist you today?"
+            # st.session_state.messages.append({"role": "assistant", "content": welcome_message})
         else:
             if 'messages' in st.session_state:
                 del st.session_state.messages
@@ -336,7 +345,7 @@ class Chatbot:
         Provides personalized prompt recommendations based on the user's input.
         """
         if prompt:
-            chat_hist,viz_count = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
+            chat_hist,self.viz_count = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
             if len(chat_hist)>0:
                 chat_hist.extend([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}])
                 recommendations=chatbotRequests.recommender(chat_hist,project_id=st.session_state.Project)
@@ -360,4 +369,3 @@ class Chatbot:
     #     result = classifier(sequence_to_classify, candidate_labels)
     #     print(result)
     # print("HISTORY: ",messages)
-    

@@ -35,7 +35,7 @@ async def get_Auto_Gen_Viz(project_id:str):
     
     serializable_visualizations=await viz_service.get_Auto_Gen_Viz(project_id=project_id)
     if serializable_visualizations==[]:
-        serializable_visualizations = await viz_service.update_Auto_Gen_Viz(project_id=project_id)
+        response,serializable_visualizations = await viz_service.update_Auto_Gen_Viz(project_id=project_id)
     return json.dumps({'visualizations': serializable_visualizations}, allow_nan=True)
 
 @viz_router.get('/project/{project_id}/visualization/get_Chat_Viz',tags=["Visualizations"])

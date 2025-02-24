@@ -28,6 +28,7 @@ from datetime import datetime
 #         )
 
 class Chat(BaseModel):
+    #TODO: Make the chat saved as List not string
     last_update:datetime = Field(default=datetime.now(), alias="last_update")
     messages:Optional[str]=Field(default=None, alias="messages")
 

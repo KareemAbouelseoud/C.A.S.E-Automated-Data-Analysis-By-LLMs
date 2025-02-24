@@ -12,7 +12,7 @@ from endpoints.ProjectEndpoints import Project_router
 import uvicorn
 
 app = FastAPI()
-
+# TODO: Add Backend LOGGING
 # app.include_router(db_router, prefix="")
 app.include_router(viz_router, prefix="")
 app.include_router(chatbot_router, prefix="")
