@@ -1,0 +1,47 @@
+services:
+  Agents:
+    image: agents:1.0
+    networks:
+      - case-pb
+    ports:
+      - "8006:8006"
+    volumes:
+      - ./Agents:/app
+    
+    restart: always
+    
+    env_file:
+      - .env
+
+  Backend:
+    image: backend:1.0
+    networks:
+      - case-pb
+    ports:
+      - "8005:8005"
+    volumes:
+      - ./Backend:/app
+      - ./dataModels:/app/dataModels
+    restart: always
+
+    env_file:
+      - .env
+
+  Frontend:
+    image: frontend:1.0
+    networks:
+      - case-pb
+    ports:
+      - "8007:8007"
+    volumes:
+      - ./Frontend:/app
+      - ./dataModels:/app/dataModels
+    restart: always
+
+    env_file:
+      - .env
+
+
+networks:
+    case-pb:
+      driver: bridge
