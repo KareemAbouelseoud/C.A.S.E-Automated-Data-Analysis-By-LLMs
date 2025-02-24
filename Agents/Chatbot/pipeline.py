@@ -1,7 +1,7 @@
 import operator
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessageChunk, AnyMessage
-from langgraph.graph import START, MessagesState, StateGraph
-from typing_extensions import TypedDict,Annotated,NotRequired
+from langchain_core.messages import  AIMessageChunk, AnyMessage
+from langgraph.graph import START, StateGraph
+from typing_extensions import TypedDict,Annotated
 from Agents.Chatbot.chatter import chatter_node,should_continue
 from Agents.Chatbot.botTools import tool_node
 from dotenv import load_dotenv
@@ -32,6 +32,7 @@ class State(TypedDict):
     """
     A class to represent the state of the application.
     """
+    data_report: str
     project_id:str
     messages: Annotated[list[AnyMessage], operator.add]
     visual: Annotated[list[AnyMessage], operator.add]
@@ -48,9 +49,9 @@ builder.add_edge('tools', 'chatter_node')
 graph = builder.compile()
 
 
-async def chat(project_id,messages):
+async def chat(messages,data_report,project_id):
     visuals=[]
-    async for chunk in graph.astream({"messages": messages,'project_id':project_id}, stream_mode=["messages",'updates','values']):
+    async for chunk in graph.astream({"messages": messages,'data_report':data_report,'project_id':project_id}, stream_mode=["messages",'updates','values']):
         if chunk[0] == 'messages':
             if chunk[1][0].content and isinstance(chunk[1][0], AIMessageChunk):
                 if chunk[1][0].content:
