@@ -231,9 +231,11 @@ class Chatbot:
         """
         with st.spinner("Generating response..."):
             try:
-                
+                st.empty()
                 response =chatbotRequests.chat(user_input,project_id=st.session_state.Project)
+                st.empty()
                 self.display_assistant_response(response)
+                st.empty()
 
             except Exception as e:
                 raise e
@@ -362,6 +364,7 @@ class Chatbot:
             if recommendations[i]!=' ':
                 recommendations[i]=recommendations[i].replace('"','')
                 st.button(recommendations[i],on_click=self.recommend_response,args=[recommendations[i]])
+                st.empty()
     
 
     # def checkQueryRequest(self,prompt):

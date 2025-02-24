@@ -16,7 +16,7 @@ async def chat(body:Chat):
 
     response = requests.post(url+"/chat",json={"messages":json.dumps(messages),"data_report":data_report})
 
-    return StreamingResponse(response.iter_content(chunk_size=1024), media_type="text/event-stream")
+    return StreamingResponse(response.iter_content(chunk_size=4096), media_type="text/event-stream")
     
 @chatbot_router.post("/recommend",tags=["Chat"])
 async def recommend(item: Recommender):
