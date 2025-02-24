@@ -1,4 +1,6 @@
 from config import *
+url="http://Agents:8006"
+import requests
 
 project_service = ProjectService()
 
@@ -6,9 +8,15 @@ chatbot_router = APIRouter()
 
 @chatbot_router.post('/chat',tags=["Chat"])
 async def chat(body:Chat):
+
     messages=await project_service.get_model_chat_history(body.project_id)
     messages.append({"role": "user", "content": body.prompt})
-    return StreamingResponse(chatbot_pipeline.chat(body.project_id,messages),media_type="text/event-stream")
+
+    data_report=project_service.fetch_data_report(body.project_id)
+
+    response = requests.post(url+"/chat",json={"messages":json.dumps(messages),"data_report":data_report})
+
+    return StreamingResponse(response.iter_content(chunk_size=1024), media_type="text/event-stream")
     
 @chatbot_router.post("/recommend",tags=["Chat"])
 async def recommend(item: Recommender):
@@ -16,7 +24,11 @@ async def recommend(item: Recommender):
     prompt = item.prompt
     project_id = item.project_id
 
-    return {"data":json.dumps(await recommender.recommender(json.loads(prompt),project_id))}
+    data_report=project_service.fetch_data_report(project_id)
+    response=requests.post(url+"/recommend",json={"prompt":prompt,"data_report":data_report})
+    recommendations=response.json()['data']
+
+    return {"data":recommendations}
 
 @chatbot_router.get('/project/{project_id}/get_model_history',tags=["Chat"])
 async def get_model_history(project_id: str):

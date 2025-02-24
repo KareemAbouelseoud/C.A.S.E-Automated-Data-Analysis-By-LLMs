@@ -46,16 +46,12 @@ from dataModels.project import Chat as projectChat
 from dataModels.user import User
 from dataModels.visualization import visualizations,ChatViz
 from repositories.base_repository import BaseRepository
-from Backend.repositories.visualizations_repository import VisualizationRepository
+from repositories.visualizations_repository import VisualizationRepository
 from repositories.project_repository import ProjectRepository
 from repositories.user_repository import UserRepository
 from services.project_service import ProjectService
 from services.user_service import UserService
 from services.visualizations_service import visualizationsService
-from Agents.codeGeneration import pipeline 
-from Agents.Chatbot import pipeline as chatbot_pipeline, recommender
-from Agents.AutoML import pipeline as automl_pipeline
-from Database import mainDatabase
 
 # from repositories.dataset_repository import DatasetRepository
 # from services.dataset_service import DatasetService
