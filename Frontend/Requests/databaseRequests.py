@@ -4,7 +4,7 @@ import json
 import pandas as pd
 from io import StringIO
 
-url = 'http://127.0.0.1:8000'
+url = 'http://Backend:8005'
 #region User API CALLS
 def check_login(username,password):
     """
@@ -136,6 +136,7 @@ def create_project(user_id,name,uploaded_file):
 
         # Send the POST request
         response = requests.post(url+'/project', files=files,data=data)
+
 def read_projects(user_id):
      response=requests.get(url+f'/project/GetProjects/{str(user_id)}')
      projects=json.loads(response.json())['data']
@@ -146,7 +147,6 @@ def get_project_details(project_id):
      project=json.loads(response.json())['data']
      return project
 #endregion
-
 
 def fetch_dataset(project_id):
     response=requests.get(url+f'/project/{project_id}/fetchDataset')

@@ -1,13 +1,15 @@
 from config import *
-from Agents.codeGeneration import pipeline 
+import requests
 def get_repo():
     repo = VisualizationRepository()
     return repo
-
 class visualizationsService:
     def __init__(self):
         self.viz_repository = get_repo()
         self.project_repository = ProjectRepository()
+        self.project_service=ProjectService()
+        self.url="http://Agents:8006"
+
     
     #region Vizualizations Get functions
     
@@ -74,15 +76,23 @@ class visualizationsService:
             raise HTTPException(status_code=500, detail=f"Error Updating project Visualizations and data to MongoDB: {e}")
     
     async def update_Auto_Gen_Viz(self, project_id: str) -> Tuple[bool, List[str]]:
-        visualizations = await pipeline.generate_visualizations(project_id)
-        visualizations = [ [v] if isinstance(v,dict) else v  for v in visualizations ]
-        serializable_visualizations = [make_serializable(v) for v in visualizations]
+        try:
+            dataframe=self.project_service.fetch_dataset(project_id).to_json()
+            data_report=self.project_service.fetch_data_report(project_id)
+
+            response=requests.post(f"{self.url}/visualizations/createDashboard",json={'dataframe':dataframe, 'data_report':data_report})
+            serializable_visualizations=json.loads(response.json())
+            
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error from Agents Module: {e}")
+        
         print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",len(serializable_visualizations))
         print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",type(serializable_visualizations))
         try:
             project = await self.project_repository.get_by_id(project_id) 
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Retriving project from MongoDB: {e}")
+        
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
         try:

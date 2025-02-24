@@ -1,14 +1,11 @@
 import sys
 import os
-from typing_extensions import TypedDict,Annotated,NotRequired
-from langgraph.graph import StateGraph, START, END
-from langchain_core.messages import AnyMessage
-import operator
+from typing_extensions import TypedDict,NotRequired
+from langgraph.graph import StateGraph, START
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from AutoML.Splitting.splitter import splitter_node
 from AutoML.Preprocessing.pipeline import graph as preprocessor_graph
-from sklearn.compose import ColumnTransformer
 from AutoML.ModelSelection.selector import model_selector_node
 
 class State(TypedDict):
@@ -16,6 +13,8 @@ class State(TypedDict):
     A class to represent the state of the application.
     """
     project_id:str # Project ID
+    data_report: NotRequired[str] # Data Report
+    dataframe: NotRequired[object] # Dataframe
     mode: str # Mode Selected by the User
     user_preferences: NotRequired[str] # User Preferences
     #Data Names
@@ -53,9 +52,9 @@ graph = builder.compile()
 
 
 
-async def automl(project_id,mode,label,features=None,user_preferences=None):
+async def automl(project_id,data_report,dataframe,mode,label,features=None,user_preferences=None):
     print("AUTOML STARTED")
-    response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'user_preferences':user_preferences})
+    response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'user_preferences':user_preferences,'data_report':data_report,'dataframe':dataframe})
     # This will contain everything needed. from steps taken by each agent to the final model(s) and their performance
     print(response)
 # import asyncio
