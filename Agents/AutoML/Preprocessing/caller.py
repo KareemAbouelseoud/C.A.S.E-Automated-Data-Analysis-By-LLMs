@@ -1,15 +1,9 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
-from typing import Literal,List
+from typing import Literal
 from langgraph.graph import END
 from langchain import hub
 from preprocessingTools import tools
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Database import mainDatabase
-from Backend.services.project_service import ProjectService
-_project_service=ProjectService()
 from pydantic import BaseModel,Field
 
 load_dotenv()
@@ -27,8 +21,7 @@ system_prompt = hub.pull("automl-preprocessor-caller").messages[0].prompt.templa
 
 async def caller_node(state):
     print("Calling Preprocessor Tools")
-    project_id = state["project_id"]
-    data_report=await _project_service.fetch_data_report(project_id)
+    data_report=state['data_report']
     if 'preprocessing_messages' not in state or state['preprocessing_messages'] is None:
         old_messages= []
     else:
