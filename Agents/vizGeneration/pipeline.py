@@ -42,11 +42,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..
 from typing_extensions import TypedDict,Annotated,NotRequired
 import operator
 from langgraph.graph import StateGraph, START, END
-from Agents.vizGeneration.caller import caller_node
-from Agents.vizGeneration.planner import planner_node,planner_brancher,tool_brancher
-from Agents.vizGeneration.mainTools import tool_node
-from Agents.vizGeneration.designer import designer_node
-from Agents.vizGeneration.coder.coderPipeline import coder
+from .caller import caller_node
+from .planner import planner_node,planner_brancher,tool_brancher
+from .mainTools import tool_node
+from .designer import designer_node
+from .coder.coderPipeline import coder
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
 import operator

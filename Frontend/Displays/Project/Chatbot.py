@@ -140,7 +140,7 @@ class Chatbot:
                 with st.chat_message(message["role"],avatar='📈'):
                     for visual in message['content']:
                         self.get_visuals(visual)
-    def save_plot(self,fig):
+    def save_plot(self,fig):        
         pass  
     
     
@@ -280,6 +280,7 @@ class Chatbot:
         """
         Called at the beginning of any chat
         """
+        #FIXME: WHY ARE WE FETCHING THE CHAT HISTORY EVERY TIME WHEN WE HAVE IT IN SESSION STATE?????? This is a performance bottleneck
         chat_history,self.viz_count = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
         if chat_history!=[]:
             st.session_state.messages = chat_history

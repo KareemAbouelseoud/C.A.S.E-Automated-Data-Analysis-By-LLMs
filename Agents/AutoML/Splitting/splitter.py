@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from API.Requests.projectRequests import fetch_dataset 
 load_dotenv()
 
 system_prompt = hub.pull("automl-splitter").messages[0].prompt.template

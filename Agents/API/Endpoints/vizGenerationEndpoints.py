@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from dataItems import createDashboard
-from Agents.API.Services.vizServices import vizService
+from .dataItems import createDashboard
+from API.Services.vizServices import vizService
 import json
 
 viz_router = APIRouter()

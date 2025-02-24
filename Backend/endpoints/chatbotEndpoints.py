@@ -12,7 +12,7 @@ async def chat(body:Chat):
     messages=await project_service.get_model_chat_history(body.project_id)
     messages.append({"role": "user", "content": body.prompt})
 
-    data_report=project_service.fetch_data_report(body.project_id)
+    data_report=await project_service.fetch_data_report(body.project_id)
 
     response = requests.post(url+"/chat",json={"messages":json.dumps(messages),"data_report":data_report})
 
@@ -24,7 +24,7 @@ async def recommend(item: Recommender):
     prompt = item.prompt
     project_id = item.project_id
 
-    data_report=project_service.fetch_data_report(project_id)
+    data_report=await project_service.fetch_data_report(project_id)
     response=requests.post(url+"/recommend",json={"prompt":prompt,"data_report":data_report})
     recommendations=response.json()['data']
 

@@ -29,12 +29,13 @@ import plotly.express as px
 from typing import Dict, Optional,List
 import pandas as pd
 from typing import Literal
-import sys
-import os
 import pandas as pd
 from langchain_core.tools import tool
 from langchain_core.messages import ToolMessage
-from Agents import loggerModule
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','Agents')))
+import loggerModule
 
 logger=loggerModule.setup_logging()
 

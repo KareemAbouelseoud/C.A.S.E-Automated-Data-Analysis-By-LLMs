@@ -1,4 +1,4 @@
-from Agents.vizGeneration import pipeline
+from vizGeneration import pipeline
 import json
 import pandas as pd
 from io import StringIO

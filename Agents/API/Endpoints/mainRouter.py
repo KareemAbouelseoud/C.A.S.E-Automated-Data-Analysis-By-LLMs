@@ -1,9 +1,9 @@
 """
-This file is the main router for the FastAPI application. It includes the database and visualization routers.
+This file is the main router for the FastAPI application. It includes the chatbot and visualization routers.
 """
 from fastapi import FastAPI
-from vizGenerationEndpoints import viz_router
-from chatbotEndpoints import chatbot_router
+from .vizGenerationEndpoints import viz_router
+from .chatbotEndpoints import chatbot_router
 import uvicorn
 
 app = FastAPI()

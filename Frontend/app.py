@@ -120,6 +120,7 @@ class MultiPageApp():
         -------
         None
         """
+        st.empty()
         cookies = self.controller.getAll()
         if st.session_state['loggedIn']==False:
             for key in cookies:

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from dataItems import Chat,Recommender
+from .dataItems import Chat,Recommender
 from fastapi.responses import StreamingResponse
 import json
 from Chatbot import pipeline,recommender

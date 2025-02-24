@@ -77,8 +77,8 @@ class visualizationsService:
     
     async def update_Auto_Gen_Viz(self, project_id: str) -> Tuple[bool, List[str]]:
         try:
-            dataframe=self.project_service.fetch_dataset(project_id).to_json()
-            data_report=self.project_service.fetch_data_report(project_id)
+            dataframe=await self.project_service.fetch_dataset(project_id).to_json()
+            data_report=await self.project_service.fetch_data_report(project_id)
 
             response=requests.post(f"{self.url}/visualizations/createDashboard",json={'dataframe':dataframe, 'data_report':data_report})
             serializable_visualizations=json.loads(response.json())

@@ -3,9 +3,9 @@ from typing_extensions import TypedDict,Annotated,NotRequired
 from langchain_core.messages import AnyMessage
 import operator
 from langgraph.graph import StateGraph, START
-from generator import generator_node
-from checker import checker_node
-from reflector import reflector_node
+from .generator import generator_node
+from .checker import checker_node
+from .reflector import reflector_node
 from typing import Literal
 
 CONFIGURATIONS={
