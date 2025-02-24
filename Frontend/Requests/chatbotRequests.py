@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from .visualizationRequests import fetch_chat_visualizations
 import requests
 import json
-url='http://127.0.0.1:8000'
+url='http://Backend:8005'
 
 def chat(prompt,project_id):
     

@@ -1,35 +1,29 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
-from dotenv import load_dotenv
-from typing import Literal
 import sys
 import os
-import pandas as pd
-from io import StringIO
 from langchain_core.tools import tool
 from langchain_core.messages import ToolMessage
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from codeGeneration.pipeline import viz_graph
-import json
+from API.Requests import projectRequests
+from vizGeneration.pipeline import viz_graph
 from typing import Annotated
 
 @tool
 async def visualizer(
     visualization_request: Annotated[str,'The visualization request created by the assistant according to the user intent and data report'],
+    data_report:str=None,
     project_id:str=None
     ):
     """
      Visualizes the user's query using a graph.
     Args:
         visualization_request (str): The visualization request created by the assistant according to the user intent and data report.
-        project_id (str, optional): The ID of the project. Defaults to None.
     Returns:
         list: A list containing a message and the visualization data. If the visualization is generated, the message informs the user and includes the visualization data. Otherwise, the message informs the user that no visualization was generated and suggests trying again later.
 
     """
-    print(f"VISUALIZER IS BEING CALLED WITH request: {visualization_request} and {project_id}") 
-
-    graph_response=await viz_graph.ainvoke({'project_id':str(project_id),'messages':[{"role":"human","content":visualization_request}]})
+    print(f"VISUALIZER IS BEING CALLED WITH request: {visualization_request}") 
+    df=await projectRequests.get_dataset(project_id)
+    graph_response=await viz_graph.ainvoke({'data_report':str(data_report),'messages':[{"role":"human","content":visualization_request}],'dataframe':df})
     if graph_response['visualization']:
         return ['YOU MUST Inform the user that the visualization has been generated',graph_response['visualization']]
     else:
@@ -52,7 +46,8 @@ async def tool_node(state):
     for tool_call in last_message.tool_calls:
         try:
             # Invoke the tool based on the tool call
-            tool_call["args"]["project_id"] = state["project_id"]
+            tool_call["args"]["data_report"] = state["data_report"]
+            tool_call['args']['project_id']=state['project_id']
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             if not isinstance(tool_result, list):
                 tool_result=[tool_result]

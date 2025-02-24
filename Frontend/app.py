@@ -1,9 +1,7 @@
 import streamlit as st
 from streamlit_cookies_controller import CookieController
 import os
-import pandas as pd
-import requests
-from Requests import databaseRequests
+import sys
 class MultiPageApp():
     """
     A class to create a multi-page Streamlit application.
@@ -28,25 +26,24 @@ class MultiPageApp():
         
         # st.session_state['cookie_man']=True
         bg = '''
-        <style>
-        [data-testid="stHeader"] {
-            background-color: rgba(0,0,0,0);
-        }
-        [data-testid="stAppViewContainer"] {
-            background-color: #908d8d;
-            opacity: 1;
-            background-image: radial-gradient(circle at center center, #000000, #908d8d), repeating-radial-gradient(circle at center center, #000000, #000000, 40px, transparent 100px, transparent 40px);
-            background-blend-mode: multiply;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.5);
-        }
-        .st-emotion-cache-lr2bj0.eiemyj5 {
-            border-radius: 16px;
-            background: rgba(0,0,0,0.5);
-            z-index: 2;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.5);
-        }
-        </style>
-        '''
+                <style>
+                [data-testid="stHeader"] {
+                    background-color: rgba(0,0,0,0);
+                }
+                [data-testid="stAppViewContainer"] {
+                    background: url("app/static/imagemeshgradient.png") no-repeat center center fixed;
+                    background-size: cover;
+                    opacity: 1;
+                    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.5);
+                }
+                .st-emotion-cache-lr2bj0.eiemyj5 {
+                    border-radius: 16px;
+                    background: rgba(0,0,0,0.5);
+                    z-index: 2;
+                    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.5);
+                }
+                </style>
+                '''
         st.markdown("""
                     <style>
                     [data-testid="stLogo"] {
@@ -54,8 +51,9 @@ class MultiPageApp():
                         height: auto;  /* Maintain aspect ratio *
 
                 """, unsafe_allow_html=True) 
+        logo_path = os.path.join(os.path.dirname(__file__), "static", "CASE LOGO.png")
         st.logo(
-            "Static\CASE LOGO.png",
+            logo_path,
         )
         st.markdown(bg,unsafe_allow_html=True)
 
@@ -122,9 +120,6 @@ class MultiPageApp():
         -------
         None
         """
-        # st.logo(
-        #     "Static\CASE LOGO.png",
-        # )
         cookies = self.controller.getAll()
         if st.session_state['loggedIn']==False:
             for key in cookies:
@@ -142,11 +137,11 @@ class MultiPageApp():
         else:
             user_first_name=controller.get("user")["first_name"]
             st.sidebar.title(f"Hello {user_first_name}")    
-            pg=st.navigation([self.pages[-1]])
+            pg=st.navigation(self.pages[2:])
             pg.run()
             clicked=st.sidebar.button("Logout",on_click=self.logout)
-            if not clicked:
-                pg=st.navigation(self.pages[2:])
+            if clicked:
+                pg=st.navigation(self.pages[:2])
                 pg.run()
 
             
@@ -156,7 +151,7 @@ if __name__=='__main__':
     full_app = MultiPageApp(controller=controller)
     full_app.add_page('Displays/Login.py',title='Login')
     full_app.add_page('Displays/Signup.py',title='Signup')
-    full_app.add_page("Displays/Projects/Overview.py",title='Overview') 
+    full_app.add_page("Displays/Overview.py",title='Overview',default=True) 
     full_app.add_page("Displays/About.py",title='About') 
     full_app.run()
 

@@ -6,7 +6,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from .Dashboard import Dashboard
 from streamlit_elements import mui, plotly
 import plotly.express as px
-import numpy as np
 
 def dynamic_color_map(df, column_name):
     unique_values = df[column_name].unique()

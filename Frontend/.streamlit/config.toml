@@ -6,3 +6,5 @@ backgroundColor = "#131313"    # Page background color
 secondaryBackgroundColor = "#1f1f1f" # Background for sidebar or secondary areas
 textColor = "#FFF6EC"          # Main text color
 font = "sans serif"            # Choose from: 'serif', 'sans serif', or 'monospace'
+[server]
+enableStaticServing = true
