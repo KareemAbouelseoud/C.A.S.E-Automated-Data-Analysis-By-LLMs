@@ -5,23 +5,19 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 import requests
 import json
 from dataModels.visualization import ChatViz
-
+url='http://Backend:8005'
 
 def fetch_visualizations(project_id:str):
-    url = f'http://127.0.0.1:8000/project/{project_id}/visualization/get_Auto_Gen'
-    response = requests.get(url)
+    response = requests.get(url+f'/project/{project_id}/visualization/get_Auto_Gen')
     return json.loads(response.json())['visualizations']
 
 def fetch_chat_visualizations(project_id:str):
-    url = f'http://127.0.0.1:8000/project/{project_id}/visualization/get_Chat_Viz'
-    response = requests.get(url)
+    response = requests.get(url+f'/project/{project_id}/visualization/get_Chat_Viz')
     return json.loads(response.json())['visualizations']
 
 
-def save_chat_visualizations(project_id:str,new_viz:ChatViz):
-    url = f'http://127.0.0.1:8000/project/{project_id}/visualization/Chat_viz'
-    
-    response = requests.post(url,json=new_viz.model_dump())
+def save_chat_visualizations(project_id:str,new_viz:ChatViz):    
+    response = requests.post(url+f'/project/{project_id}/visualization/Chat_viz',json=new_viz.model_dump())
     return response.status_code==200
 
 def make_serializable(obj):
