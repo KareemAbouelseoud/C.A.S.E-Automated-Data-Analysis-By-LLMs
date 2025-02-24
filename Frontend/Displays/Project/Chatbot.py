@@ -4,11 +4,9 @@ import streamlit as st
 # from transformers import pipelineimport os
 import sys
 from pathlib import Path
-import aiohttp
 import uuid
 import os
 import json
-import asyncio
 import plotly.graph_objects as go
 
 modules_path = Path("/home/robo/Modules")
@@ -32,6 +30,7 @@ controller=CookieController()
 class Chatbot:
     def __init__(self):
         self.viz_count=0
+        self.logo_path = "/app/static/ZEUS.png"
         st.markdown(
     """
     <style>
@@ -135,7 +134,7 @@ class Chatbot:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
             elif message['role'] == 'assistant':
-                with st.chat_message(message["role"],avatar='👸🏼'):
+                with st.chat_message(message["role"],avatar=self.logo_path):
                     st.markdown(message["content"])
             if message['role'] == 'visualizer':
                 with st.chat_message(message["role"],avatar='📈'):
@@ -256,7 +255,9 @@ class Chatbot:
         """
         Display the output of claude
         """
-        with st.chat_message("assistant", avatar=''):
+        
+
+        with st.chat_message("assistant", avatar=self.logo_path):
             visuals=[]
             if stream:
                 escaped_response=st.write_stream((self.stream_ans(response,visuals)))

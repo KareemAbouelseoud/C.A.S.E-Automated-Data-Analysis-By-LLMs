@@ -1,15 +1,15 @@
-import sys
-import os
-# Add the parent directory to the sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import streamlit as st
 from Requests import databaseRequests
-from Projects.Chatbot import Chatbot
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+from Project.Chatbot import Chatbot
 from streamlit_cookies_controller import CookieController
 controller=CookieController()
-from Projects.AutoML import AutoML
-from Projects.Visualizations import Visualizations
+from Project.AutoML import AutoML
+from Project.Visualizations import Visualizations
+import uuid
+
 class Projects:
 
     def __init__(self) -> None:
@@ -85,7 +85,7 @@ class Projects:
                 </style>
             """,unsafe_allow_html=True)
             st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
-            st.button('← Back',on_click=self.backtooverview)
+            st.button('← Back',on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
 
         st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{project['name']}</h1>", unsafe_allow_html=True)     
         st.markdown("""
@@ -160,7 +160,7 @@ class Projects:
                             """,
                             unsafe_allow_html=True)
                 st.markdown(f'<span id="button-after-{idx}"></span>', unsafe_allow_html=True)
-                st.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project["id"]])
+                st.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project["id"]],key=f"project_{uuid.uuid4()}")
         
         cols=st.columns(3)
         with cols[1]:
@@ -202,7 +202,7 @@ class Projects:
                 unsafe_allow_html=True,
             )
             st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-            st.button(" \+ Create a new Project",on_click=self.new_project_clicked)
+            st.button(" \+ Create a new Project",on_click=self.new_project_clicked,key=f"new_project_{uuid.uuid4()}")
             
             
             if st.session_state['newProject']:
@@ -214,7 +214,7 @@ class Projects:
                     uploaded_file = st.file_uploader(
                         "Upload a CSV file", type=["csv"], key="uploader"
                     )
-                    if st.button('Confirm'):
+                    if st.button('Confirm',key="confirm"):
                         
                         if uploaded_file:
                             # Ask for the project name
