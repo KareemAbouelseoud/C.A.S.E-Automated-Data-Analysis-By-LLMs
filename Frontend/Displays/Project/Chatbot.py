@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 
 # from req import clear_history,get_st_history,create_new_chat,update_user_st_history,get_model_history,chat,recommender
-from Requests import chatbotRequests,databaseRequests,visualizationRequests
+from Requests import chatbotRequests,visualizationRequests
 from dataModels.visualization import visualizations,ChatViz
 st.empty()
 
@@ -28,30 +28,34 @@ from streamlit_cookies_controller import CookieController
 controller=CookieController()
 
 class Chatbot:
-    def __init__(self):
-        self.viz_count=0
+    def __init__(self):  
         self.logo_path = "/app/static/ZEUS.png"
         st.markdown(
     """
     <style>
     div[data-testid="stChatInput"] textarea {
         box-sizing: border-box;
-        bottom: 10px ;
+        bottom: 5px ;
         position: fixed;
         z-index: 1000; 
     }
     div[data-baseweb="textarea"] {
         box-sizing: border-box;
-        bottom: 10px ;
+        bottom: 5px ;
         position: fixed;
         z-index: 1000;
         background-color: #222222; 
     }
     button[data-testid="stChatInputSubmitButton"] {
-        bottom: 10px ;
+        bottom: 5px ;
         position: fixed;
         z-index: 1000;
     }
+    .st-emotion-cache-1pqiyj1.ekr3hml7 {
+        background: url("app/static/imagemeshgradient.png") no-repeat center center fixed;
+        background-position: center 200px;
+            }
+    
     </style>
     """,
     unsafe_allow_html=True
@@ -62,9 +66,69 @@ class Chatbot:
 
         <style>
         """, unsafe_allow_html=True)
+        with st.columns(19)[-1]:
+            st.markdown("""
+                <style>
+                .element-container:has(#button-back) + div button {
+                    justify-content: center;
+                    align-items: center;
+                    width: 100%; /* Ensure the container takes up full width */
+                    height: 100%; /* Optional: to ensure vertical centering */
+                    border-radius: 16px;
+                    background: rgba(0, 0, 0, 0.4);
+                    z-index: 2;
+                    box-shadow: 
+                        0 0 6px rgba(255, 255, 255, 0.3), 
+                        0 0 12px rgba(255, 255, 255, 0.2), 
+                        0 0 18px rgba(255, 255, 255, 0.2);
+                    color: white;
+                    font-size: 50px;
+                    text-align: center;
+                    cursor: pointer;
+                    padding: 0px;
+                    justify-content: center;
+                    align-items: center;
+                    margin-bottom: 5px; /* Adds vertical space if wrapping occurs */
+                    transition: box-shadow 0.3s ease; /* Smooth transition */
+                    border: none; /* Explicitly remove any border */
+
+                    }
+                    .element-container:has(#button-back) + div button:hover {
+                    box-shadow: 
+                        0 0 10px rgba(255, 255, 255, 0.6), 
+                        0 0 20px rgba(255, 255, 255, 0.5), 
+                        0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
+                }
+                </style>
+            """,unsafe_allow_html=True)
+            st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
+            st.button('← Back',on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
         self.intialize_chat_history()
         self.setup_app_interface()
-        
+    
+    def backtooverview(self):
+        st.session_state['training']=False
+        st.session_state['Project']=None
+        st.session_state['Visualization']=None
+        st.session_state["newProject"] = False
+        st.session_state['Project']=None
+        st.session_state['Visualization']=None
+        st.session_state['viz_data']=[]
+        if 'board' in st.session_state:
+            st.session_state['board']=None
+        if "w"  in st.session_state:
+            del st.session_state['w']
+        if 'df' in st.session_state:
+            del st.session_state['df']
+            del st.session_state['autoML_data']
+        if 'project_details' in st.session_state:
+            del st.session_state['project_details']
+        del st.session_state['messages']
+        del st.session_state['new']
+        if 'recommendation' in st.session_state:
+            del st.session_state['recommendation']
+            
+    
     def setup_app_interface(self):
         """
         Sets up the main interface of the Zeus application, including:
@@ -115,7 +179,6 @@ class Chatbot:
             chatbotRequests.clear_history(st.session_state.Project,controller.get("user_id"))
             del st.session_state.messages
             del st.session_state.new
-            self.viz_count=0
             if 'recommendation' in st.session_state:
                 del st.session_state.recommendation
             self.intialize_chat_history()
@@ -188,29 +251,19 @@ class Chatbot:
             sanitized_input = self.sanitize_user_input(prompt)
             with st.chat_message("user"):
                 st.markdown(prompt)
-            
-            # if len(st.session_state.messages)<=2:
-            #      chatbotRequests.create_new_chat(st.session_state['Project'])
 
             st.session_state.messages.append({"role": "user", "content": sanitized_input,})
 
             self.generate_response(sanitized_input)
             self.recommend(sanitized_input)
-            try:
-                chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
-            except:
-                messages=st.session_state.messages[-1:]
-                messages.append({"role": "assistant", "content": 'news_dataframe'})
-                chatbotRequests.update_user_st_history(str(st.session_state['Project']),messages,controller.get("user_id"))
+            chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
+
                 
 
         if 'recommendation' in st.session_state:
             with st.chat_message("user"):
                 st.markdown(st.session_state.recommendation)
             st.session_state.new=False
-            
-            # if len(st.session_state.messages)<=2:
-            #     chatbotRequests.create_new_chat(st.session_state['Project'])
                 
             st.session_state.messages.append({"role": "user", "content": st.session_state.recommendation})
             self.generate_response(st.session_state.recommendation)
@@ -272,8 +325,6 @@ class Chatbot:
             with st.chat_message('visualizer',avatar='📈'):
                 for visual in visuals:
                     self.get_visuals(visual,save=True)
-                    
-        chatbotRequests.update_user_st_history(str(st.session_state['Project']),st.session_state.messages,controller.get("user_id"))
             
     
 
@@ -281,27 +332,15 @@ class Chatbot:
     def intialize_chat_history(self):
         """
         Called at the beginning of any chat
-        """
-        #FIXME: WHY ARE WE FETCHING THE CHAT HISTORY EVERY TIME WHEN WE HAVE IT IN SESSION STATE?????? This is a performance bottleneck
-        chat_history,self.viz_count = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
-        if chat_history!=[]:
-            st.session_state.messages = chat_history
-            st.session_state['conv_change']=''
-            st.session_state['new']=False
-            st.session_state['Bot_Clicked']=False
-            # welcome_message = "Welcome back. How can I assist you today?"
-            # st.session_state.messages.append({"role": "assistant", "content": welcome_message})
-        else:
-            if 'messages' in st.session_state:
-                del st.session_state.messages
+        """ 
         if "messages" not in st.session_state:
             st.session_state['conv_change']=''
             st.session_state['new']=True
             st.session_state.messages = []
             st.session_state['Bot_Clicked']=False
-            # Add greeting message to chat history
             first_message = "Good Morning. I am Zeus, a Smart Assistant for C.A.S.E. How can I assist you today?"
             st.session_state.messages.append({"role": "assistant", "content": first_message})
+            st.session_state['messages'],st.session_state['viz_count'] = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
 
     def stream_ans(self,response,visuals):
         """
@@ -349,14 +388,9 @@ class Chatbot:
         Provides personalized prompt recommendations based on the user's input.
         """
         if prompt:
-            chat_hist,self.viz_count = chatbotRequests.get_streamlit_chat_history(st.session_state['Project'])
-            if len(chat_hist)>0:
-                chat_hist.extend([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}])
-                recommendations=chatbotRequests.recommender(chat_hist,project_id=st.session_state.Project)
-            else:
                 recommendations=chatbotRequests.recommender([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}],st.session_state.Project)
         else:
-            recommendations=['What are your features']
+            recommendations=['What are your features',"Suggest interesting visualizations","Find outliers in this dataset and explain their impact","Create a Machine Learning Model","Summarize key insights from this dataset"]
             
         for i in range(len(recommendations)):
             if i>6:
@@ -374,3 +408,5 @@ class Chatbot:
     #     result = classifier(sequence_to_classify, candidate_labels)
     #     print(result)
     # print("HISTORY: ",messages)
+if 'Project' in st.session_state and st.session_state['Project']!=None:
+    Chatbot()

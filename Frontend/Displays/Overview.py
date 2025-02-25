@@ -3,12 +3,10 @@ from Requests import databaseRequests
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
-from Project.Chatbot import Chatbot
 from streamlit_cookies_controller import CookieController
 controller=CookieController()
-from Project.AutoML import AutoML
-from Project.Visualizations import Visualizations
 import uuid
+from Project.Home import Project
 
 class Projects:
 
@@ -18,12 +16,21 @@ class Projects:
             st.session_state['Project']=None
             st.session_state['Visualization']=None
             st.session_state['viz_data']=[]
-
+        
             st.session_state['DASHBOARD_WIDTH'] = 12  # Full width of the dashboard in grid units
             st.session_state['PLOT_WIDTH'] = 6  # Full width of the dashboard in grid units
             st.session_state['PLOT_HEIGHT'] = 4  # Full width of the dashboard in grid units
-        
-        self.projects=databaseRequests.read_projects(controller.get("user_id"))
+            
+        if 'projects_updated' not in st.session_state:
+            st.session_state['projects_updated']=False
+
+        if 'user_projects' not in st.session_state or st.session_state['projects_updated']:
+            self.projects=databaseRequests.read_projects(controller.get("user_id"))
+            st.session_state['user_projects']=self.projects
+            st.session_state['projects_updated']=False
+        else:
+            self.projects=st.session_state['user_projects']
+
         self.max_columns = 3
         self.columns = None
     
@@ -32,91 +39,7 @@ class Projects:
     
     def project_clicked(self,project_id):
         st.session_state['Project']=str(project_id)
-  
-    def backtooverview(self):
-        st.session_state['training']=False
-        st.session_state['Project']=None
-        st.session_state['Visualization']=None
-        st.session_state["newProject"] = False
-        st.session_state['Project']=None
-        st.session_state['Visualization']=None
-        st.session_state['viz_data']=[]
-        if 'board' in st.session_state:
-            st.session_state['board']=None
-        if "w"  in st.session_state:
-            del st.session_state['w']
 
-
-    def selectedProject(self):
-        project=databaseRequests.get_project_details(st.session_state['Project'])
-        with st.columns(19)[-1]:
-            st.markdown("""
-                <style>
-                .element-container:has(#button-back) + div button {
-                    justify-content: center;
-                    align-items: center;
-                    width: 100%; /* Ensure the container takes up full width */
-                    height: 100%; /* Optional: to ensure vertical centering */
-                    border-radius: 16px;
-                    background: rgba(0, 0, 0, 0.4);
-                    z-index: 2;
-                    box-shadow: 
-                        0 0 6px rgba(255, 255, 255, 0.3), 
-                        0 0 12px rgba(255, 255, 255, 0.2), 
-                        0 0 18px rgba(255, 255, 255, 0.2);
-                    color: white;
-                    font-size: 50px;
-                    text-align: center;
-                    cursor: pointer;
-                    padding: 0px;
-                    justify-content: center;
-                    align-items: center;
-                    margin-bottom: 5px; /* Adds vertical space if wrapping occurs */
-                    transition: box-shadow 0.3s ease; /* Smooth transition */
-                    border: none; /* Explicitly remove any border */
-
-                    }
-                    .element-container:has(#button-back) + div button:hover {
-                    box-shadow: 
-                        0 0 10px rgba(255, 255, 255, 0.6), 
-                        0 0 20px rgba(255, 255, 255, 0.5), 
-                        0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
-                }
-                </style>
-            """,unsafe_allow_html=True)
-            st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
-            st.button('← Back',on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
-
-        st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{project['name']}</h1>", unsafe_allow_html=True)     
-        st.markdown("""
-                    <style>
-        [data-baseweb="tab-highlight"] {
-            background-color: rgba(255, 240, 200, 0.4);
-            box-shadow: 
-                    0 0 6px rgba(255, 255, 255, 1), 
-                    0 0 12px rgba(255, 255, 255, 1), 
-                    0 0 18px rgba(255, 255, 255, 1); /* Initial glow */
-
-                            }
-
-	.stTabs [data-baseweb="tab"] {
-        color: white;
-        text-shadow: 0 0 1px white, 0 0 1px white, 0 0 1px white;
-
-    }
-
-    </style>
-""",unsafe_allow_html=True)
-        tabs=st.tabs(['Raw Dataset','Processed Dataset','Insights','Visualizations','AutoML'])
-        with tabs[0]:
-            Chatbot()
-        
-        with tabs[3]:
-            Visualizations()
-
-        with tabs[-1]:
-            AutoML()
-    
     def projectOverview(self):
         st.title("My Projects")
         for idx,project in enumerate(self.projects):
@@ -223,6 +146,7 @@ class Projects:
                                 # Save or process the uploaded file
                                 st.toast(f"Project '{project_name}' has been created!")
                                 databaseRequests.create_project(controller.get('user_id'),project_name,uploaded_file)
+                                st.session_state['projects_updated']=True
                                 st.session_state['newProject']=False
                                 st.rerun()
                             
@@ -236,7 +160,7 @@ class Projects:
             self.projectOverview()
         else:
             st.session_state["newProject"] = False
-            self.selectedProject()
+            Project()
 
 projects=Projects()
 projects.projectsPage()

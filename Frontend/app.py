@@ -1,7 +1,6 @@
 import streamlit as st
 from streamlit_cookies_controller import CookieController
 import os
-import sys
 class MultiPageApp():
     """
     A class to create a multi-page Streamlit application.
@@ -104,6 +103,13 @@ class MultiPageApp():
             st.session_state['board']=None
         if "w"  in st.session_state:
             del st.session_state['w']   
+        del st.session_state['user_projects']
+        st.session_state['projects_updated']=False
+        if 'df' in st.session_state:
+            del st.session_state['df']
+            del st.session_state['autoML_data']
+        if 'project_details' in st.session_state:
+            del st.session_state['project_details']
 
 
     def run(self):
@@ -137,13 +143,19 @@ class MultiPageApp():
             self.login()
         else:
             user_first_name=controller.get("user")["first_name"]
-            st.sidebar.title(f"Hello {user_first_name}")    
-            pg=st.navigation(self.pages[2:])
-            pg.run()
+            st.sidebar.title(f"Hello {user_first_name}")
+            if 'Project' in st.session_state and st.session_state['Project']!=None:
+                st.navigation(self.pages[-2:]).run() 
+            else:  
+                pg=st.navigation(self.pages[2:4])
+                pg.run()
             clicked=st.sidebar.button("Logout",on_click=self.logout)
             if clicked:
                 pg=st.navigation(self.pages[:2])
                 pg.run()
+        
+
+
 
             
 if __name__=='__main__':
@@ -154,6 +166,8 @@ if __name__=='__main__':
     full_app.add_page('Displays/Signup.py',title='Signup')
     full_app.add_page("Displays/Overview.py",title='Overview',default=True) 
     full_app.add_page("Displays/About.py",title='About') 
+    full_app.add_page('Displays/Project/Home.py',title='Home')
+    full_app.add_page('Displays/Project/Chatbot.py',title='ZEUS')
     full_app.run()
 
 

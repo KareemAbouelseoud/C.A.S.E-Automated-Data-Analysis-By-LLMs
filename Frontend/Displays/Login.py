@@ -17,8 +17,10 @@ import streamlit as st
 from Requests import databaseRequests
 from streamlit_cookies_controller import CookieController
 
-
-controller = CookieController()
+try:
+    controller = CookieController()
+except:
+    pass
 class Login:
 
     def __init__(self) -> None:
