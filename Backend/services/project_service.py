@@ -41,7 +41,8 @@ class ProjectService:
         new_project.model_Chat=projectChat(last_update=datetime.now())
         new_project.streamlit_Chat=projectChat(last_update=datetime.now())
         ## BUG: The below code is for testing purposes only we will remove it later
-        with open(r"Database\dataReports\data_report_1.json", 'r') as file:
+        data_report_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'data_report_1.json')
+        with open(data_report_path, 'r') as file:
             new_project.data_report = json.dumps(json.load(file))
         # 5.  Important: Save ٍProject to MongoDB
         try:       
