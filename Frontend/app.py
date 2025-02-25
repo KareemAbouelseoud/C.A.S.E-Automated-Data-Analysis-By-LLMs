@@ -155,10 +155,10 @@ class MultiPageApp():
             else:  
                 pg=st.navigation(self.pages[2:4])
                 pg.run()
-            st.markdown(
+                st.sidebar.markdown(
                 """
                 <style>
-                .stSidebar :has(#button-after) + div button {
+                .element-container:has(#button-after) + div button {
                     justify-content: center;
                     align-items: center;
                     width: 100%; /* Ensure the container takes up full width */
@@ -182,7 +182,7 @@ class MultiPageApp():
                     border: none; /* Explicitly remove any border */
 
                     }
-                    .stSidebar :has(#button-after) + div button:hover {
+                    .element-container:has(#button-after) + div button:hover {
                     box-shadow: 
                         0 0 10px rgba(255, 255, 255, 0.6), 
                         0 0 20px rgba(255, 255, 255, 0.5), 
@@ -192,7 +192,7 @@ class MultiPageApp():
                 """,
                 unsafe_allow_html=True,
             )
-            st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+            st.sidebar.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
             clicked=st.sidebar.button("Logout",on_click=self.logout)
             if clicked:
                 pg=st.navigation(self.pages[:2])
