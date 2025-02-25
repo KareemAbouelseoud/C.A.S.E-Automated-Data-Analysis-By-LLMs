@@ -1,21 +1,17 @@
-import streamlit as st
-import sys
-import os
-import pandas as pd
-import plotly.express as px
-from data_description_generator import AgentGraphState, data_description_generator_node
-from QUGEN import QUGEN
-from genai_config import model
-import scoringFunction
-from report_generator import generate_report
+from config import *
 
 sys.path.append(os.getcwd())
+
+st.set_page_config(
+    page_title="Smart Dataset Analysis Suite", layout="wide", page_icon="📊"
+)
 
 st.markdown(
     """
 <style>
+
     .main-title {
-        color: #2c3e50;
+        color: #ffffff;
         text-align: center;
         margin-bottom: 30px;
     }
@@ -26,11 +22,22 @@ st.markdown(
         margin-top: 25px;
     }
     .data-card {
-        background-color: #f8f9fa;
+        background-color: rgba(40, 40, 40, 0.9);
+        color: #ffffff;
         border-radius: 10px;
         padding: 20px;
         margin: 15px 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        border: 1px solid #4a4a4a;
+    }
+    .data-card h4 {
+        color: #58a6ff;
+    }
+    .metric-box {
+        background-color: rgba(50, 50, 50, 0.7);
+        padding: 8px;
+        border-radius: 5px;
+        margin: 10px 0;
     }
 </style>
 """,
@@ -206,10 +213,12 @@ def create_visualization(df, card):
                     y=0.95,
                     xref="paper",
                     yref="paper",
-                    text=f"🚩Attribution Alert ({score:.0%}\n the largest value in a set is more than 50% of the total)",
+                    text=f"🚩 Attribution Alert ({score:.0%})\n(Largest value > 50% of total)",
                     showarrow=False,
-                    bgcolor="#ffcccc",
-                    font=dict(size=14),
+                    bgcolor="white",
+                    font=dict(size=14, color="black"),
+                    bordercolor="#cccccc",
+                    borderwidth=1,
                 )
     elif agg_func == "COUNT":
         if score > 0.2:
