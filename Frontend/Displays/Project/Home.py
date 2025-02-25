@@ -33,46 +33,10 @@ class Project:
     def selectedProject(self):
         if 'project_details' not in st.session_state or st.session_state['project_details']==None:
             st.session_state['project_details']=databaseRequests.get_project_details(st.session_state['Project'])
-
-        with st.columns(19)[-1]:
-            st.markdown("""
-                <style>
-                .element-container:has(#button-back) + div button {
-                    justify-content: center;
-                    align-items: center;
-                    width: 100%; /* Ensure the container takes up full width */
-                    height: 100%; /* Optional: to ensure vertical centering */
-                    border-radius: 16px;
-                    background: rgba(0, 0, 0, 0.4);
-                    z-index: 2;
-                    box-shadow: 
-                        0 0 6px rgba(255, 255, 255, 0.3), 
-                        0 0 12px rgba(255, 255, 255, 0.2), 
-                        0 0 18px rgba(255, 255, 255, 0.2);
-                    color: white;
-                    font-size: 50px;
-                    text-align: center;
-                    cursor: pointer;
-                    padding: 0px;
-                    justify-content: center;
-                    align-items: center;
-                    margin-bottom: 5px; /* Adds vertical space if wrapping occurs */
-                    transition: box-shadow 0.3s ease; /* Smooth transition */
-                    border: none; /* Explicitly remove any border */
-
-                    }
-                    .element-container:has(#button-back) + div button:hover {
-                    box-shadow: 
-                        0 0 10px rgba(255, 255, 255, 0.6), 
-                        0 0 20px rgba(255, 255, 255, 0.5), 
-                        0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
-                }
-                </style>
-            """,unsafe_allow_html=True)
-            st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
-            st.button('← Back',on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
-
         st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{st.session_state['project_details']['name']}</h1>", unsafe_allow_html=True)     
+
+        
+
         st.markdown("""
                     <style>
         [data-baseweb="tab-highlight"] {
@@ -89,17 +53,133 @@ class Project:
         text-shadow: 0 0 1px white, 0 0 1px white, 0 0 1px white;
 
     }
+                    
+    .stTabs [data-baseweb="tab-list"] {
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+    }
 
     </style>
 """,unsafe_allow_html=True)
         tabs=st.tabs(['Raw Dataset','Processed Dataset','Insights','Visualizations','AutoML'])
         with tabs[0]:
-            pass
+            with st.columns(19)[-1]:
+                st.markdown("""
+                    <style>
+                    .element-container:has(#button-back) + div button {
+                        justify-content: center;
+                        align-items: center;
+                        width: 100%; /* Ensure the container takes up full width */
+                        height: 100%; /* Optional: to ensure vertical centering */
+                        border-radius: 16px;
+                        background: rgba(0, 0, 0, 0.4);
+                        z-index: 2;
+                        box-shadow: 
+                            0 0 6px rgba(255, 255, 255, 0.3), 
+                            0 0 12px rgba(255, 255, 255, 0.2), 
+                            0 0 18px rgba(255, 255, 255, 0.2);
+                        color: white;
+                        font-size: 50px;
+                        text-align: center;
+                        cursor: pointer;
+                        padding: 0px;
+                        justify-content: center;
+                        align-items: center;
+                        margin-bottom: 5px; /* Adds vertical space if wrapping occurs */
+                        transition: box-shadow 0.3s ease; /* Smooth transition */
+                        border: none; /* Explicitly remove any border */
+
+                        }
+                        .element-container:has(#button-back) + div button:hover {
+                        box-shadow: 
+                            0 0 10px rgba(255, 255, 255, 0.6), 
+                            0 0 20px rgba(255, 255, 255, 0.5), 
+                            0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
+                    }
+                    </style>
+                """,unsafe_allow_html=True)
+                st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
+                st.button('← Back',on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
         
         with tabs[3]:
+            st.markdown("<h1 style='text-align: center; font-size: 50px;'>IRIS</h1>", unsafe_allow_html=True)    
+            with st.columns(19)[-1]:
+                st.markdown("""
+                    <style>
+                    .element-container:has(#button-back) + div button {
+                        justify-content: center;
+                        align-items: center;
+                        width: 100%; /* Ensure the container takes up full width */
+                        height: 100%; /* Optional: to ensure vertical centering */
+                        border-radius: 16px;
+                        background: rgba(0, 0, 0, 0.4);
+                        z-index: 2;
+                        box-shadow: 
+                            0 0 6px rgba(255, 255, 255, 0.3), 
+                            0 0 12px rgba(255, 255, 255, 0.2), 
+                            0 0 18px rgba(255, 255, 255, 0.2);
+                        color: white;
+                        font-size: 50px;
+                        text-align: center;
+                        cursor: pointer;
+                        padding: 0px;
+                        justify-content: center;
+                        align-items: center;
+                        margin-bottom: 5px; /* Adds vertical space if wrapping occurs */
+                        transition: box-shadow 0.3s ease; /* Smooth transition */
+                        border: none; /* Explicitly remove any border */
+
+                        }
+                        .element-container:has(#button-back) + div button:hover {
+                        box-shadow: 
+                            0 0 10px rgba(255, 255, 255, 0.6), 
+                            0 0 20px rgba(255, 255, 255, 0.5), 
+                            0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
+                    }
+                    </style>
+                """,unsafe_allow_html=True)
+                st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
+                st.button('← Back',on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
             Visualizations()
 
         with tabs[-1]:
+            with st.columns(19)[-1]:
+                st.markdown("""
+                    <style>
+                    .element-container:has(#button-back) + div button {
+                        justify-content: center;
+                        align-items: center;
+                        width: 100%; /* Ensure the container takes up full width */
+                        height: 100%; /* Optional: to ensure vertical centering */
+                        border-radius: 16px;
+                        background: rgba(0, 0, 0, 0.4);
+                        z-index: 2;
+                        box-shadow: 
+                            0 0 6px rgba(255, 255, 255, 0.3), 
+                            0 0 12px rgba(255, 255, 255, 0.2), 
+                            0 0 18px rgba(255, 255, 255, 0.2);
+                        color: white;
+                        font-size: 50px;
+                        text-align: center;
+                        cursor: pointer;
+                        padding: 0px;
+                        justify-content: center;
+                        align-items: center;
+                        margin-bottom: 5px; /* Adds vertical space if wrapping occurs */
+                        transition: box-shadow 0.3s ease; /* Smooth transition */
+                        border: none; /* Explicitly remove any border */
+
+                        }
+                        .element-container:has(#button-back) + div button:hover {
+                        box-shadow: 
+                            0 0 10px rgba(255, 255, 255, 0.6), 
+                            0 0 20px rgba(255, 255, 255, 0.5), 
+                            0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
+                    }
+                    </style>
+                """,unsafe_allow_html=True)
+                st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
+                st.button('← Back',on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
             AutoML()
 
 

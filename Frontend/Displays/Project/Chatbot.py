@@ -66,6 +66,41 @@ class Chatbot:
 
         <style>
         """, unsafe_allow_html=True)
+        self.intialize_chat_history()
+        self.setup_app_interface()
+    
+    def backtooverview(self):
+        st.session_state['training']=False
+        st.session_state['Project']=None
+        st.session_state['Visualization']=None
+        st.session_state["newProject"] = False
+        st.session_state['Project']=None
+        st.session_state['Visualization']=None
+        st.session_state['viz_data']=[]
+        if 'board' in st.session_state:
+            st.session_state['board']=None
+        if "w"  in st.session_state:
+            del st.session_state['w']
+        if 'df' in st.session_state:
+            del st.session_state['df']
+            del st.session_state['autoML_data']
+        if 'project_details' in st.session_state:
+            del st.session_state['project_details']
+        del st.session_state['messages']
+        del st.session_state['new']
+        if 'recommendation' in st.session_state:
+            del st.session_state['recommendation']
+            
+    
+    def setup_app_interface(self):
+        """
+        Sets up the main interface of the Zeus application, including:
+        - Displaying the title and warnings.
+        - Setting up the buttons and event handlers.
+        - Displaying the chat history.
+        """
+
+        st.markdown("<h1 style='text-align: center; font-size: 100px;'>ZEUS</h1>", unsafe_allow_html=True)
         with st.columns(19)[-1]:
             st.markdown("""
                 <style>
@@ -103,41 +138,6 @@ class Chatbot:
             """,unsafe_allow_html=True)
             st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
             st.button('← Back',on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
-        self.intialize_chat_history()
-        self.setup_app_interface()
-    
-    def backtooverview(self):
-        st.session_state['training']=False
-        st.session_state['Project']=None
-        st.session_state['Visualization']=None
-        st.session_state["newProject"] = False
-        st.session_state['Project']=None
-        st.session_state['Visualization']=None
-        st.session_state['viz_data']=[]
-        if 'board' in st.session_state:
-            st.session_state['board']=None
-        if "w"  in st.session_state:
-            del st.session_state['w']
-        if 'df' in st.session_state:
-            del st.session_state['df']
-            del st.session_state['autoML_data']
-        if 'project_details' in st.session_state:
-            del st.session_state['project_details']
-        del st.session_state['messages']
-        del st.session_state['new']
-        if 'recommendation' in st.session_state:
-            del st.session_state['recommendation']
-            
-    
-    def setup_app_interface(self):
-        """
-        Sets up the main interface of the Zeus application, including:
-        - Displaying the title and warnings.
-        - Setting up the buttons and event handlers.
-        - Displaying the chat history.
-        """
-
-        st.markdown("<h1 style='text-align: center; font-size: 50px;'>ZEUS</h1>", unsafe_allow_html=True)
         # Apply CSS to all elements with the class `.st-emotion-cache-4oy321`
         st.markdown("""
             <style>

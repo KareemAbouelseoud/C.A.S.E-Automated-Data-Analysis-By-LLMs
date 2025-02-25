@@ -41,6 +41,12 @@ class MultiPageApp():
                     z-index: 2;
                     box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.5);
                 }
+                .stSidebar {
+                    background: url("app/static/background final 2.png") no-repeat center center;
+                    background-size: cover;
+                    opacity: 1;
+                    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.5);
+                    }
                 </style>
                 '''
         st.markdown("""
@@ -149,6 +155,44 @@ class MultiPageApp():
             else:  
                 pg=st.navigation(self.pages[2:4])
                 pg.run()
+            st.markdown(
+                """
+                <style>
+                .stSidebar :has(#button-after) + div button {
+                    justify-content: center;
+                    align-items: center;
+                    width: 100%; /* Ensure the container takes up full width */
+                    height: 100%; /* Optional: to ensure vertical centering */
+                    border-radius: 16px;
+                    background: rgba(0, 0, 0, 0.4);
+                    z-index: 2;
+                    box-shadow: 
+                        0 0 6px rgba(255, 255, 255, 0.3), 
+                        0 0 12px rgba(255, 255, 255, 0.2), 
+                        0 0 18px rgba(255, 255, 255, 0.2);
+                    color: white;
+                    padding: 30px;
+                    font-size: 50px;
+                    text-align: center;
+                    cursor: pointer;
+                    justify-content: center;
+                    align-items: center;
+                    margin-bottom: 20px; /* Adds vertical space if wrapping occurs */
+                    transition: box-shadow 0.3s ease; /* Smooth transition */
+                    border: none; /* Explicitly remove any border */
+
+                    }
+                    .stSidebar :has(#button-after) + div button:hover {
+                    box-shadow: 
+                        0 0 10px rgba(255, 255, 255, 0.6), 
+                        0 0 20px rgba(255, 255, 255, 0.5), 
+                        0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
+                }
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
             clicked=st.sidebar.button("Logout",on_click=self.logout)
             if clicked:
                 pg=st.navigation(self.pages[:2])

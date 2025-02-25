@@ -41,7 +41,9 @@ class Projects:
         st.session_state['Project']=str(project_id)
 
     def projectOverview(self):
-        st.title("My Projects")
+        st.markdown("<h1 style='text-align: center; font-size: 80px;'>My Projects</h1>", unsafe_allow_html=True)
+        st.write("---")
+        st.write("\n\n\n")
         for idx,project in enumerate(self.projects):
             
             if idx % self.max_columns == 0:  # Create a new row every 3 projects
