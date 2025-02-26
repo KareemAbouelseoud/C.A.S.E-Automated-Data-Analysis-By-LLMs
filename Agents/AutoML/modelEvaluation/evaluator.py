@@ -113,8 +113,15 @@ def evaluator_node(state):
                     'y_train':y_train,
                     'preprocessing_pipeline':preprocessing_pipeline}
     
-    model = evaluate_model(mode,problem_type,model,models_completed)
-    
+    if mode == "HERMES" and models_completed < 1:
+        model = eval_code
+
+    elif mode == "ATHENA" and models_completed < 3:
+        model = eval_code
+
+    elif mode == "HEPHAESTUS" and models_completed < 5:
+        model = eval_code
+
     # defining the evaluation metrics based on the problem type
     if problem_type == "classification":
         metrics = metrics_block["classification_metrics"]
@@ -134,34 +141,8 @@ def evaluator_node(state):
     # No errors
     print("---NO CODE TEST FAILURES---")
     return {
-        "generation": code_solution,
         "messages": messages,
         "iterations": iterations,
         "error": "no",
         'models_completed':globals_dict["models_completed"]+1,
     }
-
-
-def evaluate_model(mode,problem_type,models_completed):
-        if mode == "HERMES":
-            if models_completed < 1:
-                if problem_type == "classification":
-                    model = eval_code
-                elif problem_type == "regression":
-                    model = eval_code
-        
-        if mode == "ATHENA":
-            if models_completed < 3:
-                if problem_type == "classification":
-                    model = eval_code
-                elif problem_type == "regression":
-                    model = eval_code
-                                    
-        if mode == "HEPHAESTUS":
-            if models_completed < 5:
-                if problem_type == "classification":
-                    model = eval_code
-                elif problem_type == "regression":
-                    model = eval_code
-        
-        return model
