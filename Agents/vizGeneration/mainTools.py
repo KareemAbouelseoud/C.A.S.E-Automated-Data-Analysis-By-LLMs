@@ -30,17 +30,17 @@ from typing import Dict, Optional,List
 import pandas as pd
 from typing import Literal
 import pandas as pd
-from langchain_core.tools import tool
+from langchain_core.tools import tool,InjectedToolArg
 from langchain_core.messages import ToolMessage
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','Agents')))
 import loggerModule
-
+from typing import Annotated
 logger=loggerModule.setup_logging()
 
 @tool
-async def create_line_plot(x: str, y: str,title: str , color: str = None,x_label: str=None,y_label: str=None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_line_plot(x: str, y: str,title: str , color: str = None,x_label: str=None,y_label: str=None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Generates a line plot using Plotly Express and returns the figure as a dictionary.
 
@@ -85,7 +85,7 @@ async def create_line_plot(x: str, y: str,title: str , color: str = None,x_label
         print(f"Error creating line plot: {e}")
 
 @tool
-async def create_scatter_plot(x: str, y: str,title: str, color: Optional[str] = None,x_label: str=None,y_label: str=None, marginal_x: Optional[str] = None, marginal_y: Optional[str] = None, trendline: Optional[str] = None, trendline_scope: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_scatter_plot(x: str, y: str,title: str, color: Optional[str] = None,x_label: str=None,y_label: str=None, marginal_x: Optional[str] = None, marginal_y: Optional[str] = None, trendline: Optional[str] = None, trendline_scope: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Generates a scatter plot using Plotly Express and returns the figure as a dictionary.
 
@@ -137,7 +137,7 @@ async def create_scatter_plot(x: str, y: str,title: str, color: Optional[str] = 
         print(f"Error creating scatter plot: {e}")
 
 @tool
-async def create_bubble_plot(x: str, y: str, title: str, color: Optional[str] = None, size: Optional[str] = None, x_label: str=None,y_label: str=None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_bubble_plot(x: str, y: str, title: str, color: Optional[str] = None, size: Optional[str] = None, x_label: str=None,y_label: str=None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Generates a bubble plot using Plotly Express and returns the figure as a dictionary.
 
@@ -183,7 +183,7 @@ async def create_bubble_plot(x: str, y: str, title: str, color: Optional[str] = 
         print(f"Error creating bubble plot: {e}")
 
 @tool
-async def create_swarm_plot(x: str, y: str,title: str , color: Optional[str] = None,  x_label: str=None,y_label: str=None, stripmode: Optional[str] = "group", df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_swarm_plot(x: str, y: str,title: str , color: Optional[str] = None,  x_label: str=None,y_label: str=None, stripmode: Optional[str] = "group", df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Creates a swarm plot (approximated using scatter plot) using Plotly Express and returns the figure as a dictionary.
 
@@ -230,7 +230,7 @@ async def create_swarm_plot(x: str, y: str,title: str , color: Optional[str] = N
         print(f"Error creating swarm plot: {e}")
 
 @tool
-async def grouped_bar_plot(x: str, y: str,title:str, color: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def grouped_bar_plot(x: str, y: str,title:str, color: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Creates a grouped bar plot using Plotly Express and returns the plot as a dictionary.
 
@@ -271,7 +271,7 @@ async def grouped_bar_plot(x: str, y: str,title:str, color: Optional[str] = None
         print(f"Error creating grouped bar plot: {e}")
 
 @tool
-async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = None, diagonal_visible: Optional[bool] = True, title: Optional[str] = 'Pair Plot', df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = None, diagonal_visible: Optional[bool] = True, title: Optional[str] = 'Pair Plot', df: Annotated[pd.DataFrame,InjectedToolArg]= None) -> Dict:
     """
     Create a pairplot using Plotly and returns the plot as a dictionary.
 
@@ -306,7 +306,7 @@ async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = N
         logger.error(f"An error occurred: {e}")
 
 @tool
-async def create_radar_chart(category_column: str,title: str, value_columns: List[str] = None, color_column: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_radar_chart(category_column: str,title: str, value_columns: List[str] = None, color_column: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Generates a radar chart using Plotly Express and returns the plot as a dictionary.
 
@@ -368,7 +368,7 @@ async def create_radar_chart(category_column: str,title: str, value_columns: Lis
         return None
 
 @tool
-async def create_treemap(path_columns: List[str],title: str, value_column: Optional[str] = None, color_column: Optional[str] = None, color_scale: Optional[str] = "Viridis", df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_treemap(path_columns: List[str],title: str, value_column: Optional[str] = None, color_column: Optional[str] = None, color_scale: Optional[str] = "Viridis", df: Annotated[pd.DataFrame,InjectedToolArg]= None) -> Dict:
     """
     Generates a treemap using Plotly Express and returns the plot as a dictionary.
 
@@ -435,7 +435,7 @@ async def create_treemap(path_columns: List[str],title: str, value_column: Optio
         return None
 
 @tool
-async def create_correlation_heatmap(columns: List[str] = None,title: Optional[str] = "Correlation Heatmap", color_scale: Optional[str] = "Viridis", show_values: Optional[bool] = True, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_correlation_heatmap(columns: List[str] = None,title: Optional[str] = "Correlation Heatmap", color_scale: Optional[str] = "Viridis", show_values: Optional[bool] = True, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Generates a heatmap of correlations between numerical columns in the dataset and returns it as a dictionary.
 
@@ -476,7 +476,7 @@ async def create_correlation_heatmap(columns: List[str] = None,title: Optional[s
         return None
 
 @tool
-async def create_faceted_bar_chart(x: str, y: str,title: str, color: Optional[str] = None, barmode: Optional[str] = "group", facet_row: Optional[str] = None, facet_col: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_faceted_bar_chart(x: str, y: str,title: str, color: Optional[str] = None, barmode: Optional[str] = "group", facet_row: Optional[str] = None, facet_col: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Generates a faceted bar chart using Plotly Express and returns it as a dictionary.
 
@@ -519,7 +519,7 @@ async def create_faceted_bar_chart(x: str, y: str,title: str, color: Optional[st
         return None
 
 @tool
-async def create_histogram(x: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df:Optional[pd.DataFrame] = None) -> Dict:
+async def create_histogram(x: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df:Annotated[pd.DataFrame,InjectedToolArg]= None) -> Dict:
     """
     Creates a histogram using Plotly Express and returns it as a dictionary.
 
@@ -543,7 +543,7 @@ async def create_histogram(x: str, color: Optional[str] = None, x_label: Optiona
         return None
 
 @tool
-async def create_pie_chart(values: str, names: str,title: str, color: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_pie_chart(values: str, names: str,title: str, color: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Creates a pie chart using Plotly Express and returns it as a dictionary.
 
@@ -568,7 +568,7 @@ async def create_pie_chart(values: str, names: str,title: str, color: Optional[s
         return None
 
 @tool
-async def create_area_chart(x: str, y: str, title: str,color: Optional[str] = None,  x_label: Optional[str] = None, y_label: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_area_chart(x: str, y: str, title: str,color: Optional[str] = None,  x_label: Optional[str] = None, y_label: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Creates an area chart using Plotly Express and returns it as a dictionary.
 
@@ -595,7 +595,7 @@ async def create_area_chart(x: str, y: str, title: str,color: Optional[str] = No
         return None
 
 @tool
-async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Creates a box plot using Plotly Express and returns it as a dictionary.
 
@@ -626,7 +626,7 @@ async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color
         return None
 
 @tool
-async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, points: Optional[str] = None, hover_data: List[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df: Optional[pd.DataFrame] = None) -> Dict:
+async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, points: Optional[str] = None, hover_data: List[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
     """
     Creates a violin plot using Plotly Express and returns it as a dictionary.
 

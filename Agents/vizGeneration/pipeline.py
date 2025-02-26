@@ -50,6 +50,7 @@ from .coder.coderPipeline import coder
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
 import operator
+import pandas as pd
 
 class State(TypedDict):
     """
@@ -91,6 +92,8 @@ def make_serializable(obj):
         return int(obj)
     elif isinstance(obj, (np.float64, np.float32, np.float16)):
         return float(obj)
+    elif isinstance(obj, pd.Interval):
+        return {'left': obj.left, 'right': obj.right, 'closed': obj.closed}
     elif isinstance(obj, np.ndarray):
         return obj.tolist()
     elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
