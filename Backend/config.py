@@ -31,6 +31,8 @@ def make_serializable(obj):
         return float(obj)
     elif isinstance(obj, np.ndarray):
         return obj.tolist()
+    elif isinstance(obj, pd.Interval):
+        return {'left': obj.left, 'right': obj.right, 'closed': obj.closed}
     elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
         return None
     else:

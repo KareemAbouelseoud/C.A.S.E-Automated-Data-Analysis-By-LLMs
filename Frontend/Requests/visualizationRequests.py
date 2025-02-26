@@ -5,6 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 import requests
 import json
 from dataModels.visualization import ChatViz
+import pandas as pd
 url='http://Backend:8005'
 
 def fetch_visualizations(project_id:str):
@@ -34,6 +35,9 @@ def make_serializable(obj):
         return float(obj)
     elif isinstance(obj, np.ndarray):
         return obj.tolist()
+    elif isinstance(obj, pd.Interval):
+        return {'left': obj.left, 'right': obj.right, 'closed': obj.closed}
+    
     elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
         return None
     else:
