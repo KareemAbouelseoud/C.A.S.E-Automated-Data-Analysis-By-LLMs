@@ -1,5 +1,5 @@
 import streamlit as st
-from QUGEN import QUGEN
+from Flow.QUGEN import QUGEN
 from genai_config import model
 import sys
 import os
@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 def render_ai_analysis(col, df, state, analysis_mode, viz_function):
     with col:
         st.markdown(
-            "<h2 class='section-header'>AI Analysis Results</h2>",
+            "<h2 class='section-header'>Analysis Results</h2>",
             unsafe_allow_html=True,
         )
 
@@ -29,7 +29,7 @@ def render_ai_analysis(col, df, state, analysis_mode, viz_function):
             )
 
             if "insight_cards" in state:
-                for i, card in enumerate(state["insight_cards"][:5]):
+                for i, card in enumerate(state["insight_cards"][:]):
                     with st.container():
                         st.markdown(
                             f"""

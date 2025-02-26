@@ -17,6 +17,7 @@ def render_dataset_overview(col, df, state):
             """)
             st.markdown("**Sample Data**")
             st.dataframe(df.head(5), height=150)
+            st.dataframe(df.tail(5), height=150)
 
         with st.expander("🔑 Dataset Schema"):
             schema = state.get("schema", [])

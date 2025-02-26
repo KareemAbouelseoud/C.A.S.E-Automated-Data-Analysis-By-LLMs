@@ -30,7 +30,7 @@ def data_description_generator_node(
     basic_stats = {"numerical": numerical_stats, "categorical": categorical_stats}
     prompt = f"""
     Given the dataset:
-    {df.head().to_markdown()}
+    {df.to_markdown()}
 
     Provide the following:
     1. A detailed explanation of each column in bullet points.

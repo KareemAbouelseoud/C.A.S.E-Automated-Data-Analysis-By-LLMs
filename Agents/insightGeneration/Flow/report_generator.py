@@ -9,9 +9,12 @@ from typing import Dict, Any
 def generate_report(state: Dict[str, Any]) -> Dict[str, Any]:
     df = state["df"]
 
+    reports_dir = os.path.join(os.pardir, "Reports")
+    os.makedirs(reports_dir, exist_ok=True)
+
     dataset_name = state.get("dataset_name", "Dataset")
     safe_name = "".join(c if c.isalnum() else "_" for c in dataset_name)
-    report_filename = f"{safe_name}_report.json"
+    report_filename = os.path.join("Reports", f"{safe_name}_report.json")
 
     start_time = time.time()
     profile = ProfileReport(df, title=dataset_name, explorative=True)

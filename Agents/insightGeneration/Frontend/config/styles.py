@@ -1,4 +1,4 @@
-from recurr import *
+import streamlit as st
 
 
 def set_page_config():
@@ -8,8 +8,6 @@ def set_page_config():
 
 
 def load_custom_css():
-    import streamlit as st
-
     st.markdown(
         """
     <style>

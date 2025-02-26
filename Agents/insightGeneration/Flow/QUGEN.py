@@ -1,18 +1,16 @@
 from typing import Dict, List
 import re
-from data_description_generator import AgentGraphState
+from Agents.insightGeneration.Flow.data_description_generator import AgentGraphState
 import numpy as np
-from scoringFunction import score_attribution, score_distribution_difference
+from Agents.insightGeneration.Flow.scoringFunction import (
+    score_attribution,
+    score_distribution_difference,
+)
 import google.generativeai as genai
-
-import google.generativeai as genai
-from dotenv import load_dotenv
-import numpy as np
-from scoringFunction import score_attribution, score_distribution_difference
 
 
 class QUGEN:
-    def __init__(self, model, iterations=3, questions_per_iter=5, temperature=0):
+    def __init__(self, model, iterations=3, questions_per_iter=7, temperature=0):
         self.model = model
         self.iterations = iterations
         self.questions_per_iter = questions_per_iter
@@ -36,13 +34,12 @@ class QUGEN:
             )
             insights.extend(new_insights)
 
-        # Pass the df parameter here
         state["insight_cards"] = self._filter_insights(
             insights,
             state["schema"],
             numeric_cols,
-            df,  # Added df argument
-        )[:10]
+            df,
+        )[:11]
 
         return state
 
