@@ -1,160 +1,84 @@
 from Database import mainDatabase
-
-classification_model_block = {
-    "Logistic Regression": """
-y_pred = model.predict(X_test)
-""",
-    "Stochastic Gradient Descent (SGD) Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Gaussian Naive Bayes": """
-y_pred = model.predict(X_test)
-""",
-    "Multinomial Naive Bayes": """
-y_pred = model.predict(X_test)
-""",
-    "Bernoulli Naive Bayes": """
-y_pred = model.predict(X_test)
-""",
-    "K-Nearest Neighbors (KNN) Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Decision Tree Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Random Forest Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Gradient Boosting Classifier (GBM)": """
-y_pred = model.predict(X_test)
-""",
-    "Extreme Gradient Boosting (XGBoost) Classifier": """y_pred = model.predict(X_test)
-""",
-    "Light Gradient Boosting Machine (LightGBM) Classifier": """y_pred = model.predict(X_test)
-""",
-    "Categorical Boosting (CatBoost) Classifier": """y_pred = model.predict(X_test)
-""",
-    "Support Vector Machine (SVM) Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Multi-layer Perceptron (MLP) Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "AdaBoost Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Extra Trees Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Linear Discriminant Analysis (LDA)": """
-y_pred = model.predict(X_test)
-""",
-    "Quadratic Discriminant Analysis (QDA)": """
-y_pred = model.predict(X_test)
-""",
-    "Gaussian Process Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Histogram-based Gradient Boosting Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Bagging Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Ridge Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Passive-Aggressive Classifier": """
-y_pred = model.predict(X_test)
-""",
-    "Quadratic Support Vector Classifier (QSVC)": """
-degree=2)y_pred = model.predict(X_test)
-""",
-    "Nearest Centroid Classifier": """
-y_pred = model.predict(X_test)
-"""
-}
-
-regression_model_block = {
-    "Ordinary Least Squares (OLS) Linear Regression": """
-y_pred = model.predict(X_test)
-""",
-    "Ridge Regression (L2 Regularization)": """
-y_pred = model.predict(X_test)
-""",
-    "Lasso Regression (L1 Regularization)": """
-y_pred = model.predict(X_test)
-""",
-    "ElasticNet Regression (L1+L2)": """
-y_pred = model.predict(X_test)
-""",
-    "Stochastic Gradient Descent (SGD) Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "Decision Tree Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "Random Forest Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "Gradient Boosting Regressor (GBR)": """
-y_pred = model.predict(X_test)
-""",
-    "Extreme Gradient Boosting (XGBoost) Regressor": """y_pred = model.predict(X_test)
-""",
-    "Light Gradient Boosting Machine (LightGBM) Regressor": """y_pred = model.predict(X_test)
-""",
-    "Categorical Boosting (CatBoost) Regressor": """y_pred = model.predict(X_test)
-""",
-    "Support Vector Regression (SVR)": """
-y_pred = model.predict(X_test)
-""",
-    "Multi-layer Perceptron (MLP) Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "AdaBoost Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "Extra Trees Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "Bayesian Ridge Regression": """
-y_pred = model.predict(X_test)
-""",
-    "Huber Regressor (Robust Regression)": """
-y_pred = model.predict(X_test)
-""",
-    "Theil-Sen Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "Quantile Regression": """
-y_pred = model.predict(X_test)
-""",
-    "Kernel Ridge Regression": """
-y_pred = model.predict(X_test)
-""",
-    "Partial Least Squares Regression": """
-y_pred = model.predict(X_test)
-""",
-    "Passive-Aggressive Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "Gaussian Process Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "Histogram-based Gradient Boosting Regressor": """
-y_pred = model.predict(X_test)
-""",
-    "Isotonic Regression": """
-y_pred = model.predict(X_test)
-"""
-}
 metrics_block={
-    "HERMES":"",
-    "ATHENA":"",
-    "HEPHAESTUS":""
+    "classification_metrics" :"""
+        #import block
+        from sklearn.metrics import accuracy_score, f1_score, confusion_matrix,roc_auc_score, roc_curve
+        from sklearn.metrics import confusion_matrix
+        import seaborn as sns
+        import matplotlib.pyplot as plt
 
-}
+        #metrics block
+        f1 = f1_score(y_test, y_pred, average='weighted')
+        cm = confusion_matrix(y_test, y_pred)
+        accuracy = accuracy_score(y_test, y_pred)
+        
+        # For binary classification
+        try:
+            y_proba = model.predict_proba(X_test)[:, 1]
+        except:
+            print("not a binary classification model")
+
+        roc_auc = roc_auc_score(y_test, y_proba)
+        fpr, tpr, _ = roc_curve(y_test, y_proba)
+
+        #print block
+        print(f"Accuracy: {accuracy:.4f}")
+        print(f"F1-Score: {f1:.4f}")
+
+        #plot block
+        plt.figure()
+        plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.2f})')
+        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC Curve')
+        plt.legend(loc="lower right")
+        plt.show()
+
+        plt.figure(figsize=(7,5))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+        plt.xlabel('Predicted Labels')
+        plt.ylabel('True Labels')
+        plt.title('Confusion Matrix')
+        plt.show()
+    """,
+    
+    "regression_metrics" :"""
+        #import block
+        import matplotlib.pyplot as plt
+        from sklearn.metrics import mean_squared_error,r2_score
+
+        #metrics block
+        rmse = mean_squared_error(y_test, y_pred, squared=False)
+        r2 = r2_score(y_test, y_pred)
+        residuals = y_test - y_pred
+
+        #print block
+        print(f"RMSE: {rmse:.4f}")
+        print(f"R-squared: {r2:.4f}")
+
+        #plot block
+        plt.figure(figsize=(10, 6))
+        plt.scatter(y_test, y_pred, alpha=0.5, edgecolors='w', s=80)
+        plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=3)
+        plt.xlabel('Actual Values')
+        plt.ylabel('Predicted Values')
+        plt.title('Actual vs. Predicted Values')
+        plt.show()
+
+
+        plt.figure(figsize=(10, 6))
+        plt.scatter(y_pred, residuals, alpha=0.5, edgecolors='w', s=80)
+        plt.axhline(y=0, color='k', linestyle='--', lw=2)
+        plt.xlabel('Predicted Values')
+        plt.ylabel('Residuals')
+        plt.title('Residual Analysis')
+        plt.show()
+    """
+    }
+
+eval_code = "y_pred = model.predict(X_test)"
+
 def evaluator_node(state):
     """
     Check code
@@ -176,10 +100,8 @@ def evaluator_node(state):
     y_train = state["y_train"]
     project_id = state["project_id"]
     problem_type = state["problem_type"]
-    models_selected = state["models_selected"]
     models_completed = state["models_completed"]
     mode = state["mode"]
-
 
     df=mainDatabase.fetch_dataset(state['project_id'])
     preprocessing_pipeline=mainDatabase.fetch_pipeline(project_id)
@@ -190,47 +112,24 @@ def evaluator_node(state):
                     'X_train':X_train,
                     'y_train':y_train,
                     'preprocessing_pipeline':preprocessing_pipeline}
+    
+    model = evaluate_model(mode,problem_type,model,models_completed)
+    
+    # defining the evaluation metrics based on the problem type
+    if problem_type == "classification":
+        metrics = metrics_block["classification_metrics"]
+    elif problem_type == "regression":
+        metrics = metrics_block["regression_metrics"]
 
+    exec(model,globals_dict)
+    exec(metrics,globals_dict)
+    
+    model=globals_dict['model']
+    metrics = globals_dict['metrics']
 
-    # Check imports
-    for model in models_selected:
-        if mode == "HERMES":
-            if models_completed < 1:
-                if problem_type == "classification":
-                    if model in classification_model_block:
-                        model_block = classification_model_block[model]
-                elif problem_type == "regression":
-                    if model in regression_model_block:
-                        model_block = regression_model_block[model]
-        
-        if mode == "ATHENA":
-            if models_completed < 3:
-                if problem_type == "classification":
-                    if model in classification_model_block:
-                        model_block = classification_model_block[model]
-                elif problem_type == "regression":
-                    if model in regression_model_block:
-                        model_block = regression_model_block[model]
-                                    
-        if mode == "HEPHAESTUS":
-            if models_completed < 5:
-                if problem_type == "classification":
-                    if model in classification_model_block:
-                        model_block = classification_model_block[model]
-                elif problem_type == "regression":
-                    if model in regression_model_block:
-                        model_block = regression_model_block[model]
-        
-        
-        exec(model_block,globals_dict)
-        models_completed+=1
-        
-        model=globals_dict['model']
-
-        # Save the model to the database
-
-        mainDatabase.save_model(project_id, model,state['model'][state['models_completed']]['model'])
-        print("---MODEL SAVED SUCCESSFULLY---")  
+    # Save the model to the database
+    mainDatabase.save_model(project_id, model,state['model'][state['models_completed']]['model'])
+    print("---MODEL SAVED SUCCESSFULLY---")  
     
     # No errors
     print("---NO CODE TEST FAILURES---")
@@ -239,5 +138,30 @@ def evaluator_node(state):
         "messages": messages,
         "iterations": iterations,
         "error": "no",
-        'models_completed':globals_dict['models_completed'],
+        'models_completed':globals_dict["models_completed"]+1,
     }
+
+
+def evaluate_model(mode,problem_type,models_completed):
+        if mode == "HERMES":
+            if models_completed < 1:
+                if problem_type == "classification":
+                    model = eval_code
+                elif problem_type == "regression":
+                    model = eval_code
+        
+        if mode == "ATHENA":
+            if models_completed < 3:
+                if problem_type == "classification":
+                    model = eval_code
+                elif problem_type == "regression":
+                    model = eval_code
+                                    
+        if mode == "HEPHAESTUS":
+            if models_completed < 5:
+                if problem_type == "classification":
+                    model = eval_code
+                elif problem_type == "regression":
+                    model = eval_code
+        
+        return model
