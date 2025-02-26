@@ -1,13 +1,12 @@
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(_file_))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing_extensions import TypedDict
 from typing_extensions import TypedDict,Annotated,NotRequired
 from langchain_core.messages import AnyMessage
 import operator
 from langgraph.graph import END, StateGraph, START
-from generator import generator_node
 from evaluator import evaluator_node
 from typing import Literal
 
@@ -40,7 +39,7 @@ class CoderState(TypedDict):
 
     
     
-def decide_to_finish(state)->Literal["generator", "_end_"]:
+def decide_to_finish(state)->Literal["evaluator", "_end_"]:
     """
     Determines whether to finish.
 
@@ -67,16 +66,14 @@ def decide_to_finish(state)->Literal["generator", "_end_"]:
         else:
             print("---DECISION: RE-TRY EVALUATION---")
 
-        return "generator"
+        return "evaluator"
 
 
 workflow = StateGraph(CoderState)
 # Define the nodes
-workflow.add_node("generator", generator_node)  # generation solution
 workflow.add_node("evaluator", evaluator_node)  # check code
 
 # Build graph
-workflow.add_edge(START, "generator")
-workflow.add_edge("generator", "evaluator")
+workflow.add_edge(START, "evaluator")
 workflow.add_conditional_edges("evaluator",decide_to_finish)
 coder = workflow.compile()
