@@ -65,3 +65,20 @@ async def Save_Chat_Viz(project_id:str,new_chat_viz:ChatViz):
         bool: saved successfully or not
     """ 
     return await viz_service.update_Chat_Viz(project_id=project_id,new_viz=new_chat_viz)
+
+
+@viz_router.get('/project/{project_id}/visualization/plot_column_type', tags=["Visualizations"])
+async def plot_column_type(project_id: str):
+    """
+    Endpoint to plot a specific column type for a project.
+
+    Args:
+        project_id (str): Project ID to retrieve visualization data for.
+        column_name (str): Column name to plot.
+
+    Returns:
+        dict: JSON with plot data.
+    """
+    
+    plot_data = await viz_service.plot_column_types(project_id=project_id)
+    return plot_data

@@ -1,5 +1,7 @@
 from config import *
 import requests
+import plotly.express as px
+
 def get_repo():
     repo = VisualizationRepository()
     return repo
@@ -141,4 +143,47 @@ class visualizationsService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project Visualizations and data to MongoDB: {e}")
     #endregion
+
+    #region Vizualizations Dataset Creation functions
+    async def plot_column_types(self, project_id: str) -> str:
+        try:
+            project = await self.project_repository.get_by_id(project_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retriving project from MongoDB: {e}")
+        if project is None:
+            raise HTTPException(status_code=400, detail="Invalid project_id. Please provide an existing Project id.")
+        
+        try:
+            dataframe = await self.project_service.fetch_dataset(project_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching dataset: {e}")
+        
+            # Get data types and count them
+        dtypes = dataframe.dtypes.astype(str)
+        dtype_counts = dtypes.value_counts().reset_index()
+        dtype_counts.columns = ['Data Type', 'Count']
+
+        # Create the histogram
+        fig = px.bar(
+            dtype_counts,
+            x='Data Type',
+            y='Count',
+            title='Distribution of Column Data Types',
+            text_auto=True,
+            color='Data Type',
+            labels={'Count': 'Number of Columns', 'Data Type': 'Data Type'}
+        )
+
+        fig.update_layout(
+            xaxis_title='Data Type',
+            yaxis_title='Number of Columns',
+            plot_bgcolor='rgba(0,0,0,0.05)',
+            font=dict(size=12)
+        )
+        
+        # Return the figure as JSON
+        return make_serializable(fig.to_json())
+        
+        
+        
     
