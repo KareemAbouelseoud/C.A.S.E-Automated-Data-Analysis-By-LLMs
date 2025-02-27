@@ -11,34 +11,34 @@ from Project.Home import Project
 class Projects:
 
     def __init__(self) -> None:
-        if "newProject" not in st.session_state:
-            st.session_state["newProject"] = False
-            st.session_state['Project']=None
-            st.session_state['Visualization']=None
-            st.session_state['viz_data']=[]
+        if "newProject" not in st.session_state['user_data']['projects']:
+            st.session_state['user_data']['projects']["newProject"] = False
+            st.session_state['user_data']['projects']['current_project']['project_id']=None
+            st.session_state['user_data']['projects']['current_project']['Visualization']=None
+            st.session_state['user_data']['projects']['current_project']['viz_data']=[]
         
             st.session_state['DASHBOARD_WIDTH'] = 12  # Full width of the dashboard in grid units
             st.session_state['PLOT_WIDTH'] = 6  # Full width of the dashboard in grid units
             st.session_state['PLOT_HEIGHT'] = 4  # Full width of the dashboard in grid units
             
-        if 'projects_updated' not in st.session_state:
-            st.session_state['projects_updated']=False
+        if 'projects_updated' not in st.session_state['user_data']['projects']:
+            st.session_state['user_data']['projects']['projects_updated']=False
 
-        if 'user_projects' not in st.session_state or st.session_state['projects_updated']:
+        if 'user_projects' not in st.session_state['user_data']['projects'] or st.session_state['user_data']['projects']['projects_updated']:
             self.projects=databaseRequests.read_projects(controller.get("user_id"))
-            st.session_state['user_projects']=self.projects
-            st.session_state['projects_updated']=False
+            st.session_state['user_data']['projects']['user_projects']=self.projects
+            st.session_state['user_data']['projects']['projects_updated']=False
         else:
-            self.projects=st.session_state['user_projects']
+            self.projects=st.session_state['user_data']['projects']['user_projects']
 
         self.max_columns = 3
         self.columns = None
     
     def new_project_clicked(self):
-        st.session_state["newProject"] = True
+        st.session_state['user_data']['projects']["newProject"] = True
     
     def project_clicked(self,project_id):
-        st.session_state['Project']=str(project_id)
+        st.session_state['user_data']['projects']['current_project']['project_id']=str(project_id)
 
     def projectOverview(self):
         st.markdown("<h1 style='text-align: center; font-size: 80px;'>My Projects</h1>", unsafe_allow_html=True)
@@ -130,7 +130,7 @@ class Projects:
             st.button(" \+ Create a new Project",on_click=self.new_project_clicked,key=f"new_project_{uuid.uuid4()}")
             
             
-            if st.session_state['newProject']:
+            if st.session_state['user_data']['projects']['newProject']:
                 
                 with st.container(border=True):
                     st.header("New Project")
@@ -148,8 +148,8 @@ class Projects:
                                 # Save or process the uploaded file
                                 st.toast(f"Project '{project_name}' has been created!")
                                 databaseRequests.create_project(controller.get('user_id'),project_name,uploaded_file)
-                                st.session_state['projects_updated']=True
-                                st.session_state['newProject']=False
+                                st.session_state['user_data']['projects']['projects_updated']=True
+                                st.session_state['user_data']['projects']['newProject']=False
                                 st.rerun()
                             
                             else:
@@ -158,10 +158,10 @@ class Projects:
                             st.toast('Please upload a dataset')
                                                       
     def projectsPage(self):
-        if not st.session_state['Project']:
+        if 'project_id' not in st.session_state['user_data']['projects']['current_project'] or not st.session_state['user_data']['projects']['current_project']['project_id']:
             self.projectOverview()
         else:
-            st.session_state["newProject"] = False
+            st.session_state['user_data']['projects']["newProject"] = False
             Project()
 
 projects=Projects()

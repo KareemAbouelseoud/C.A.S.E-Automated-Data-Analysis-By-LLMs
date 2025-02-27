@@ -99,23 +99,7 @@ class MultiPageApp():
         st.session_state['loggedIn'] = False
         self.controller.remove(f"user")     
         self.controller.remove(f"user_id")     
-        st.session_state['Project']=None
-        st.session_state['Visualization']=None
-        st.session_state["newProject"] = False
-        st.session_state['Project']=None
-        st.session_state['Visualization']=None
-        st.session_state['viz_data']=[]
-        if 'board' in st.session_state:
-            st.session_state['board']=None
-        if "w"  in st.session_state:
-            del st.session_state['w']   
-        del st.session_state['user_projects']
-        st.session_state['projects_updated']=False
-        if 'df' in st.session_state:
-            del st.session_state['df']
-            del st.session_state['autoML_data']
-        if 'project_details' in st.session_state:
-            del st.session_state['project_details']
+        del st.session_state['user_data']
 
 
     def run(self):
@@ -134,12 +118,16 @@ class MultiPageApp():
         """
         st.empty()
         cookies = self.controller.getAll()
+        if 'user_data' not in st.session_state:
+            st.session_state['user_data'] = {}
+            st.session_state['user_data']['projects'] = {}
+            st.session_state['user_data']['projects']['current_project'] = {}
+
         if st.session_state['loggedIn']==False:
             for key in cookies:
                 if key=="user_id":
-                    st.session_state['user_id'] = cookies[key]
+                    st.session_state['user_data']['user_id'] = cookies[key]
                     st.session_state['loggedIn']=True
-                    print(st.session_state.user_id)
                     user_first_name=controller.get("user")["first_name"]
                     st.toast(f"Welcome back, {user_first_name}!",icon='🎉')
                     break
@@ -150,7 +138,7 @@ class MultiPageApp():
         else:
             user_first_name=controller.get("user")["first_name"]
             st.sidebar.title(f"Hello {user_first_name}")
-            if 'Project' in st.session_state and st.session_state['Project']!=None:
+            if 'project_id' in st.session_state['user_data']['projects']['current_project'] and st.session_state['user_data']['projects']['current_project']['project_id']!=None:
                 st.navigation(self.pages[-2:]).run() 
             else:  
                 pg=st.navigation(self.pages[2:4])

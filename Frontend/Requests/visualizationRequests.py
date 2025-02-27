@@ -8,18 +8,6 @@ from dataModels.visualization import ChatViz
 import pandas as pd
 url='http://Backend:8005'
 
-def fetch_visualizations(project_id:str):
-    response = requests.get(url+f'/project/{project_id}/visualization/get_Auto_Gen')
-    return json.loads(response.json())['visualizations']
-
-def fetch_chat_visualizations(project_id:str):
-    response = requests.get(url+f'/project/{project_id}/visualization/get_Chat_Viz')
-    return json.loads(response.json())['visualizations']
-
-
-def save_chat_visualizations(project_id:str,new_viz:ChatViz):    
-    response = requests.post(url+f'/project/{project_id}/visualization/Chat_viz',json=new_viz.model_dump())
-    return response.status_code==200
 
 def make_serializable(obj):
     """
@@ -42,3 +30,24 @@ def make_serializable(obj):
         return None
     else:
         return obj
+    
+def fetch_visualizations(project_id:str):
+    response = requests.get(url+f'/project/{project_id}/visualization/get_Auto_Gen')
+    return json.loads(response.json())['visualizations']
+
+def fetch_chat_visualizations(project_id:str):
+    response = requests.get(url+f'/project/{project_id}/visualization/get_Chat_Viz')
+    return json.loads(response.json())['visualizations']
+
+
+def save_chat_visualizations(project_id:str,new_viz:ChatViz):    
+    response = requests.post(url+f'/project/{project_id}/visualization/Chat_viz',json=new_viz.model_dump())
+    return response.status_code==200
+
+
+def plot_column_types(project_id:str):
+    response = requests.get(url+f'/project/{project_id}/visualization/plot_column_type')
+    if response.status_code==200:
+        return response.json()
+    else:
+        return None

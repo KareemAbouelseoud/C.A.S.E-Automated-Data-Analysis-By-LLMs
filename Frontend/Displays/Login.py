@@ -26,8 +26,8 @@ class Login:
     def __init__(self) -> None:
         __username=None
         __password=None
-        if 'user_id' not in st.session_state:
-            st.session_state['user_id']=''
+        if 'user_id' not in st.session_state['user_data']:
+            st.session_state['user_data']['user_id']=''
 
     
         
