@@ -3,21 +3,24 @@ from Objects import Dashboard,Plot
 from streamlit_elements import elements,event,sync,lazy
 from types import SimpleNamespace
 from Requests import visualizationRequests
-
+viz_session=st.session_state['user_data']['projects']['current_project']
 class Visualizations:
     def __init__(self):
+        if 'viz' not in viz_session:
+            viz_session['viz']={}
+            viz_session['viz']['Visualization']=False
         self.run()
 
     def create(self,fig_dict):
         if isinstance(fig_dict,dict):
-            plot=Plot.Plots(st.session_state.board, 12,  7, w=5, h=7, minW=2, minH=4,fig=fig_dict)
+            plot=Plot.Plots(viz_session['viz']['board'], 12,  7, w=5, h=7, minW=2, minH=4,fig=fig_dict)
             return plot
         else:
             for i in fig_dict:
                 return self.create(i)
     
     def visualizationShown(self):
-        st.session_state['Visualization']=True
+        viz_session['viz']['Visualization']=True
         
     def run(self):
         cols=st.columns(3)
@@ -60,26 +63,26 @@ class Visualizations:
                 unsafe_allow_html=True,
             )
             st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-            if not st.session_state['Visualization']:
+            if 'Visualization' not in viz_session['viz'] or not viz_session['viz']['Visualization']:
                 st.button("Begin Generation",on_click=self.visualizationShown)
-        print(st.session_state['Visualization'])
-        if st.session_state['Visualization']:
-            if "w" not in st.session_state:
-                st.session_state.board = Dashboard.Dashboard()
+        
+        if viz_session['viz']['Visualization']:
+            if "w" not in viz_session['viz']:
+                viz_session['viz']['board'] = Dashboard.Dashboard()
                 w = SimpleNamespace(
                     visualizations=[]
                 )
-                st.session_state.w = w
+                viz_session['viz']['w'] = w
 
             else:
-                w = st.session_state.w
+                w = viz_session['viz']['w']
             with elements("demo"):
                 event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
-                vizs=visualizationRequests.fetch_visualizations(st.session_state.Project)
+                vizs=visualizationRequests.fetch_visualizations(viz_session['project_id'])
                 for i in vizs:
                     w.visualizations.append(self.create((i)))
                 
 
-                with st.session_state.board(rowHeight=57):
+                with viz_session['viz']['board'](rowHeight=57):
                     for i in w.visualizations:
                         i()
