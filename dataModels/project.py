@@ -35,14 +35,15 @@ class Chat(BaseModel):
 class Project(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True,populate_by_name=True) #Add this line
     id: Optional[ObjectId] = Field(default=None, alias="_id")
-    name: str
-    Dataset: str
+    name: Optional[str]= Field(default=None, alias="name")
+    Dataset: Optional[str] = None
     user_id: str  # Reference to the User model
     streamlit_Chat:Optional[Chat]= Field(default=Chat(last_update=datetime.now()), alias="streamlit_Chat")
     model_Chat:Optional[Chat]= Field(default=Chat(last_update=datetime.now()), alias="model_Chat")
     data_report:Optional[str]= Field(default=None, alias="data_report")
     dataset_description:Optional[str]= Field(default=None, alias="dataset_description")
     created_Date:Optional[datetime]= Field(default=None, alias="created_Date")
+    thread_id: Optional[str] = Field(default=None, alias="thread_id")
     
     @classmethod
     def from_mongo(cls, document):
@@ -57,5 +58,8 @@ class Project(BaseModel):
         document["created_Date"] = datetime.strptime(document["created_Date"],"%d %B %Y")  # Convert ObjectId to string 
         document["model_Chat"]["last_update"] = datetime.strptime(document["model_Chat"]["last_update"],"%d %B %Y")  # Convert ObjectId to string 
         document["streamlit_Chat"]["last_update"] = datetime.strptime(document["streamlit_Chat"]["last_update"],"%d %B %Y")  # Convert ObjectId to string 
+        # Only process thread_id if it exists in the document
+        if "thread_id" in document and document["thread_id"] is not None:
+            document["thread_id"] = str(document["thread_id"])
         return cls(**document)
     
