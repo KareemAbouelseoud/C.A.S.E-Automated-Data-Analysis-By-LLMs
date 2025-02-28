@@ -138,12 +138,14 @@ class MultiPageApp():
             st.sidebar.title(f"Hello {user_first_name}")
             if 'project_id' in st.session_state['user_data']['projects']['current_project'] and st.session_state['user_data']['projects']['current_project']['project_id']!=None:
                 
-                if st.session_state['user_data']['projects']['current_project'].get('description_confirmed',False):
-                    st.navigation(self.pages[-2:]).run()
-                else:
-                    #this needs to be here
-                    from Displays.Project.dataDescription import dataDescription
-                    dataDescription()
+                # if st.session_state['user_data']['projects']['current_project'].get('description_confirmed',False):
+                #     st.navigation(self.pages[-2:]).run()
+                # else:
+                #     #this needs to be here
+                #     from Displays.Project.dataDescription import dataDescription
+                #     dataDescription()
+                st.navigation(self.pages[-2:]).run() #remove this when the above is fixed
+
                     
             else:  
                 pg=st.navigation(self.pages[2:4])
