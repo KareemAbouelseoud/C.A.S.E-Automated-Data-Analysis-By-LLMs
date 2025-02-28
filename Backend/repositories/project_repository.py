@@ -18,19 +18,33 @@ class ProjectRepository(BaseRepository[Project]):
             project.created_Date=project.created_Date.strftime("%d %B %Y")
             project.model_Chat.last_update=project.model_Chat.last_update.strftime("%d %B %Y")
             project.streamlit_Chat.last_update=project.streamlit_Chat.last_update.strftime("%d %B %Y")
+            project.thread_id=project.thread_id
             return project
         return None
+    
+    async def get_by_thread_id(self, id: str) -> Optional[Project]:
+        projection={'_id': 1, 'data_report':1,'model_Chat':1,'user_id':1}
+        document = await self.collection.find_one({"thread_id": id},projection)
+        if document:
+            project = Project.from_mongo(document)
+            project.id = str(project.id)
+            project.model_Chat.last_update = project.model_Chat.last_update.strftime("%d %B %Y")
+            project.streamlit_Chat.last_update = project.streamlit_Chat.last_update.strftime("%d %B %Y")
+            return project
+        return []
 
     
     async def Filter(self, filter: dict) -> List[Project]:
         filtered_Items = []
-        async for document in self.collection.find(filter):
+        projection={'_id': 1, 'name': 1, 'created_Date': 1, 'thread_id': 1,'user_id':1}
+        async for document in self.collection.find(filter,projection):
             project=Project.from_mongo(document)
             project.id=str(project.id)
             project.created_Date=project.created_Date.strftime("%d %B %Y")
             project.model_Chat.last_update=project.model_Chat.last_update.strftime("%d %B %Y")
             project.streamlit_Chat.last_update=project.streamlit_Chat.last_update.strftime("%d %B %Y")
             filtered_Items.append(project.model_dump())  # Convert ObjectId
+
         return filtered_Items
 
     
@@ -42,6 +56,7 @@ class ProjectRepository(BaseRepository[Project]):
             project.created_Date=project.created_Date.strftime("%d %B %Y")
             project.model_Chat.last_update=project.model_Chat.last_update.strftime("%d %B %Y")
             project.streamlit_Chat.last_update=project.streamlit_Chat.last_update.strftime("%d %B %Y")
+            project.thread_id=project.thread_id
             projects.append(project)
         return projects
 

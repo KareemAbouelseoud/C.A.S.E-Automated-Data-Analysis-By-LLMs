@@ -38,10 +38,11 @@ class Projects:
     def new_project_clicked(self):
         st.session_state['user_data']['projects']["newProject"] = True
     
-    def project_clicked(self,project_id):
+    def project_clicked(self,project_id,thread_id):
         for placeholder in self.placeholders:
             placeholder.empty()
         st.session_state['user_data']['projects']['current_project']['project_id']=str(project_id)
+        st.session_state['user_data']['projects']['current_project']['thread_id']= str(thread_id)
 
     def projectOverview(self):
         st.markdown("<h1 style='text-align: center; font-size: 80px;'>My Projects</h1>", unsafe_allow_html=True)
@@ -89,7 +90,7 @@ class Projects:
                             unsafe_allow_html=True)
                 st.markdown(f'<span id="button-after-{idx}"></span>', unsafe_allow_html=True)
                 placeholder = st.empty()
-                placeholder.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project["id"]],key=f"project_{uuid.uuid4()}")
+                placeholder.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project["id"],project['thread_id']],key=f"project_{uuid.uuid4()}")
                 self.placeholders.append(placeholder)
         cols=st.columns(3)
         with cols[1]:

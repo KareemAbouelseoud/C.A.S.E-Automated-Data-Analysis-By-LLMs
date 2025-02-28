@@ -9,12 +9,7 @@ chatbot_router = APIRouter()
 @chatbot_router.post('/chat',tags=["Chat"])
 async def chat(body:Chat):
 
-    messages=await project_service.get_model_chat_history(body.project_id)
-    messages.append({"role": "user", "content": body.prompt})
-
-    data_report=await project_service.fetch_data_report(body.project_id)
-
-    response = requests.post(url+"/chat",json={"messages":json.dumps(messages),"data_report":data_report},stream=True)
+    response = requests.post(url+"/chat",json={'thread_id':body.thread_id,'prompt':body.prompt},stream=True)
 
     return StreamingResponse(response.iter_content(chunk_size=4096), media_type="text/event-stream")
     
@@ -25,23 +20,25 @@ async def recommend(item: Recommender):
     project_id = item.project_id
 
     data_report=await project_service.fetch_data_report(project_id)
-    response=requests.post(url+"/recommend",json={"prompt":prompt,"data_report":data_report})
+    response=requests.post(url+"/recommend",json={"prompt":prompt,"data_report":data_report,'thread_id':item.thread_id})
     recommendations=response.json()['data']
 
     return {"data":recommendations}
 
-@chatbot_router.get('/project/{project_id}/get_model_history',tags=["Chat"])
-async def get_model_history(project_id: str):
+
+
+@chatbot_router.get('/project/{thread_id}/get_model_history',tags=["Chat"])
+async def get_model_history(thread_id: str):
     """
     Endpoint to retrieve Streamlit chat history for a specific chat ID.
 
     Args:
-        project_id (str): Chat ID to retrieve Streamlit chat history for.
+        thread_id (str): Chat ID to retrieve Streamlit chat history for.
 
     Returns:
         dict: JSON with Streamlit chat history.
     """
-    return json.dumps({'data':await project_service.get_model_chat_history(project_id)})
+    return json.dumps({'data':await project_service.get_model_chat_history(thread_id)})
 
 @chatbot_router.get('/project/{project_id}/get_streamlit_history',tags=["Chat"])
 async def get_streamlit_history(project_id: str):
@@ -77,4 +74,5 @@ async def clearChatHistory(project_id:str,user_id:str):
     """
     if project_id=="" or user_id=="":
         raise HTTPException(status_code=400, detail="Project Id and user Id Can not be null")
-    return {'Updated':await project_service.clearChatHistory(project_id=project_id,user_id=user_id)}
+    return {'data':await project_service.clearChatHistory(project_id=project_id,user_id=user_id)}
+

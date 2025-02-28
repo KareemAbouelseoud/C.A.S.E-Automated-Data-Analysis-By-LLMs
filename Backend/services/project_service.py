@@ -1,5 +1,6 @@
 
 from config import *
+import uuid
 def get_repo():
     repo = ProjectRepository()
     return repo
@@ -44,6 +45,7 @@ class ProjectService:
         data_report_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'data_report_1.json')
         with open(data_report_path, 'r') as file:
             new_project.data_report = json.dumps(json.load(file))
+        new_project.thread_id = str(uuid.uuid4())
         # 5.  Important: Save ٍProject to MongoDB
         try:       
             project = await self.project_repository.create(new_project)         
@@ -69,7 +71,7 @@ class ProjectService:
     
     #region Chat Functions
 
-    async def clearChatHistory(self, project_id: str,user_id:str) -> bool:
+    async def clearChatHistory(self, project_id: str,user_id:str) -> str:
         try:
             user = await self.userRepository.get_by_id(user_id)  
         except Exception as e:
@@ -95,6 +97,7 @@ class ProjectService:
         project.model_Chat=projectChat(last_update=datetime.now())
         project.streamlit_Chat=projectChat(last_update=datetime.now())
         project_viz.Chat_visualizations=[]
+        project.thread_id=str(uuid.uuid4())
 
         try:
             await self.project_repository.update(project_id, project)
@@ -103,9 +106,10 @@ class ProjectService:
             raise HTTPException(status_code=500, detail=f"Error Updating project and data to MongoDB: {e}")
         try:
             await self.vizRepository.update(project_id, project_viz)
-            return True
+            return project.thread_id
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project and data to MongoDB: {e}")
+        
     
     async def updateChatHistory(self, project_id: str, user_id:str,last_conv:list) -> bool:
         try:
@@ -144,17 +148,14 @@ class ProjectService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project's chat to MongoDB: {e}")
     
-    async def get_model_chat_history(self, project_id: str) -> Optional[List[str]]:
+    async def get_model_chat_history(self, thread_id: str) -> Optional[List[str]]:
         try:
-            project = await self.project_repository.get_by_id(project_id)
+            project = await self.project_repository.get_by_thread_id(thread_id)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
-            
-        if project==None:
-            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
-        if project.model_Chat.messages==None:
+        if project==[]:
             return []
-        return json.loads(project.model_Chat.messages)
+        return [project.model_Chat.messages if project.model_Chat.messages else [],project.data_report,str(project.id)]
     
     async def get_streamlit_chat_history(self, project_id: str) -> Optional[Project]:
         try:
@@ -189,5 +190,15 @@ class ProjectService:
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
         return pd.read_json(StringIO(project.Dataset))
+
+    async def fetch_thread_id(self, project_id: str) -> Optional[str]:
+        try:
+            project = await self.project_repository.get_by_id(project_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            
+        if project==None:
+            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        return project.thread_id
 
     #endregion
