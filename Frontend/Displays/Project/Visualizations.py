@@ -4,6 +4,7 @@ from streamlit_elements import elements,event,sync,lazy
 from types import SimpleNamespace
 from Requests import visualizationRequests
 viz_session=st.session_state['user_data']['projects']['current_project']
+import hydralit_components as hc
 class Visualizations:
     def __init__(self):
         if 'viz' not in viz_session:
@@ -19,52 +20,54 @@ class Visualizations:
             for i in fig_dict:
                 return self.create(i)
     
-    def visualizationShown(self):
+    def visualizationShown(self,placeholder):
+        placeholder.empty()
         viz_session['viz']['Visualization']=True
         
     def run(self):
-        cols=st.columns(3)
-        with cols[1]:
-            st.markdown(
-                """
-                <style>
-                .element-container:has(#button-after) + div button {
-                    justify-content: center;
-                    align-items: center;
-                    width: 100%; /* Ensure the container takes up full width */
-                    height: 100%; /* Optional: to ensure vertical centering */
-                    border-radius: 16px;
-                    background: rgba(0, 0, 0, 0.4);
-                    z-index: 2;
-                    box-shadow: 
-                        0 0 6px rgba(255, 255, 255, 0.3), 
-                        0 0 12px rgba(255, 255, 255, 0.2), 
-                        0 0 18px rgba(255, 255, 255, 0.2);
-                    color: white;
-                    padding: 30px;
-                    font-size: 50px;
-                    text-align: center;
-                    cursor: pointer;
-                    justify-content: center;
-                    align-items: center;
-                    margin-bottom: 20px; /* Adds vertical space if wrapping occurs */
-                    transition: box-shadow 0.3s ease; /* Smooth transition */
-                    border: none; /* Explicitly remove any border */
+        if 'Visualization' not in viz_session['viz'] or not viz_session['viz']['Visualization']:
+            cols=st.columns(3)
+            with cols[1]:
+                st.markdown(
+                    """
+                    <style>
+                    .element-container:has(#button-after) + div button {
+                        justify-content: center;
+                        align-items: center;
+                        width: 100%; /* Ensure the container takes up full width */
+                        height: 100%; /* Optional: to ensure vertical centering */
+                        border-radius: 16px;
+                        background: rgba(0, 0, 0, 0.4);
+                        z-index: 2;
+                        box-shadow: 
+                            0 0 6px rgba(255, 255, 255, 0.3), 
+                            0 0 12px rgba(255, 255, 255, 0.2), 
+                            0 0 18px rgba(255, 255, 255, 0.2);
+                        color: white;
+                        padding: 30px;
+                        font-size: 50px;
+                        text-align: center;
+                        cursor: pointer;
+                        justify-content: center;
+                        align-items: center;
+                        margin-bottom: 20px; /* Adds vertical space if wrapping occurs */
+                        transition: box-shadow 0.3s ease; /* Smooth transition */
+                        border: none; /* Explicitly remove any border */
 
+                        }
+                        .element-container:has(#button-after) + div button:hover {
+                        box-shadow: 
+                            0 0 10px rgba(255, 255, 255, 0.6), 
+                            0 0 20px rgba(255, 255, 255, 0.5), 
+                            0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
                     }
-                    .element-container:has(#button-after) + div button:hover {
-                    box-shadow: 
-                        0 0 10px rgba(255, 255, 255, 0.6), 
-                        0 0 20px rgba(255, 255, 255, 0.5), 
-                        0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
-                }
-                </style>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-            if 'Visualization' not in viz_session['viz'] or not viz_session['viz']['Visualization']:
-                st.button("Begin Generation",on_click=self.visualizationShown)
+                    </style>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+                placeholder = st.empty()
+                placeholder.button("Begin Generation",on_click=self.visualizationShown,args=[placeholder])
         
         if viz_session['viz']['Visualization']:
             if "w" not in viz_session['viz']:
@@ -78,7 +81,8 @@ class Visualizations:
                 w = viz_session['viz']['w']
             with elements("demo"):
                 event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
-                vizs=visualizationRequests.fetch_visualizations(viz_session['project_id'])
+                with hc.HyLoader("",hc.Loaders.pulse_bars,index=[0]):
+                    vizs=visualizationRequests.fetch_visualizations(viz_session['project_id'])
                 for i in vizs:
                     w.visualizations.append(self.create((i)))
                 

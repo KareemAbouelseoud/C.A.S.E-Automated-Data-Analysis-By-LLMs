@@ -14,7 +14,6 @@ chatbot_session=st.session_state['user_data']['projects']['current_project']
 # from req import clear_history,get_st_history,create_new_chat,update_user_st_history,get_model_history,chat,recommender
 from Requests import chatbotRequests,visualizationRequests
 from dataModels.visualization import visualizations,ChatViz
-st.empty()
 from streamlit_cookies_controller import CookieController
 controller=CookieController()
 
@@ -151,7 +150,7 @@ class Chatbot:
 
         if st.sidebar.button('Clear History'):
             chatbotRequests.clear_history(chatbot_session['project_id'],controller.get("user_id"))
-            chatbot_session['chatbot']['messages']={}
+            chatbot_session['chatbot']['messages']=[]
             chatbot_session['chatbot']['new']=None
             if 'recommendation' in chatbot_session['chatbot']:
                 chatbot_session['chatbot']['recommendation']=None
@@ -217,10 +216,8 @@ class Chatbot:
         """
         Accepts user input and processes the query. It generates responses and handles recommendations.
         """
-        st.empty()
 
         if prompt := st.chat_input("Enter your query:"):
-            st.empty()
             chatbot_session['chatbot']['new']=False
             sanitized_input = self.sanitize_user_input(prompt)
             with st.chat_message("user"):
@@ -241,7 +238,7 @@ class Chatbot:
                 
             chatbot_session['chatbot']['messages'].append({"role": "user", "content": chatbot_session['chatbot']['recommendation']})
             self.generate_response(chatbot_session['chatbot']['recommendation'])
-            chatbotRequests.update_user_st_history(str(chatbot_session['Project']),chatbot_session['chatbot']['messages'],controller.get("user_id"))
+            chatbotRequests.update_user_st_history(str(chatbot_session['project_id']),chatbot_session['chatbot']['messages'],controller.get("user_id"))
             self.recommend(chatbot_session['chatbot']['recommendation'])
             del chatbot_session['chatbot']['recommendation']
 
@@ -258,11 +255,8 @@ class Chatbot:
         """
         with st.spinner("Generating response..."):
             try:
-                st.empty()
                 response =chatbotRequests.chat(user_input,project_id=chatbot_session['project_id'])
-                st.empty()
                 self.display_assistant_response(response)
-                st.empty()
 
             except Exception as e:
                 raise e
@@ -372,7 +366,6 @@ class Chatbot:
             if recommendations[i]!=' ':
                 recommendations[i]=recommendations[i].replace('"','')
                 st.button(recommendations[i],on_click=self.recommend_response,args=[recommendations[i]])
-                st.empty()
     
 
     # def checkQueryRequest(self,prompt):
