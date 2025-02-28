@@ -27,11 +27,12 @@ class CreateProject(BaseModel):
 class Recommender(BaseModel):
     prompt:str
     project_id:str
+    thread_id:str
 
 class Chat(BaseModel):
     prompt:str
-    messages:Optional[str]=None
     project_id:str
+    thread_id:str
 
 class Train(BaseModel):
     target_feature:str
