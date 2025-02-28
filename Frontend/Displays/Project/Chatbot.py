@@ -149,7 +149,7 @@ class Chatbot:
         """, unsafe_allow_html=True)
 
         if st.sidebar.button('Clear History'):
-            chatbotRequests.clear_history(chatbot_session['project_id'],controller.get("user_id"))
+            chatbot_session['thread_id']=chatbotRequests.clear_history(chatbot_session['project_id'],controller.get("user_id"))
             chatbot_session['chatbot']['messages']=[]
             chatbot_session['chatbot']['new']=None
             if 'recommendation' in chatbot_session['chatbot']:
@@ -255,7 +255,7 @@ class Chatbot:
         """
         with st.spinner("Generating response..."):
             try:
-                response =chatbotRequests.chat(user_input,project_id=chatbot_session['project_id'])
+                response =chatbotRequests.chat(user_input,project_id=chatbot_session['project_id'],thread_id=chatbot_session['thread_id'])
                 self.display_assistant_response(response)
 
             except Exception as e:
@@ -356,7 +356,7 @@ class Chatbot:
         Provides personalized prompt recommendations based on the user's input.
         """
         if prompt:
-                recommendations=chatbotRequests.recommender([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}],chatbot_session['project_id'])
+                recommendations=chatbotRequests.recommender([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}],chatbot_session['project_id'],chatbot_session['thread_id'])
         else:
             recommendations=['What are your features',"Suggest interesting visualizations","Find outliers in this dataset and explain their impact","Create a Machine Learning Model","Summarize key insights from this dataset"]
             
