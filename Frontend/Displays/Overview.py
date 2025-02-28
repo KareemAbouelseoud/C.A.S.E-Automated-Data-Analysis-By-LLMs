@@ -156,6 +156,12 @@ class Projects:
                                 databaseRequests.create_project(controller.get('user_id'),project_name,uploaded_file)
                                 st.session_state['user_data']['projects']['projects_updated']=True
                                 st.session_state['user_data']['projects']['newProject']=False
+                                
+                                # #NOTE THIS HERE SHOULD RETURN TWO THINGS, THE PROJECT ID
+                                # st.session_state['user_data']['projects']['current_project']={} #this is fine
+                                # st.session_state['user_data']['projects']['current_project']['project_id']= None #new project id
+                                # st.session_state['user_data']['projects']['current_project']['initial_data_description']=None #initial data description
+                                # st.session_state['user_data']['projects']['current_project']['description_confirmed']=False #this is fine
                                 st.rerun()
                             
                             else:
