@@ -33,11 +33,14 @@ class Projects:
 
         self.max_columns = 3
         self.columns = None
+        self.placeholders = []
     
     def new_project_clicked(self):
         st.session_state['user_data']['projects']["newProject"] = True
     
     def project_clicked(self,project_id):
+        for placeholder in self.placeholders:
+            placeholder.empty()
         st.session_state['user_data']['projects']['current_project']['project_id']=str(project_id)
 
     def projectOverview(self):
@@ -85,8 +88,9 @@ class Projects:
                             """,
                             unsafe_allow_html=True)
                 st.markdown(f'<span id="button-after-{idx}"></span>', unsafe_allow_html=True)
-                st.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project["id"]],key=f"project_{uuid.uuid4()}")
-        
+                placeholder = st.empty()
+                placeholder.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project["id"]],key=f"project_{uuid.uuid4()}")
+                self.placeholders.append(placeholder)
         cols=st.columns(3)
         with cols[1]:
             st.markdown(
@@ -127,7 +131,9 @@ class Projects:
                 unsafe_allow_html=True,
             )
             st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-            st.button(" \+ Create a new Project",on_click=self.new_project_clicked,key=f"new_project_{uuid.uuid4()}")
+            placeholder = st.empty()
+            placeholder.button(" \+ Create a new Project",on_click=self.new_project_clicked,key=f"new_project_{uuid.uuid4()}")
+            self.placeholders.append(placeholder)
             
             
             if st.session_state['user_data']['projects']['newProject']:

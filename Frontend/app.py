@@ -95,7 +95,6 @@ class MultiPageApp():
         pg.run()
 
     def logout(self):
-        st.empty()
         st.session_state['loggedIn'] = False
         self.controller.remove(f"user")     
         self.controller.remove(f"user_id")     
@@ -116,7 +115,6 @@ class MultiPageApp():
         -------
         None
         """
-        st.empty()
         cookies = self.controller.getAll()
         if 'user_data' not in st.session_state:
             st.session_state['user_data'] = {}
