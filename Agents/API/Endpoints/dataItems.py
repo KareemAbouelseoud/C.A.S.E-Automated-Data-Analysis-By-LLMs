@@ -10,9 +10,9 @@ class createDashboard(BaseModel):
     data_report: str
 
 class Chat(BaseModel):
-    messages:Optional[str]=None
-    data_report:Optional[str]=None
     project_id:Optional[str]=None
+    thread_id:Optional[str]=None
+    prompt:str
 
 class Recommender(BaseModel):
     prompt:str
