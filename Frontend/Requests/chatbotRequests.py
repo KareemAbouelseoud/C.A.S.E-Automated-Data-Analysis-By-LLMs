@@ -6,13 +6,13 @@ import requests
 import json
 url='http://Backend:8005'
 
-def chat(prompt,project_id):
+def chat(prompt,project_id,thread_id):
     
-    response=requests.post(url + "/chat", json={"prompt": prompt,'project_id': project_id},stream=True)    
+    response=requests.post(url + "/chat", json={"prompt": prompt,'project_id': project_id,'thread_id':thread_id},stream=True)    
     return response
 
-def recommender(prompt,project_id):
-    response=requests.post(url+"/recommend", json={"prompt": json.dumps(prompt),'project_id':project_id})
+def recommender(prompt,project_id,thread_id):
+    response=requests.post(url+"/recommend", json={"prompt": json.dumps(prompt),'project_id':project_id,'thread_id':thread_id})
     ## This is the response and it is a dict like that => {'data': '["Summarize data", "Show correlations", "Find outliers"]'}
     return eval(response.json()['data'])
 
@@ -97,7 +97,8 @@ def clear_history(project_id,user_id):
     -------
     None
     """
-    requests.get(url+f"/project/{project_id}/chat/clear?user_id={user_id}")
+    response=requests.get(url+f"/project/{project_id}/chat/clear?user_id={user_id}")
+    return response.json()['data']
 
 
 
