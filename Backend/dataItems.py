@@ -38,3 +38,6 @@ class Train(BaseModel):
     training_features:List[str]
     mode:str
     user_input:Optional[str]=None
+class DatasetVis(BaseModel):
+    column_name:str
+    plot_type:Optional[str]=None
