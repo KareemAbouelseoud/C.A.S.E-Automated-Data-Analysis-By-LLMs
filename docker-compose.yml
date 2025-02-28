@@ -1,5 +1,8 @@
 services:
   Agents:
+    build: 
+      context: ./Agents
+      dockerfile: dockerfile
     image: agents:1.0
     networks:
       - case-pb
@@ -14,6 +17,9 @@ services:
       - .env
 
   Backend:
+    build: 
+      context: ./Backend
+      dockerfile: dockerfile
     image: backend:1.0
     networks:
       - case-pb
@@ -28,6 +34,9 @@ services:
       - .env
 
   Frontend:
+    build: 
+      context: ./Frontend
+      dockerfile: dockerfile
     image: frontend:1.0
     networks:
       - case-pb
@@ -37,7 +46,9 @@ services:
       - ./Frontend:/app
       - ./dataModels:/app/dataModels
     restart: always
-
+    environment:
+      - STREAMLIT_SERVER_RUN_ON_SAVE=true
+      - STREAMLIT_SERVER_HEADLESS=true
     env_file:
       - .env
 

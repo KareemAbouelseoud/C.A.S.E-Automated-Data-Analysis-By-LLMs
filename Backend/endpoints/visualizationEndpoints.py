@@ -65,3 +65,84 @@ async def Save_Chat_Viz(project_id:str,new_chat_viz:ChatViz):
         bool: saved successfully or not
     """ 
     return await viz_service.update_Chat_Viz(project_id=project_id,new_viz=new_chat_viz)
+
+
+@viz_router.get('/project/{project_id}/visualization/plot_column_type', tags=["Visualizations"])
+async def plot_column_type(project_id: str):
+    """
+    Endpoint to plot a specific column type for a project.
+
+    Args:
+        project_id (str): Project ID to retrieve visualization data for.
+        column_name (str): Column name to plot.
+
+    Returns:
+        dict: JSON with plot data.
+    """
+    
+    plot_data = await viz_service.plot_column_types(project_id=project_id)
+    return plot_data
+
+@viz_router.get('/project/{project_id}/visualization/plot_missing_column', tags=["Visualizations"])
+async def plot_missing_column(project_id: str,item:DatasetVis):
+    """
+    Endpoint to plot a specific column type for a project.
+
+    Args:
+        project_id (str): Project ID to retrieve visualization data for.
+        column_name (str): Column name to plot.
+
+    Returns:
+        dict: JSON with plot data.
+    """
+    
+    plot_data = await viz_service.plot_missing_column(project_id=project_id,column_name=item.column_name,plot_type=item.plot_type)
+    return plot_data
+
+@viz_router.get('/project/{project_id}/visualization/plot_distribution', tags=["Visualizations"])
+async def plot_distribution(project_id: str,item:DatasetVis):
+    """
+    Endpoint to plot a specific column type for a project.
+
+    Args:
+        project_id (str): Project ID to retrieve visualization data for.
+        column_name (str): Column name to plot.
+
+    Returns:
+        dict: JSON with plot data.
+    """
+    
+    plot_data = await viz_service.plot_distribution(project_id=project_id,column_name=item.column_name,plot_type=item.plot_type)
+    return plot_data
+
+@viz_router.get('/project/{project_id}/visualization/top-n', tags=["Visualizations"])
+async def top_n(project_id: str,item:DatasetVis):
+    """
+    Endpoint to plot a specific column type for a project.
+
+    Args:
+        project_id (str): Project ID to retrieve visualization data for.
+        column_name (str): Column name to plot.
+
+    Returns:
+        dict: JSON with plot data.
+    """
+    
+    plot_data = await viz_service.plot_top_n(project_id=project_id,column_name=item.column_name,plot_type=item.plot_type)
+    return plot_data
+
+@viz_router.get('/project/{project_id}/visualization/wordcloud', tags=["Visualizations"])
+async def wordcloud(project_id: str,item:DatasetVis):
+    """
+    Endpoint to plot a specific column type for a project.
+
+    Args:
+        project_id (str): Project ID to retrieve visualization data for.
+        column_name (str): Column name to plot.
+
+    Returns:
+        dict: JSON with plot data.
+    """
+    
+    plot_data = await viz_service.plot_word_cloud(project_id=project_id,column_name=item.column_name)
+    return plot_data

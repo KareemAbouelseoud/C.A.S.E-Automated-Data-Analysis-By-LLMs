@@ -6,20 +6,9 @@ import requests
 import json
 from dataModels.visualization import ChatViz
 import pandas as pd
+import streamlit as st
 url='http://Backend:8005'
 
-def fetch_visualizations(project_id:str):
-    response = requests.get(url+f'/project/{project_id}/visualization/get_Auto_Gen')
-    return json.loads(response.json())['visualizations']
-
-def fetch_chat_visualizations(project_id:str):
-    response = requests.get(url+f'/project/{project_id}/visualization/get_Chat_Viz')
-    return json.loads(response.json())['visualizations']
-
-
-def save_chat_visualizations(project_id:str,new_viz:ChatViz):    
-    response = requests.post(url+f'/project/{project_id}/visualization/Chat_viz',json=new_viz.model_dump())
-    return response.status_code==200
 
 def make_serializable(obj):
     """
@@ -42,3 +31,56 @@ def make_serializable(obj):
         return None
     else:
         return obj
+    
+def fetch_visualizations(project_id:str):
+    response = requests.get(url+f'/project/{project_id}/visualization/get_Auto_Gen')
+    return json.loads(response.json())['visualizations']
+
+def fetch_chat_visualizations(project_id:str):
+    response = requests.get(url+f'/project/{project_id}/visualization/get_Chat_Viz')
+    return json.loads(response.json())['visualizations']
+
+
+def save_chat_visualizations(project_id:str,new_viz:ChatViz):    
+    response = requests.post(url+f'/project/{project_id}/visualization/Chat_viz',json=new_viz.model_dump())
+    return response.status_code==200
+
+
+@st.cache_data
+def plot_column_types(project_id:str):
+    response = requests.get(url+f'/project/{project_id}/visualization/plot_column_type')
+    if response.status_code==200:
+        return response.json()
+    else:
+        return None
+
+@st.cache_data
+def plot_missing_column(project_id:str,column_name:str,plot_type:str='Pie Chart',**kwargs):
+    response = requests.get(url+f'/project/{project_id}/visualization/plot_missing_column',json={'column_name':column_name,'plot_type':plot_type})
+    if response.status_code==200:
+        return response.json()
+    else:
+        return None
+@st.cache_data
+def plot_distribution(project_id:str,column_name:str,plot_type:str='histogram',**kwargs):
+    response = requests.get(url+f'/project/{project_id}/visualization/plot_distribution',json={'column_name':column_name,'plot_type':plot_type})
+    if response.status_code==200:
+        return response.json()
+    else:
+        return None
+
+@st.cache_data
+def plot_top_n(project_id:str,column_name:str,plot_type:str='Word Frequency',**kwargs):
+    response = requests.get(url+f'/project/{project_id}/visualization/top-n',json={'column_name':column_name,'plot_type':plot_type})
+    if response.status_code==200:
+        return response.json()
+    else:
+        return None
+
+@st.cache_data
+def plot_word_cloud(project_id:str,column_name:str,**kwargs):
+    response = requests.get(url+f'/project/{project_id}/visualization/wordcloud',json={'column_name':column_name})
+    if response.status_code==200:
+        return response.json()
+    else:
+        return None

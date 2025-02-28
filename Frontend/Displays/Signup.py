@@ -24,8 +24,8 @@ class SignUp:
         self.__username=None
         self.__password=None
         self.__email=None
-        if 'user_id' not in st.session_state:
-            st.session_state['user_id']=''
+        if 'user_id' not in st.session_state['user_data']:
+            st.session_state['user_data']['user_id']=''
 
     def __signup(self)->None:
         """

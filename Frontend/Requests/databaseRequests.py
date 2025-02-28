@@ -154,3 +154,8 @@ def fetch_dataset(project_id):
     df=pd.DataFrame(_df)
     return df
 
+def fetch_datareport(project_id):
+    response=requests.get(url+f'/project/{project_id}/fetchDataReport')
+    dataReport=json.loads(response.json()["data"])
+    return dataReport
+

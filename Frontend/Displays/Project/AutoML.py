@@ -1,11 +1,11 @@
 import streamlit as st
+autoML_session = st.session_state['user_data']['projects']['current_project']
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from Requests import databaseRequests,automlRequests
 
-st.empty()
 
 
 
@@ -13,25 +13,28 @@ st.empty()
 class AutoML:
 
     def __init__(self):
-        if 'training' not in st.session_state:
-            st.session_state['training']=False
+        if 'autoML' not in autoML_session:
+            autoML_session['autoML']={}            
+            autoML_session['autoML']['training']=False
+            autoML_session['autoML']['autoML_data']={}
         
         self.run()
 
 
     def trainingStarted(self):
-        st.session_state['training']=True
-        self.trainPage(**st.session_state['autoML_data'])
+        autoML_session['autoML']['training']=True
+        self.trainPage(**autoML_session['autoML']['autoML_data'])
 
     def run(self):
         st.write("\n\n\n\n\n")
-        if 'df' not in st.session_state or st.session_state['df'] is None:
-            df=databaseRequests.fetch_dataset(st.session_state['Project'])
+        if 'df' not in autoML_session['autoML'] or autoML_session['autoML']['df'] is None:
+            df=databaseRequests.fetch_dataset(autoML_session['project_id'])
+            autoML_session['autoML']['df']=df
         else:
-            df=st.session_state['df']
+            df=autoML_session['autoML']['df']
         
-        if 'autoML_data' not in st.session_state:
-            st.session_state['autoML_data']={}
+        if 'autoML_data' not in autoML_session['autoML']:
+            autoML_session['autoML']['autoML_data']={}
         
             
         with st.form('AutoML'):
@@ -42,7 +45,7 @@ class AutoML:
                     if df is not None:
                         columns = df.columns.tolist()
                         target_feature = st.selectbox('Select the target feature', columns)
-                        st.session_state['autoML_data']['target_feature']=target_feature
+                        autoML_session['autoML']['autoML_data']['target_feature']=target_feature
             with cols[1]:
                 c=st.columns([2,1])
                 with c[1]:
@@ -51,14 +54,14 @@ class AutoML:
                     if df is not None:
                         if feature_selection_mode == 'Include':
                             features = st.multiselect('Select the features to include', [col for col in df.columns.tolist() if col != target_feature])
-                            st.session_state['autoML_data']['features']=features
+                            autoML_session['autoML']['autoML_data']['features']=features
                         else:
                             features = st.multiselect('Select the features to exclude', [col for col in df.columns.tolist() if col != target_feature])
                             features = [feature for feature in df.columns.tolist() if feature not in features and feature != target_feature]
-                            st.session_state['autoML_data']['features']=features
+                            autoML_session['autoML']['autoML_data']['features']=features
             with cols[2]:
                 mode = st.selectbox('Select the mode', ['⚡HERMES', '⚖️ ATHENA', '🔨 HEPHAESTUS'],help='HERMES is extremely fast, but sacrifices accuracy\n\n ATHENA is the balanced mode\n\n HEPHAESTUS is the slowest, but guarantess the highest accuracy')
-                st.session_state['mode'] = mode
+                autoML_session['autoML']['mode'] = mode
             c=st.columns([1,2,1])
             # with c[-1]:
                 # if st.session_state['mode'] == '⚡HERMES':
@@ -70,7 +73,7 @@ class AutoML:
                 
             with c[0]:
                 model_preferences = st.text_input('Model Preferences (Optional)', help='Specify any preferences or constraints for the model.\n\nE.g., "High recall for detecting fraud" or "High precision for medical diagnosis".')
-                st.session_state['autoML_data']['model_preferences']=model_preferences
+                autoML_session['autoML']['autoML_data']['model_preferences']=model_preferences
             with c[1]:
                 cc=st.columns([1,2,1])
                 with cc[1]:
@@ -112,7 +115,7 @@ class AutoML:
                     unsafe_allow_html=True,
                 )
                     st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-                    if not st.session_state['training']:
+                    if not autoML_session['autoML']['training']:
                         st.form_submit_button("Begin Training",on_click=self.trainingStarted)
                     else:
                         st.form_submit_button("Retrain",on_click=self.trainingStarted)
@@ -122,8 +125,8 @@ class AutoML:
 
     def trainPage(self,target_feature,features,model_preferences=None):
         print( target_feature,features,model_preferences)
-        print(st.session_state['Project'])
-        print(st.session_state['mode'])
+        print(autoML_session['project_id'])
+        print(autoML_session['mode'])
         # automlRequests.train(st.session_state['Project'],target_feature,training_features,st.session_state['mode'],user_input)
 
         

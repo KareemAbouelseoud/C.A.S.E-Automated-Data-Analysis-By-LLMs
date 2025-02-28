@@ -49,10 +49,20 @@ async def getProject(project_id:str):
 
 
 @Project_router.get("/project/{project_id}/fetchDataset",tags=["Project"])
-async def getProject(project_id:str):
+async def fetchDataset(project_id:str):
     """
     API endpoint to receive and save uploaded files.
     """
     df = await project_service.fetch_dataset(project_id)
     
     return {'data':df.to_json()}
+
+
+@Project_router.get("/project/{project_id}/fetchDataReport",tags=["Project"])
+async def fetchDataset(project_id:str):
+    """
+    API endpoint to receive and save uploaded files.
+    """
+    dr = await project_service.fetch_data_report(project_id)
+    
+    return {'data':dr}
