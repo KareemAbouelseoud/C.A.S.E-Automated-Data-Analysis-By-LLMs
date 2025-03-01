@@ -1,3 +1,5 @@
+from API.Requests.projectRequests import get_dataset
+import numpy as np
 async def checker_node(state):
     """
     Check code
@@ -36,7 +38,7 @@ async def checker_node(state):
 
     # Check execution
     try:
-        df= state['dataframe']
+        df=await get_dataset(state['project_id'])
         globals_dict={'df':df}
         
         print("CODE:", imports + "\n" + code)
@@ -63,11 +65,33 @@ async def checker_node(state):
         }
 
     # No errors
+
     print("---NO CODE TEST FAILURES---")
     return {
         "generation": code_solution,
         "messages": messages,
         "iterations": iterations,
         "error": "no",
-        'visualization':[globals_dict['fig_dict']],
+        'visualization':[make_serializable(globals_dict['fig_dict'])],
     }
+
+def make_serializable(obj):
+    """
+    Convert an object to a serializable format.
+    """
+    if isinstance(obj, dict):
+        return {k: make_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [make_serializable(i) for i in obj]
+    elif isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
+        return int(obj)
+    elif isinstance(obj, (np.float64, np.float32, np.float16)):
+        return float(obj)
+    elif isinstance(obj, pd.Interval):
+        return {'left': obj.left, 'right': obj.right, 'closed': obj.closed}
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
+        return None
+    else:
+        return obj

@@ -29,7 +29,7 @@ class CoderState(TypedDict):
     generation: str
     iterations: NotRequired[int] = 0
     error: NotRequired[str] = ''
-    dataframe:object
+    project_id:str
     data_report: NotRequired[str]
     visualization: NotRequired[Annotated[list[dict], operator.add]]
 

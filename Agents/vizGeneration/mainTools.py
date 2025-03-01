@@ -37,10 +37,32 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','Agents')))
 import loggerModule
 from typing import Annotated
+from API.Requests.projectRequests import get_dataset
 logger=loggerModule.setup_logging()
+import numpy as np
+def make_serializable(obj):
+    """
+    Convert an object to a serializable format.
+    """
+    if isinstance(obj, dict):
+        return {k: make_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [make_serializable(i) for i in obj]
+    elif isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
+        return int(obj)
+    elif isinstance(obj, (np.float64, np.float32, np.float16)):
+        return float(obj)
+    elif isinstance(obj, pd.Interval):
+        return {'left': obj.left, 'right': obj.right, 'closed': obj.closed}
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
+        return None
+    else:
+        return obj
 
 @tool
-async def create_line_plot(x: str, y: str,title: str , color: str = None,x_label: str=None,y_label: str=None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_line_plot(x: str, y: str,title: str , color: str = None,x_label: str=None,y_label: str=None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Generates a line plot using Plotly Express and returns the figure as a dictionary.
 
@@ -55,7 +77,7 @@ async def create_line_plot(x: str, y: str,title: str , color: str = None,x_label
     - dict: The generated line plot as a dictionary.
     """
     try:
-        
+        df=await get_dataset(project_id)
         # Check if provided column names exist in the dataset
         for col in [x, y, color]:
             if col and col not in df.columns:
@@ -80,12 +102,12 @@ async def create_line_plot(x: str, y: str,title: str , color: str = None,x_label
             title=title,
             template="plotly_dark",
         )
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         print(f"Error creating line plot: {e}")
 
 @tool
-async def create_scatter_plot(x: str, y: str,title: str, color: Optional[str] = None,x_label: str=None,y_label: str=None, marginal_x: Optional[str] = None, marginal_y: Optional[str] = None, trendline: Optional[str] = None, trendline_scope: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_scatter_plot(x: str, y: str,title: str, color: Optional[str] = None,x_label: str=None,y_label: str=None, marginal_x: Optional[str] = None, marginal_y: Optional[str] = None, trendline: Optional[str] = None, trendline_scope: Optional[str] = None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Generates a scatter plot using Plotly Express and returns the figure as a dictionary.
 
@@ -104,6 +126,7 @@ async def create_scatter_plot(x: str, y: str,title: str, color: Optional[str] = 
     - dict: The generated scatter plot as a dictionary.
     """
     try:
+        df=await get_dataset(project_id)
         # Check if provided column names exist in the dataset
         for col in [x, y, color]:
             if col and col not in df.columns:
@@ -132,12 +155,12 @@ async def create_scatter_plot(x: str, y: str,title: str, color: Optional[str] = 
             title=title,
             template='plotly_dark',
         )
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         print(f"Error creating scatter plot: {e}")
 
 @tool
-async def create_bubble_plot(x: str, y: str, title: str, color: Optional[str] = None, size: Optional[str] = None, x_label: str=None,y_label: str=None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_bubble_plot(x: str, y: str, title: str, color: Optional[str] = None, size: Optional[str] = None, x_label: str=None,y_label: str=None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Generates a bubble plot using Plotly Express and returns the figure as a dictionary.
 
@@ -153,6 +176,7 @@ async def create_bubble_plot(x: str, y: str, title: str, color: Optional[str] = 
     - dict: The generated bubble plot as a dictionary.
     """
     try:
+        df=await get_dataset(project_id)
         # Check if provided column names exist in the dataset
         for col in [x, y, color, size]:
             if col and col not in df.columns:
@@ -178,12 +202,12 @@ async def create_bubble_plot(x: str, y: str, title: str, color: Optional[str] = 
             title=title,
             template="plotly_dark",
         )
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         print(f"Error creating bubble plot: {e}")
 
 @tool
-async def create_swarm_plot(x: str, y: str,title: str , color: Optional[str] = None,  x_label: str=None,y_label: str=None, stripmode: Optional[str] = "group", df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_swarm_plot(x: str, y: str,title: str , color: Optional[str] = None,  x_label: str=None,y_label: str=None, stripmode: Optional[str] = "group", project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Creates a swarm plot (approximated using scatter plot) using Plotly Express and returns the figure as a dictionary.
 
@@ -199,6 +223,7 @@ async def create_swarm_plot(x: str, y: str,title: str , color: Optional[str] = N
         dict: The generated swarm plot as a dictionary.
     """
     try:
+        df=await get_dataset(project_id)
         # Check if provided column names exist in the dataset
         for col in [x, y, color]:
             if col and col not in df.columns:
@@ -225,12 +250,12 @@ async def create_swarm_plot(x: str, y: str,title: str , color: Optional[str] = N
             title=title, 
             template="plotly_dark", 
         )
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         print(f"Error creating swarm plot: {e}")
 
 @tool
-async def grouped_bar_plot(x: str, y: str,title:str, color: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def grouped_bar_plot(x: str, y: str,title:str, color: Optional[str] = None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Creates a grouped bar plot using Plotly Express and returns the plot as a dictionary.
 
@@ -244,7 +269,7 @@ async def grouped_bar_plot(x: str, y: str,title:str, color: Optional[str] = None
         dict: The generated grouped bar plot as a dictionary.
     """
     try:
-
+        df=await get_dataset(project_id)
         # Check if provided column names exist in the dataset
         for col in [x, y, color]:
             if col and col not in df.columns:
@@ -266,12 +291,12 @@ async def grouped_bar_plot(x: str, y: str,title:str, color: Optional[str] = None
             title=title, 
             barmode="group"
             )
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         print(f"Error creating grouped bar plot: {e}")
 
 @tool
-async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = None, diagonal_visible: Optional[bool] = True, title: Optional[str] = 'Pair Plot', df: Annotated[pd.DataFrame,InjectedToolArg]= None) -> Dict:
+async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = None, diagonal_visible: Optional[bool] = True, title: Optional[str] = 'Pair Plot', project_id: Annotated[str,InjectedToolArg]= None) -> Dict:
     """
     Create a pairplot using Plotly and returns the plot as a dictionary.
 
@@ -284,6 +309,7 @@ async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = N
     dict: The generated pairplot as a dictionary.
     """
     try:
+        df = await get_dataset(project_id)
         # Check if DataFrame has more than one column
         if df.shape[1] < 2:
             raise ValueError("DataFrame must have at least two columns for a pairplot.")
@@ -298,7 +324,7 @@ async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = N
         logger.info(f"Pair Plot Created Successfully")
         fig.update_layout(
                 template="plotly_dark",)
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
         
     except ValueError as e:
         logger.error(f"ValueError: {e}")
@@ -306,7 +332,7 @@ async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = N
         logger.error(f"An error occurred: {e}")
 
 @tool
-async def create_radar_chart(category_column: str,title: str, value_columns: List[str] = None, color_column: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_radar_chart(category_column: str,title: str, value_columns: List[str] = None, color_column: Optional[str] = None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Generates a radar chart using Plotly Express and returns the plot as a dictionary.
 
@@ -324,6 +350,7 @@ async def create_radar_chart(category_column: str,title: str, value_columns: Lis
     # Example dataset
 
     try:
+        df = await get_dataset(project_id)
         if category_column not in df.columns:
             raise ValueError(f"Category column '{category_column}' is not in the DataFrame.")
 
@@ -361,14 +388,14 @@ async def create_radar_chart(category_column: str,title: str, value_columns: Lis
 
         fig.update_layout(
                 template="plotly_dark",)
-        return fig.to_dict()  
+        return make_serializable(fig.to_dict())  
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
 
 @tool
-async def create_treemap(path_columns: List[str],title: str, value_column: Optional[str] = None, color_column: Optional[str] = None, color_scale: Optional[str] = "Viridis", df: Annotated[pd.DataFrame,InjectedToolArg]= None) -> Dict:
+async def create_treemap(path_columns: List[str],title: str, value_column: Optional[str] = None, color_column: Optional[str] = None, color_scale: Optional[str] = "Viridis", project_id: Annotated[str,InjectedToolArg]= None) -> Dict:
     """
     Generates a treemap using Plotly Express and returns the plot as a dictionary.
 
@@ -383,7 +410,7 @@ async def create_treemap(path_columns: List[str],title: str, value_column: Optio
         dict: The generated treemap as a dictionary.
     """
     try:  
-
+        df = await get_dataset(project_id)
         valid_path_columns = [col for col in path_columns if col in df.columns]
         if len(valid_path_columns) < len(path_columns):
             missing_cols = set(path_columns) - set(valid_path_columns)
@@ -428,14 +455,14 @@ async def create_treemap(path_columns: List[str],title: str, value_column: Optio
 
         fig.update_layout(
                 template="plotly_dark",)
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
 
 @tool
-async def create_correlation_heatmap(columns: List[str] = None,title: Optional[str] = "Correlation Heatmap", color_scale: Optional[str] = "Viridis", show_values: Optional[bool] = True, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_correlation_heatmap(columns: List[str] = None,title: Optional[str] = "Correlation Heatmap", color_scale: Optional[str] = "Viridis", show_values: Optional[bool] = True, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Generates a heatmap of correlations between numerical columns in the dataset and returns it as a dictionary.
 
@@ -449,6 +476,7 @@ async def create_correlation_heatmap(columns: List[str] = None,title: Optional[s
         dict: The generated correlation heatmap in dictionary format.
     """
     try:
+        df = await get_dataset(project_id)
         numerical_data = df.select_dtypes(include=["number"])
 
         if columns:
@@ -470,13 +498,13 @@ async def create_correlation_heatmap(columns: List[str] = None,title: Optional[s
             fig.update_traces(text=correlation_matrix.values, texttemplate="%{text:.2f}", textfont_size=12)
 
         fig.update_layout(template="plotly_dark")
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
 
 @tool
-async def create_faceted_bar_chart(x: str, y: str,title: str, color: Optional[str] = None, barmode: Optional[str] = "group", facet_row: Optional[str] = None, facet_col: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_faceted_bar_chart(x: str, y: str,title: str, color: Optional[str] = None, barmode: Optional[str] = "group", facet_row: Optional[str] = None, facet_col: Optional[str] = None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Generates a faceted bar chart using Plotly Express and returns it as a dictionary.
 
@@ -493,6 +521,7 @@ async def create_faceted_bar_chart(x: str, y: str,title: str, color: Optional[st
         dict: The generated faceted bar chart in dictionary format.
     """
     try:
+        df = await get_dataset(project_id)
         relevant_columns = [col for col in [x, y, color, facet_row, facet_col] if col]
         df = df.dropna(subset=relevant_columns)
 
@@ -513,13 +542,13 @@ async def create_faceted_bar_chart(x: str, y: str,title: str, color: Optional[st
             font=dict(size=12),
             template="plotly_dark"
         )
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
-
+    
 @tool
-async def create_histogram(x: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df:Annotated[pd.DataFrame,InjectedToolArg]= None) -> Dict:
+async def create_histogram(x: str, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id:Annotated[str,InjectedToolArg]= None) -> Dict:
     """
     Creates a histogram using Plotly Express and returns it as a dictionary.
 
@@ -533,17 +562,18 @@ async def create_histogram(x: str, color: Optional[str] = None, x_label: Optiona
         dict: The generated histogram in dictionary format.
     """
     try:
+        df = await get_dataset(project_id)
         if x not in df.columns:
             raise ValueError(f"Column '{x}' not found in the dataset.")
 
         fig = px.histogram(df, x=x, color=color)
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
 
 @tool
-async def create_pie_chart(values: str, names: str,title: str, color: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_pie_chart(values: str, names: str,title: str, color: Optional[str] = None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Creates a pie chart using Plotly Express and returns it as a dictionary.
 
@@ -557,18 +587,18 @@ async def create_pie_chart(values: str, names: str,title: str, color: Optional[s
         dict: The generated pie chart in dictionary format.
     """
     try:
-
+        df = await get_dataset(project_id)
         if values not in df.columns or names not in df.columns:
             raise ValueError("Specified columns not found in the dataset.")
 
         fig = px.pie(df, values=values, names=names, color=color, title=title)
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
 
 @tool
-async def create_area_chart(x: str, y: str, title: str,color: Optional[str] = None,  x_label: Optional[str] = None, y_label: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_area_chart(x: str, y: str, title: str,color: Optional[str] = None,  x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Creates an area chart using Plotly Express and returns it as a dictionary.
 
@@ -584,18 +614,18 @@ async def create_area_chart(x: str, y: str, title: str,color: Optional[str] = No
         dict: The generated area chart in dictionary format.
     """
     try:
-
+        df = await get_dataset(project_id)
         if x not in df.columns or y not in df.columns:
             raise ValueError("Specified columns not found in the dataset.")
 
         fig = px.area(df, x=x, y=y, color=color, title=title, labels={'x': x_label, 'y': y_label})
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
 
 @tool
-async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Creates a box plot using Plotly Express and returns it as a dictionary.
 
@@ -610,7 +640,7 @@ async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color
         dict: The generated box plot in dictionary format.
     """
     try:
-
+        df = await get_dataset(project_id)
         if y not in df.columns or (x and x not in df.columns) or (color and color not in df.columns):
             raise ValueError("Specified columns not found in the dataset.")
 
@@ -620,13 +650,13 @@ async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color
             fig.update_xaxes(title_text=x_label)
         if y_label:
             fig.update_yaxes(title_text=y_label)
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
 
 @tool
-async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, points: Optional[str] = None, hover_data: List[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, df: Annotated[pd.DataFrame,InjectedToolArg] = None) -> Dict:
+async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, color: Optional[str] = None, points: Optional[str] = None, hover_data: List[str] = None, x_label: Optional[str] = None, y_label: Optional[str] = None, project_id: Annotated[str,InjectedToolArg] = None) -> Dict:
     """
     Creates a violin plot using Plotly Express and returns it as a dictionary.
 
@@ -640,10 +670,10 @@ async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, c
         y_label (Optional[str], optional): Label for the y-axis. Default is None.
 
     Returns:
-        dict: The generated violin plot in dictionary format.
+        dict: The generated violin plot in dictionary format
     """
     try:
-        
+        df = await get_dataset(project_id)
         if y not in df.columns or (x and x not in df.columns) or (color and color not in df.columns):
             raise ValueError("Specified columns not found in the dataset.")
 
@@ -653,7 +683,7 @@ async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, c
             fig.update_xaxes(title_text=x_label)
         if y_label:
             fig.update_yaxes(title_text=y_label)
-        return fig.to_dict()
+        return make_serializable(fig.to_dict())
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
@@ -682,13 +712,13 @@ async def tool_node(state)->Literal["caller", "__end__"]:
     # get the last message of this state
     last_message = messages[-1]
     output_messages = []
-    df = state['dataframe']
     for tool_call in last_message.tool_calls:
         try:
             # Invoke the tool based on the tool call
-            tool_call["args"]["df"] = df
+            tool_call["args"]["project_id"] = state['project_id']
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             return {"next": "__end__",'visualization':tool_result}
+        
         except Exception as e:
             # Return the error if the tool call fails
             output_messages.append(

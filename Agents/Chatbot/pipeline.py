@@ -75,7 +75,8 @@ async def chat(user_input,thread_id=None):
             project_id=response[2]
             messages.append({'role':'user','content':user_input})
             graph_input = {'input':{"messages": messages,'data_report':data_report,'project_id':project_id},'config':config,'stream_mode':["messages",'updates','values']}
-    print(graph_input)
+    
+    
     async for chunk in graph.astream(**graph_input):
         if chunk[0] == 'messages':
             if chunk[1][0].content and isinstance(chunk[1][0], AIMessageChunk):
@@ -93,5 +94,5 @@ async def chat(user_input,thread_id=None):
                         visuals.append(visual)
     
     for visual in visuals:
-        yield json.dumps(make_serializable(visual))
+        yield json.dumps(visual)
                         

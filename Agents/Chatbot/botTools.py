@@ -3,13 +3,12 @@ import os
 from langchain_core.tools import tool
 from langchain_core.messages import ToolMessage
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from API.Requests import projectRequests
 from vizGeneration.pipeline import viz_graph
 from typing import Annotated
 
 @tool
 async def visualizer(
-    visualization_request: Annotated[str,'The visualization request created by the assistant according to the user intent and data report'],
+    visualization_request: Annotated[str,'The visualization request created by the assistant according to the user intent and data report, atleast give plot type and columns to plot'],
     data_report:str=None,
     project_id:str=None
     ):
@@ -22,8 +21,7 @@ async def visualizer(
 
     """
     print(f"VISUALIZER IS BEING CALLED WITH request: {visualization_request}") 
-    df=await projectRequests.get_dataset(project_id)
-    graph_response=await viz_graph.ainvoke({'data_report':str(data_report),'messages':[{"role":"human","content":visualization_request}],'dataframe':df})
+    graph_response=await viz_graph.ainvoke({'data_report':str(data_report),'messages':[{"role":"human","content":visualization_request}],'project_id':project_id})
     if graph_response['visualization']:
         return ['YOU MUST Inform the user that the visualization has been generated',graph_response['visualization']]
     else:
@@ -52,7 +50,6 @@ async def tool_node(state):
             if not isinstance(tool_result, list):
                 tool_result=[tool_result]
             else:
-
                 visual_results.append(tool_result[1])
 
             output_messages.append(

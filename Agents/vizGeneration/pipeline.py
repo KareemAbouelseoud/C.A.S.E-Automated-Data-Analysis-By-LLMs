@@ -56,8 +56,7 @@ class State(TypedDict):
     """
     A class to represent the state of the application.
     """
-    data_report:str
-    dataframe: NotRequired[object]
+    project_id: str
     messages: Annotated[list[AnyMessage], operator.add]
     visualization: NotRequired[Annotated[list[dict], operator.add]]
     next: NotRequired[str]
@@ -78,35 +77,13 @@ builder.add_conditional_edges('tools',tool_brancher)
 builder.add_edge('coder',END)
 
 viz_graph = builder.compile()
-
-
-def make_serializable(obj):
-    """
-    Convert an object to a serializable format.
-    """
-    if isinstance(obj, dict):
-        return {k: make_serializable(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [make_serializable(i) for i in obj]
-    elif isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
-        return int(obj)
-    elif isinstance(obj, (np.float64, np.float32, np.float16)):
-        return float(obj)
-    elif isinstance(obj, pd.Interval):
-        return {'left': obj.left, 'right': obj.right, 'closed': obj.closed}
-    elif isinstance(obj, np.ndarray):
-        return obj.tolist()
-    elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
-        return None
-    else:
-        return obj
     
-async def generate_visualizations(data_report,dataframe):
+async def generate_visualizations(data_report,project_id):
     response= await designer_node(data_report)
     visualizations=[]
     for idx,design in  enumerate(response):
         try:
-            graph_response= await viz_graph.ainvoke({'data_report':str(data_report),'messages':[{"role":"human","content":str(design)}],'dataframe':dataframe})
+            graph_response= await viz_graph.ainvoke({'data_report':str(data_report),'messages':[{"role":"human","content":str(design)}],'project_id':project_id})
             print("Graph response",graph_response)
             if 'visualization' in graph_response and graph_response['visualization']:
                 visualizations.append(graph_response['visualization'])    
