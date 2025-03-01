@@ -3,19 +3,20 @@ from Requests import databaseRequests,visualizationRequests
 import plotly.io as pio
 import streamlit_nested_layout # Leave it here, dont remove it.
 import hydralit_components as hc
-dataset_session=st.session_state['user_data']['projects']['current_project']
 class Dataset:
     def __init__(self):
-        if 'dataset_session' not in dataset_session:
+        self.dataset_session=st.session_state['user_data']['projects']['current_project']
+
+        if 'dataset_session' not in self.dataset_session:
             with hc.HyLoader("",hc.Loaders.pretty_loaders,index=[3]):
-                dataset_session['dataset_session']={}
-                dataset_session['dataset_session']['Insights']=False
+                self.dataset_session['dataset_session']={}
+                self.dataset_session['dataset_session']['Insights']=False
                 #NOTE: Only fetch a certain number of rows for the dataset description to avoid large payloads
-                dataset_session['dataset_session']['raw_data_report']=databaseRequests.fetch_datareport(dataset_session['project_id'])
-                dataset_session['dataset_session']['raw_dataset']=databaseRequests.fetch_dataset(dataset_session['project_id'])
+                self.dataset_session['dataset_session']['raw_data_report']=databaseRequests.fetch_datareport(self.dataset_session['project_id'])
+                self.dataset_session['dataset_session']['raw_dataset']=databaseRequests.fetch_dataset(self.dataset_session['project_id'])
                 #NOTE: CHANGE THIS TO FETCH PROCESSED DATA REPORT
-                dataset_session['dataset_session']['processed_data_report']=databaseRequests.fetch_datareport(dataset_session['project_id'])
-                dataset_session['dataset_session']['processed_dataset']=databaseRequests.fetch_dataset(dataset_session['project_id'])
+                self.dataset_session['dataset_session']['processed_data_report']=databaseRequests.fetch_datareport(self.dataset_session['project_id'])
+                self.dataset_session['dataset_session']['processed_dataset']=databaseRequests.fetch_dataset(self.dataset_session['project_id'])
 
 
         self.viz_types={
@@ -52,16 +53,16 @@ class Dataset:
         self.run()
 
     def InsightsShown(self):
-        dataset_session['dataset_session']['Insights']=True
+        self.dataset_session['dataset_session']['Insights']=True
     def run(self):
         with hc.HyLoader("",hc.Loaders.pretty_loaders,index=[3]):
 
-            if dataset_session['dataset_mode']=='Raw':
-                data_report=dataset_session['dataset_session']['raw_data_report']
-                dataset=dataset_session['dataset_session']['raw_dataset']
+            if self.dataset_session['dataset_mode']=='Raw':
+                data_report=self.dataset_session['dataset_session']['raw_data_report']
+                dataset=self.dataset_session['dataset_session']['raw_dataset']
             else:
-                data_report=dataset_session['dataset_session']['processed_data_report']
-                dataset=dataset_session['dataset_session']['processed_dataset']
+                data_report=self.dataset_session['dataset_session']['processed_data_report']
+                dataset=self.dataset_session['dataset_session']['processed_dataset']
             with st.container(border=True):
                     st.dataframe(dataset,use_container_width=True,)
             st.markdown("""
@@ -118,7 +119,7 @@ class Dataset:
                         st.write(f"Number of Rows: {overview['n']}")
                         st.write(f"Number of Features: {overview['n_var']}")
                         try:
-                            plot_data=visualizationRequests.plot_column_types(dataset_session['project_id'])
+                            plot_data=visualizationRequests.plot_column_types(self.dataset_session['project_id'])
                             
                             with st.expander("Column Types"):
                                 if plot_data:
@@ -332,9 +333,9 @@ class Dataset:
                             
                             if viz_options:
                                 op=st.selectbox('Select Visualization Type',viz_options,key=f'{feature_name}_{viz_type}')
-                                viz=self.viz_types[viz_type](project_id=dataset_session['project_id'],column_name=feature_name,plot_type=op)
+                                viz=self.viz_types[viz_type](project_id=self.dataset_session['project_id'],column_name=feature_name,plot_type=op)
                             else:
-                                viz=self.viz_types[viz_type](project_id=dataset_session['project_id'],column_name=feature_name)
+                                viz=self.viz_types[viz_type](project_id=self.dataset_session['project_id'],column_name=feature_name)
                             
                             if viz:
                                 fig = pio.from_json(viz)

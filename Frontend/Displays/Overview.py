@@ -43,6 +43,7 @@ class Projects:
             placeholder.empty()
         st.session_state['user_data']['projects']['current_project']['project_id']=str(project_id)
         st.session_state['user_data']['projects']['current_project']['thread_id']= str(thread_id)
+        print("AFTER PROJECT CLICKED", st.session_state['user_data'])
 
     def projectOverview(self):
         st.markdown("<h1 style='text-align: center; font-size: 80px;'>My Projects</h1>", unsafe_allow_html=True)
@@ -138,8 +139,8 @@ class Projects:
             
             
             if st.session_state['user_data']['projects']['newProject']:
-                
-                with st.container(border=True):
+                placeholder=st.empty()
+                with placeholder.container(border=True):
                     st.header("New Project")
                     project_name = st.text_input("Enter a name for your project:", key="project_name")
 
@@ -169,6 +170,7 @@ class Projects:
                                 st.toast('Please choose a unique name for the project')
                         else:
                             st.toast('Please upload a dataset')
+                self.placeholders.append(placeholder)
                                                       
     def projectsPage(self):
         if 'project_id' not in st.session_state['user_data']['projects']['current_project'] or not st.session_state['user_data']['projects']['current_project']['project_id']:

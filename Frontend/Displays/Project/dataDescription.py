@@ -1,13 +1,14 @@
 import streamlit as st
 from Requests import databaseRequests
-data_session = st.session_state['user_data']['projects']['current_project']
 class dataDescription:
     def __init__(self):
-        #NOTE: Initial Data Description should contain the generated description of the data
+        self.data_session = st.session_state['user_data']['projects']['current_project']
+
+        #NOTE: Initial Data Description in session state should contain the generated description of the data
         try:
-            self.initial_description = data_session['initial_data_description']
+            self.initial_description = self.data_session['initial_data_description']
         except:
-            self.initial_description = databaseRequests.fetch_datareport(data_session['project_id'])['dataset_description']
+            self.initial_description = databaseRequests.fetch_datareport(self.data_session['project_id'])['dataset_description']
         self.display()
     def display(self):
         with st.container(border=True):
@@ -19,6 +20,6 @@ class dataDescription:
     def submit(self,final_description):
         #NOTE: Save the final description to the database
         #NOTE: BEWARE OF PROMPT INJECTION, MAKE SURE TO SANITIZE THE INPUT BEFORE SAVING
-        data_session['description_confirmed']=True
+        self.data_session['description_confirmed']=True
         
 

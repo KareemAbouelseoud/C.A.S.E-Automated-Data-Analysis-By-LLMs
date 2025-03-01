@@ -3,18 +3,19 @@ from Objects import Dashboard,Plot
 from streamlit_elements import elements,event,sync,lazy
 from types import SimpleNamespace
 from Requests import visualizationRequests
-viz_session=st.session_state['user_data']['projects']['current_project']
 import hydralit_components as hc
 class Visualizations:
     def __init__(self):
-        if 'viz' not in viz_session:
-            viz_session['viz']={}
-            viz_session['viz']['Visualization']=False
+        self.viz_session=st.session_state['user_data']['projects']['current_project']
+
+        if 'viz' not in self.viz_session:
+            self.viz_session['viz']={}
+            self.viz_session['viz']['Visualization']=False
         self.run()
 
     def create(self,fig_dict):
         if isinstance(fig_dict,dict):
-            plot=Plot.Plots(viz_session['viz']['board'], 12,  7, w=5, h=7, minW=2, minH=4,fig=fig_dict)
+            plot=Plot.Plots(self.viz_session['viz']['board'], 12,  7, w=5, h=7, minW=2, minH=4,fig=fig_dict)
             return plot
         else:
             for i in fig_dict:
@@ -22,10 +23,10 @@ class Visualizations:
     
     def visualizationShown(self,placeholder):
         placeholder.empty()
-        viz_session['viz']['Visualization']=True
+        self.viz_session['viz']['Visualization']=True
         
     def run(self):
-        if 'Visualization' not in viz_session['viz'] or not viz_session['viz']['Visualization']:
+        if 'Visualization' not in self.viz_session['viz'] or not self.viz_session['viz']['Visualization']:
             cols=st.columns(3)
             with cols[1]:
                 st.markdown(
@@ -69,24 +70,24 @@ class Visualizations:
                 placeholder = st.empty()
                 placeholder.button("Begin Generation",on_click=self.visualizationShown,args=[placeholder])
         
-        if viz_session['viz']['Visualization']:
-            if "w" not in viz_session['viz']:
-                viz_session['viz']['board'] = Dashboard.Dashboard()
+        if self.viz_session['viz']['Visualization']:
+            if "w" not in self.viz_session['viz']:
+                self.viz_session['viz']['board'] = Dashboard.Dashboard()
                 w = SimpleNamespace(
                     visualizations=[]
                 )
-                viz_session['viz']['w'] = w
+                self.viz_session['viz']['w'] = w
 
             else:
-                w = viz_session['viz']['w']
+                w = self.viz_session['viz']['w']
             with elements("demo"):
                 event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
                 with hc.HyLoader("",hc.Loaders.pulse_bars,index=[0]):
-                    vizs=visualizationRequests.fetch_visualizations(viz_session['project_id'])
+                    vizs=visualizationRequests.fetch_visualizations(self.viz_session['project_id'])
                 for i in vizs:
                     w.visualizations.append(self.create((i)))
                 
 
-                with viz_session['viz']['board'](rowHeight=57):
+                with self.viz_session['viz']['board'](rowHeight=57):
                     for i in w.visualizations:
                         i()

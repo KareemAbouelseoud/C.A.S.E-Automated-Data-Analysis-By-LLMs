@@ -4,17 +4,19 @@ from Project.Visualizations import Visualizations
 from Project.Dataset import Dataset
 from Requests import databaseRequests
 import uuid
-home_session=st.session_state['user_data']['projects']['current_project']
 class Project:
     
     def backtooverview(self):
         st.session_state['user_data']['projects']['current_project']={}
+        print("AFTER BACK", st.session_state['user_data'])
+        
 
 
     def selectedProject(self):
-        if 'project_details' not in home_session or home_session['project_details']==None:
-            home_session['project_details']=databaseRequests.get_project_details(home_session['project_id'])
-        st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{home_session['project_details']['name']}</h1>", unsafe_allow_html=True)     
+        self.home_session=st.session_state['user_data']['projects']['current_project']
+        if 'project_details' not in self.home_session or self.home_session['project_details']==None:
+            self.home_session['project_details']=databaseRequests.get_project_details(self.home_session['project_id'])
+        st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{self.home_session['project_details']['name']}</h1>", unsafe_allow_html=True)     
 
         
 
@@ -114,14 +116,14 @@ class Project:
                     </style>
                 """,unsafe_allow_html=True)
                 st.markdown(f'<span id="button-segmented"></span>', unsafe_allow_html=True)
-                home_session['dataset_mode'] = st.segmented_control(
+                self.home_session['dataset_mode'] = st.segmented_control(
                     "Displayed values", 
                     ["Raw", "Processed"], 
-                    default=home_session.get('dataset_mode', 'Raw'), 
+                    default=self.home_session.get('dataset_mode', 'Raw'), 
                     label_visibility="collapsed", 
                     selection_mode='single'
                 )
-            print(home_session['dataset_mode'])
+            print(self.home_session['dataset_mode'])
             Dataset()
         with tabs[2]:
             st.markdown("<h1 style='text-align: center; font-size: 65px;'>ODIN</h1>", unsafe_allow_html=True)    
@@ -244,6 +246,6 @@ class Project:
             AutoML()
 
 
-if 'project_id' in home_session and home_session['project_id']!=None:
+if 'project_id' in st.session_state['user_data']['projects']['current_project'] and st.session_state['user_data']['projects']['current_project']['project_id']!=None:
     Project().selectedProject()
     

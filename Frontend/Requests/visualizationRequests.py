@@ -34,6 +34,8 @@ def make_serializable(obj):
     
 def fetch_visualizations(project_id:str):
     response = requests.get(url+f'/project/{project_id}/visualization/get_Auto_Gen')
+    if response.status_code!=200:
+        return []
     return json.loads(response.json())['visualizations']
 
 def fetch_chat_visualizations(project_id:str):

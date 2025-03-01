@@ -9,7 +9,6 @@ import json
 import plotly.graph_objects as go
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-chatbot_session=st.session_state['user_data']['projects']['current_project']
 
 # from req import clear_history,get_st_history,create_new_chat,update_user_st_history,get_model_history,chat,recommender
 from Requests import chatbotRequests,visualizationRequests
@@ -19,8 +18,13 @@ controller=CookieController()
 
 class Chatbot:
     def __init__(self):  
-        if 'chatbot' not in chatbot_session:
-            chatbot_session['chatbot']={}
+        self.chatbot_session=st.session_state['user_data']['projects']['current_project']
+        try:
+            print("AT THE BEGINING",self.chatbot_session['chatbot']['messages'])
+        except:
+            pass
+        if 'chatbot' not in self.chatbot_session:
+            self.chatbot_session['chatbot']={}
         self.logo_path = "/app/static/ZEUS.png"
         st.markdown(
     """
@@ -149,15 +153,16 @@ class Chatbot:
         """, unsafe_allow_html=True)
 
         if st.sidebar.button('Clear History'):
-            chatbot_session['thread_id']=chatbotRequests.clear_history(chatbot_session['project_id'],controller.get("user_id"))
-            chatbot_session['chatbot']['messages']=[]
-            chatbot_session['chatbot']['new']=None
-            if 'recommendation' in chatbot_session['chatbot']:
-                chatbot_session['chatbot']['recommendation']=None
+            self.chatbot_session['thread_id']=chatbotRequests.clear_history(self.chatbot_session['project_id'],controller.get("user_id"))
+            self.chatbot_session['chatbot']['messages']=[]
+            self.chatbot_session['chatbot']['new']=None
+            if 'recommendation' in self.chatbot_session['chatbot']:
+                self.chatbot_session['chatbot']['recommendation']=None
             self.intialize_chat_history()
             st.rerun()
         self.display_chat_history()
         self.accept_user_input()
+        print("After SETUP APP INTERFACE",self.chatbot_session['chatbot']['messages'])
         
    
 
@@ -165,7 +170,7 @@ class Chatbot:
         """
         Displays the conversation history, showing each message sent by the user and the assistant.
         """
-        for message in chatbot_session['chatbot']['messages']:
+        for message in st.session_state['user_data']['projects']['current_project']['chatbot']['messages']:
             if message['role'] == 'user':
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
@@ -176,6 +181,7 @@ class Chatbot:
                 with st.chat_message(message["role"],avatar='📈'):
                     for visual in message['content']:
                         self.get_visuals(visual)
+
     def save_plot(self,fig):        
         pass  
     
@@ -194,9 +200,10 @@ class Chatbot:
             if save:
                 serializable_visuals = visualizationRequests.make_serializable(visuals)
                 new_chat_viz = ChatViz(viz=[serializable_visuals])
-                visualizationRequests.save_chat_visualizations(chatbot_session['project_id'], new_chat_viz)
-                chatbot_session['chatbot']['messages'].append({'role':'visualizer','content':chatbot_session['chatbot']['viz_count']})
-                chatbot_session['chatbot']['viz_count']+=1
+                visualizationRequests.save_chat_visualizations(self.chatbot_session['project_id'], new_chat_viz)
+                self.chatbot_session['chatbot']['messages'].append({'role':'visualizer','content':visuals})
+                print("Visuals saved:",self.chatbot_session['chatbot']['messages'])
+                self.chatbot_session['chatbot']['viz_count']+=1
         except Exception as e:
             print(f"Error in get_visuals: {str(e)}")
             if isinstance(visuals, dict):
@@ -218,32 +225,32 @@ class Chatbot:
         """
 
         if prompt := st.chat_input("Enter your query:"):
-            chatbot_session['chatbot']['new']=False
+            self.chatbot_session['chatbot']['new']=False
             sanitized_input = self.sanitize_user_input(prompt)
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-            chatbot_session['chatbot']['messages'].append({"role": "user", "content": sanitized_input,})
+            self.chatbot_session['chatbot']['messages'].append({"role": "user", "content": sanitized_input,})
 
             self.generate_response(sanitized_input)
             self.recommend(sanitized_input)
-            chatbotRequests.update_user_st_history(str(chatbot_session['project_id']),chatbot_session['chatbot']['messages'],controller.get("user_id"))
+            chatbotRequests.update_user_st_history(str(self.chatbot_session['project_id']),self.chatbot_session['chatbot']['messages'],controller.get("user_id"))
 
                 
 
-        if 'recommendation' in chatbot_session['chatbot']:
+        if 'recommendation' in self.chatbot_session['chatbot']:
             with st.chat_message("user"):
-                st.markdown(chatbot_session['chatbot']['recommendation'])
-            chatbot_session['chatbot']['new']=False
+                st.markdown(self.chatbot_session['chatbot']['recommendation'])
+            self.chatbot_session['chatbot']['new']=False
                 
-            chatbot_session['chatbot']['messages'].append({"role": "user", "content": chatbot_session['chatbot']['recommendation']})
-            self.generate_response(chatbot_session['chatbot']['recommendation'])
-            chatbotRequests.update_user_st_history(str(chatbot_session['project_id']),chatbot_session['chatbot']['messages'],controller.get("user_id"))
-            self.recommend(chatbot_session['chatbot']['recommendation'])
-            del chatbot_session['chatbot']['recommendation']
+            self.chatbot_session['chatbot']['messages'].append({"role": "user", "content": self.chatbot_session['chatbot']['recommendation']})
+            self.generate_response(self.chatbot_session['chatbot']['recommendation'])
+            chatbotRequests.update_user_st_history(str(self.chatbot_session['project_id']),self.chatbot_session['chatbot']['messages'],controller.get("user_id"))
+            self.recommend(self.chatbot_session['chatbot']['recommendation'])
+            del self.chatbot_session['chatbot']['recommendation']
 
 
-        if len(chatbot_session['chatbot']['messages'])==1:
+        if len(self.chatbot_session['chatbot']['messages'])==1:
             self.recommend()
             pass
     
@@ -255,7 +262,7 @@ class Chatbot:
         """
         with st.spinner("Generating response..."):
             try:
-                response =chatbotRequests.chat(user_input,project_id=chatbot_session['project_id'],thread_id=chatbot_session['thread_id'])
+                response =chatbotRequests.chat(user_input,project_id=self.chatbot_session['project_id'],thread_id=self.chatbot_session['thread_id'])
                 self.display_assistant_response(response)
 
             except Exception as e:
@@ -287,7 +294,7 @@ class Chatbot:
             else:
                 escaped_response=response
                 st.write(escaped_response)
-        chatbot_session['chatbot']['messages'].append({"role": "assistant", "content": escaped_response})
+        self.chatbot_session['chatbot']['messages'].append({"role": "assistant", "content": escaped_response})
 
         if len(visuals)>0:
             with st.chat_message('visualizer',avatar='📈'):
@@ -301,14 +308,16 @@ class Chatbot:
         """
         Called at the beginning of any chat
         """ 
-        if "messages" not in chatbot_session['chatbot']:
-            chatbot_session['chatbot']['conv_change']=''
-            chatbot_session['chatbot']['new']=True
-            chatbot_session['chatbot']['messages'] = []
-            chatbot_session['chatbot']['Bot_Clicked']=False
+        
+        if "messages" not in self.chatbot_session['chatbot'] or self.chatbot_session['chatbot']['messages']==[]:
+            self.chatbot_session['chatbot']['conv_change']=''
+            self.chatbot_session['chatbot']['new']=True
+            self.chatbot_session['chatbot']['messages'] = []
+            self.chatbot_session['chatbot']['Bot_Clicked']=False
             first_message = "Good Morning. I am Zeus, a Smart Assistant for C.A.S.E. How can I assist you today?"
-            chatbot_session['chatbot']['messages'].append({"role": "assistant", "content": first_message})
-            chatbot_session['chatbot']['messages'],chatbot_session['chatbot']['viz_count'] = chatbotRequests.get_streamlit_chat_history(chatbot_session['project_id'])
+            self.chatbot_session['chatbot']['messages'].append({"role": "assistant", "content": first_message})
+            self.chatbot_session['chatbot']['messages'],self.chatbot_session['chatbot']['viz_count'] = chatbotRequests.get_streamlit_chat_history(self.chatbot_session['project_id'])
+        print("After INIT CHAT HISTORY",self.chatbot_session['chatbot']['messages'])
 
     def stream_ans(self,response,visuals):
         """
@@ -349,14 +358,14 @@ class Chatbot:
         """
         Function Helper for recommend()
         """
-        chatbot_session['chatbot']['recommendation']=prompt
+        self.chatbot_session['chatbot']['recommendation']=prompt
 
     def recommend(self,prompt=None):
         """
         Provides personalized prompt recommendations based on the user's input.
         """
         if prompt:
-                recommendations=chatbotRequests.recommender([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}],chatbot_session['project_id'],chatbot_session['thread_id'])
+                recommendations=chatbotRequests.recommender([{'role':'user','content':"Don't answer the user prompt, just choose the prompts and generate them in a PYTHON LIST of strings as requested in the system instruction. Give different SIMPLE functionality than what the user and you have already gave. You are restricted to the prompts listed in the system instruction do not get creative. The stocks that you can use to generate the prompts are from the list given to you use them:\n"+prompt}],self.chatbot_session['project_id'],self.chatbot_session['thread_id'])
         else:
             recommendations=['What are your features',"Suggest interesting visualizations","Find outliers in this dataset and explain their impact","Create a Machine Learning Model","Summarize key insights from this dataset"]
             
@@ -375,5 +384,5 @@ class Chatbot:
     #     result = classifier(sequence_to_classify, candidate_labels)
     #     print(result)
     # print("HISTORY: ",messages)
-if 'project_id' in chatbot_session and chatbot_session['project_id']!=None:
+if 'project_id' in st.session_state['user_data']['projects']['current_project'] and st.session_state['user_data']['projects']['current_project']['project_id']!=None:
     Chatbot()
