@@ -4,6 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from .visualizationRequests import fetch_chat_visualizations
 import requests
 import json
+import copy
 url='http://Backend:8005'
 
 def chat(prompt,project_id,thread_id):
@@ -39,7 +40,7 @@ def get_streamlit_chat_history(project_id):
         if message['role']=='visualizer':
             message['content']=chat_viz[int(message['content'])]
             
-    return streamlit_chat,len(chat_viz)
+    return streamlit_chat
 
 def create_new_chat(user_id):
     """
@@ -74,7 +75,9 @@ def update_user_st_history(project_id,last_conv,user_id):
     """
     ## FIXME: This is a temporary fix to update the Chat including visualizations
     viz_count=0
-    for i,message in enumerate(last_conv):
+    last_conv_copy = copy.deepcopy(last_conv)
+
+    for i,message in enumerate(last_conv_copy):
             if message['role']=='visualizer':
                 message['content']=viz_count
                 viz_count+=1

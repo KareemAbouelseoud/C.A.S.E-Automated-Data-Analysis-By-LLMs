@@ -20,9 +20,10 @@ class Chatbot:
     def __init__(self):  
         self.chatbot_session=st.session_state['user_data']['projects']['current_project']
         try:
-            print("AT THE BEGINING",self.chatbot_session['chatbot']['messages'])
+            print("at the beginning of chatbot",self.chatbot_session['chatbot']['messages'])
         except:
             pass
+
         if 'chatbot' not in self.chatbot_session:
             self.chatbot_session['chatbot']={}
         self.logo_path = "/app/static/ZEUS.png"
@@ -62,6 +63,7 @@ class Chatbot:
 
         <style>
         """, unsafe_allow_html=True)
+        
         self.intialize_chat_history()
         self.setup_app_interface()
     
@@ -159,10 +161,10 @@ class Chatbot:
             if 'recommendation' in self.chatbot_session['chatbot']:
                 self.chatbot_session['chatbot']['recommendation']=None
             self.intialize_chat_history()
+            print("History Cleared")
             st.rerun()
         self.display_chat_history()
         self.accept_user_input()
-        print("After SETUP APP INTERFACE",self.chatbot_session['chatbot']['messages'])
         
    
 
@@ -170,7 +172,8 @@ class Chatbot:
         """
         Displays the conversation history, showing each message sent by the user and the assistant.
         """
-        for message in st.session_state['user_data']['projects']['current_project']['chatbot']['messages']:
+        print("Before Displaying Chat History",self.chatbot_session['chatbot']['messages'])
+        for message in self.chatbot_session['chatbot']['messages']:
             if message['role'] == 'user':
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
@@ -181,7 +184,7 @@ class Chatbot:
                 with st.chat_message(message["role"],avatar='📈'):
                     for visual in message['content']:
                         self.get_visuals(visual)
-
+        print("After Displaying Chat History",self.chatbot_session['chatbot']['messages'])
     def save_plot(self,fig):        
         pass  
     
@@ -190,7 +193,7 @@ class Chatbot:
         if isinstance(visuals, list):
             for v in visuals:
                 self.get_visuals(v,save)
-                pass
+                return
         try:
             fig = go.Figure(data=visuals['data'], layout=visuals['layout'])
             st.plotly_chart(fig)
@@ -202,8 +205,7 @@ class Chatbot:
                 new_chat_viz = ChatViz(viz=[serializable_visuals])
                 visualizationRequests.save_chat_visualizations(self.chatbot_session['project_id'], new_chat_viz)
                 self.chatbot_session['chatbot']['messages'].append({'role':'visualizer','content':visuals})
-                print("Visuals saved:",self.chatbot_session['chatbot']['messages'])
-                self.chatbot_session['chatbot']['viz_count']+=1
+                print("VISUALS SAVED")
         except Exception as e:
             print(f"Error in get_visuals: {str(e)}")
             if isinstance(visuals, dict):
@@ -223,7 +225,7 @@ class Chatbot:
         """
         Accepts user input and processes the query. It generates responses and handles recommendations.
         """
-
+        print('Before Accepting User Input',self.chatbot_session['chatbot']['messages'])
         if prompt := st.chat_input("Enter your query:"):
             self.chatbot_session['chatbot']['new']=False
             sanitized_input = self.sanitize_user_input(prompt)
@@ -253,13 +255,14 @@ class Chatbot:
         if len(self.chatbot_session['chatbot']['messages'])==1:
             self.recommend()
             pass
-    
+        print('After Accepting User Input',self.chatbot_session['chatbot']['messages'])
  
 
     def generate_response(self, user_input):
         """
         Generates a response from the assistant using the chat model (Claude).
         """
+        print("Before Generating Response",self.chatbot_session['chatbot']['messages'])
         with st.spinner("Generating response..."):
             try:
                 response =chatbotRequests.chat(user_input,project_id=self.chatbot_session['project_id'],thread_id=self.chatbot_session['thread_id'])
@@ -270,6 +273,7 @@ class Chatbot:
                 error_message = f"An error occurred: {str(e)}"
                 st.warning(error_message)
                 self.display_assistant_response("Sorry,I don't have this functionality, Can't provide an answer.\n Ask another question please.",stream=False)
+        print("After Generating Response",self.chatbot_session['chatbot']['messages'])
 
     def sanitize_user_input(self, user_input):
         # Remove any potentially harmful characters or sequences        
@@ -285,7 +289,7 @@ class Chatbot:
         """
         Display the output of claude
         """
-        
+        print("Before Displaying Assistant Response",self.chatbot_session['chatbot']['messages'])
 
         with st.chat_message("assistant", avatar=self.logo_path):
             visuals=[]
@@ -300,7 +304,7 @@ class Chatbot:
             with st.chat_message('visualizer',avatar='📈'):
                 for visual in visuals:
                     self.get_visuals(visual,save=True)
-            
+        print("After Displaying Assistant Response",self.chatbot_session['chatbot']['messages'])
     
 
 
@@ -312,13 +316,13 @@ class Chatbot:
         if "messages" not in self.chatbot_session['chatbot'] or self.chatbot_session['chatbot']['messages']==[]:
             self.chatbot_session['chatbot']['conv_change']=''
             self.chatbot_session['chatbot']['new']=True
-            self.chatbot_session['chatbot']['messages'] = []
             self.chatbot_session['chatbot']['Bot_Clicked']=False
             first_message = "Good Morning. I am Zeus, a Smart Assistant for C.A.S.E. How can I assist you today?"
-            self.chatbot_session['chatbot']['messages'].append({"role": "assistant", "content": first_message})
-            self.chatbot_session['chatbot']['messages'],self.chatbot_session['chatbot']['viz_count'] = chatbotRequests.get_streamlit_chat_history(self.chatbot_session['project_id'])
-        print("After INIT CHAT HISTORY",self.chatbot_session['chatbot']['messages'])
-
+            self.chatbot_session['chatbot']['messages']=[{"role": "assistant", "content": first_message}]
+            print("FETCHED HISTORY")
+            self.chatbot_session['chatbot']['messages'].extend(chatbotRequests.get_streamlit_chat_history(self.chatbot_session['project_id']))
+        else:
+            print("HISTORY ALREADY EXISTS")
     def stream_ans(self,response,visuals):
         """
     Response of claude is streamed so this function handles it
