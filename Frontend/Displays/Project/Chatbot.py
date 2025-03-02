@@ -193,7 +193,6 @@ class Chatbot:
         if isinstance(visuals, list):
             for v in visuals:
                 self.get_visuals(v,save)
-                return
         try:
             fig = go.Figure(data=visuals['data'], layout=visuals['layout'])
             st.plotly_chart(fig)
@@ -204,7 +203,7 @@ class Chatbot:
                 serializable_visuals = visualizationRequests.make_serializable(visuals)
                 new_chat_viz = ChatViz(viz=[serializable_visuals])
                 visualizationRequests.save_chat_visualizations(self.chatbot_session['project_id'], new_chat_viz)
-                self.chatbot_session['chatbot']['messages'].append({'role':'visualizer','content':visuals})
+                self.chatbot_session['chatbot']['messages'].append({'role':'visualizer','content':[visuals]})
                 print("VISUALS SAVED")
         except Exception as e:
             print(f"Error in get_visuals: {str(e)}")
@@ -217,7 +216,9 @@ class Chatbot:
                             self.get_visuals(v,save)
             else:
                 if isinstance(visuals, str):
-                    json.loads(visuals)
+                    if visuals == None:
+                        return
+                    self.get_visuals(json.loads(visuals),save)
                 
 
         

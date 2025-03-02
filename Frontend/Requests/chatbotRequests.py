@@ -82,7 +82,7 @@ def update_user_st_history(project_id,last_conv,user_id):
                 message['content']=viz_count
                 viz_count+=1
     
-    response=requests.post(url+f"/project/{project_id}/chat_streamlit/?user_id={user_id}",json={'project_id':project_id,'last_conv':json.dumps(last_conv)})
+    response=requests.post(url+f"/project/{project_id}/chat_streamlit/?user_id={user_id}",json={'project_id':project_id,'last_conv':json.dumps(last_conv_copy)})
 
 
 def clear_history(project_id,user_id):
