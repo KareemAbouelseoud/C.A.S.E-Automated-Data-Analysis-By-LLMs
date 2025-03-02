@@ -18,11 +18,11 @@ class QUGEN:
         if "df" not in state:
             raise ValueError("Missing required dataset (df) in state")
 
-        df = state["df"]
+        df = state["df"] # Comes from DB
         
         # Ensure schema exists or create it
         if "schema" not in state:
-            state["schema"] = df.columns.tolist()
+            state["schema"] = df.columns.tolist() 
             
         # Ensure basic_stats exists or create it
         if "basic_stats" not in state:
@@ -34,7 +34,7 @@ class QUGEN:
             }
             
         # Ensure description exists or create a simple one
-        if "description" not in state:
+        if "description" not in state: # Comes from DB
             raise ValueError("Missing required dataset description in state")
 
         numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
