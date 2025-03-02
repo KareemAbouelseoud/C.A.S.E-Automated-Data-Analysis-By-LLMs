@@ -1,13 +1,13 @@
 import sys
 import os
 
+from modelEvaluation.evaluator import evaluator_node
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing_extensions import TypedDict
 from typing_extensions import TypedDict,Annotated,NotRequired
 from langchain_core.messages import AnyMessage
 import operator
 from langgraph.graph import END, StateGraph, START
-from evaluator import evaluator_node
 from typing import Literal
 
 CONFIGURATIONS={
@@ -39,7 +39,7 @@ class CoderState(TypedDict):
 
     
     
-def decide_to_finish(state)->Literal["evaluator", "_end_"]:
+def decide_to_finish(state)->Literal["evaluator", "__end__"]:
     """
     Determines whether to finish.
 
@@ -76,4 +76,4 @@ workflow.add_node("evaluator", evaluator_node)  # check code
 # Build graph
 workflow.add_edge(START, "evaluator")
 workflow.add_conditional_edges("evaluator",decide_to_finish)
-coder = workflow.compile()
+model_evaluator_node = workflow.compile()

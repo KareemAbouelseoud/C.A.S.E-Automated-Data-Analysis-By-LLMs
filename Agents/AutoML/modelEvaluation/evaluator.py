@@ -93,8 +93,8 @@ def evaluator_node(state):
     print("---CHECKING CODE---")
 
     # State
-    messages = state["messages"]
-    code_solution = state["generation"]
+    #messages = state["messages"]
+    #code_solution = state["generation"]
     iterations = state["iterations"]
     X_train = state["X_train"]
     y_train = state["y_train"]
@@ -141,7 +141,7 @@ def evaluator_node(state):
     # No errors
     print("---NO CODE TEST FAILURES---")
     return {
-        "messages": messages,
+        #"messages": messages,
         "iterations": iterations,
         "error": "no",
         'models_completed':globals_dict["models_completed"]+1,
