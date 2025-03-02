@@ -1,11 +1,10 @@
 import streamlit as st
-from Flow.QUGEN import QUGEN
 from genai_config import model
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
+from Flow.QUGEN.node import qugen_node
 
 def render_ai_analysis(col, df, state, analysis_mode, viz_function):
     with col:
@@ -20,8 +19,8 @@ def render_ai_analysis(col, df, state, analysis_mode, viz_function):
 
         if analysis_mode == "Advanced":
             with st.spinner("🧠 Generating intelligent insights..."):
-                qugen = QUGEN(model=model)
-                state = qugen.invoke(state)
+                # Use the new QUGEN node
+                state = qugen_node(state)
 
             st.markdown(
                 "<h3 class='section-header'>💡 Key Insights</h3>",

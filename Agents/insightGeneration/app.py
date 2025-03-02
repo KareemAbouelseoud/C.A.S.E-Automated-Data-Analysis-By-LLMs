@@ -1,24 +1,24 @@
 import sys
 import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from Frontend.config.styles import set_page_config, load_custom_css
 import plotly.express as px
+from genai_config import model
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from Frontend.config.styles import set_page_config, load_custom_css
 from Flow.data_description_generator import (
     AgentGraphState,
     data_description_generator_node,
 )
-from Agents.insightGeneration.Flow.report_generator import generate_report
-import streamlit as st
-from genai_config import model
+from Flow.report_generator import generate_report
+from Flow.QUGEN.node import qugen_node  
 from Frontend.components.sidebar import render_sidebar
 from Frontend.components.dataset_overview import render_dataset_overview
-from Frontend.components.ai_analysis import render_ai_analysis
-
+from Frontend.components.ai_analysis import render_ai_analysis 
 import pandas as pd
-
-sys.path.append(os.getcwd())
-
+import streamlit as st
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
 set_page_config()
 load_custom_css()
 

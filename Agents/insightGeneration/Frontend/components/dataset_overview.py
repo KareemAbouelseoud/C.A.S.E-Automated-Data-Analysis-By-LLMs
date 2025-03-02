@@ -50,3 +50,4 @@ def render_dataset_overview(col, df, state):
                 st.dataframe(categorical_df, use_container_width=True)
             else:
                 st.warning("No categorical columns found")
+
