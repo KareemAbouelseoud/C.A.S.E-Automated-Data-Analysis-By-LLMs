@@ -219,10 +219,13 @@ def trainer_node(state):
     """
 
     print("---CHECKING CODE---")
+    print(f"=======================================\nthis is the state in trainer:{state}\n====================================")
     # State
-    messages = state["messages"]
+    if "models_completed" not in state:
+        state["models_completed"] = 0
+    #messages = state["messages"]
     mode = state["mode"]
-    models_selected = state["models_selected"]
+    #models_selected = state["models_selected"]
     problem_type = state["problem_type"]
     X_train = state["X_train"]
     y_train = state["y_train"]
@@ -238,8 +241,15 @@ def trainer_node(state):
     numerical_cols = X_train.select_dtypes(include=['int64', 'float64']).columns
     categorical_cols = X_train.select_dtypes(include=['object']).columns
 
+    Xpreprocessing_pipeline.transformers = [t for t in Xpreprocessing_pipeline.transformers if t is not None]
+    Ypreprocessing_pipeline.transformers = [t for t in Ypreprocessing_pipeline.transformers if t is not None]
+    
+
     final_step=[('categorical_imputer', SimpleImputer(strategy='most_frequent'), categorical_cols),('numerical_imputer', SimpleImputer(strategy='median'), numerical_cols)]
     Xpreprocessing_pipeline.transformers.extend(final_step)
+
+    print(f"=======================================\nthis is the Xpreprocessing_pipeline:{Xpreprocessing_pipeline.transformers}\n====================================")
+    print(f"=======================================\nthis is the Ypreprocessing_pipeline:{Ypreprocessing_pipeline.transformers}\n====================================")
 
     X_train=Xpreprocessing_pipeline.fit_transform(X_train)
     y_train=Ypreprocessing_pipeline.fit_transform(y_train)
@@ -300,8 +310,8 @@ def trainer_node(state):
     print("---MODEL SAVED SUCCESSFULLY---")
 
     return {
-        "messages": messages,
+        #"messages": messages,
         "iterations": 0,
         "error": "no",
-        'models_completed':globals_dict["models_completed"]+1
+        'models_completed':models_completed+1
     }

@@ -1,13 +1,13 @@
 import sys
 import os
 
+from modelTraining.trainer import trainer_node
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing_extensions import TypedDict
 from typing_extensions import TypedDict,Annotated,NotRequired
 from langchain_core.messages import AnyMessage
 import operator
 from langgraph.graph import END, StateGraph, START
-from modelTraining.trainer import trainer_node
 from typing import Literal
 
 CONFIGURATIONS={
