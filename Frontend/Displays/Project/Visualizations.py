@@ -77,17 +77,15 @@ class Visualizations:
                     visualizations=[]
                 )
                 self.viz_session['viz']['w'] = w
-
-            else:
-                w = self.viz_session['viz']['w']
-            with elements("demo"):
-                event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
                 with hc.HyLoader("",hc.Loaders.pulse_bars,index=[0]):
                     vizs=visualizationRequests.fetch_visualizations(self.viz_session['project_id'])
-                for i in vizs:
-                    w.visualizations.append(self.create((i)))
-                
+                    for i in vizs:
+                        w.visualizations.append(self.create((i)))
+            else:
+                w = self.viz_session['viz']['w']
 
+            with elements("demo"):
+                event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
                 with self.viz_session['viz']['board'](rowHeight=57):
                     for i in w.visualizations:
                         i()
