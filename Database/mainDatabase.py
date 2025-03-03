@@ -15,6 +15,8 @@ processed_datasets_directory=r'Database\processedDatasets'
 data_reports_directory=r'Database\dataReports'
 chat_directory=r'Database\Users\Chats.csv'
 preprocessor_pipelines_directory=r'Database\preprocessorPipelines'
+Models_directory=r'Database\Models'
+
 def check_login(username,password):
     df=pd.read_csv(user_directory)
     row=df[(df['username'] == username)]
@@ -193,13 +195,25 @@ def update_st_chat_history(project_id,last_conv : list):
 
     df.to_csv(chat_directory, index=False)
 
-def save_pipeline(pipeline, project_id):
-    pipeline_path = os.path.join(preprocessor_pipelines_directory, f"pipeline_{project_id}.joblib")
+def save_pipeline(pipeline, project_id,mode='X'):
+    pipeline_path = os.path.join(preprocessor_pipelines_directory, f"pipeline_{project_id}_{mode}.joblib")
     dump(pipeline, pipeline_path)
 
-def fetch_pipeline(project_id):
-    pipeline_path = os.path.join(preprocessor_pipelines_directory, f"pipeline_{project_id}.joblib")
+def fetch_pipeline(project_id,mode='X'):
+    pipeline_path = os.path.join(preprocessor_pipelines_directory, f"pipeline_{project_id}_{mode}.joblib")
     if os.path.exists(pipeline_path):
         return load(pipeline_path)
     else:
         return None
+
+def save_model(project_id, model_object, model_name):
+    model_path = os.path.join(Models_directory, f"{model_name}_model_projectid_{project_id}.joblib")
+    dump(model_object, model_path)
+
+def fetch_model(project_id):
+    models = []
+    for file_name in os.listdir(Models_directory):
+        if f"projectid_{project_id}" in file_name:
+            model_path = os.path.join(Models_directory, file_name)
+            models.append(load(model_path))
+    return models

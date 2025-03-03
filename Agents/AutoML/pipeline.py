@@ -10,6 +10,9 @@ from AutoML.Splitting.splitter import splitter_node
 from AutoML.Preprocessing.pipeline import graph as preprocessor_graph
 from sklearn.compose import ColumnTransformer
 from AutoML.ModelSelection.selector import model_selector_node
+from AutoML.modelTraining.pipeline import model_trainer_node
+from AutoML.modelEvaluation.pipeline import model_evaluator_node
+
 
 class State(TypedDict):
     """
@@ -31,11 +34,12 @@ class State(TypedDict):
     y_test: NotRequired[object] # Testing Target
 
     #Preprocessing Pipeline
-    preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
+    X_preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
+    Y_preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
     
     #Model
+    training_logic: NotRequired[str] # Training Steps Documented for the User and rest of Agents
     models: NotRequired[list] # Model Names Selected by LLM
-    model_objects: NotRequired[list[object]] # Model Objects
 
 
 
@@ -43,11 +47,15 @@ class State(TypedDict):
 builder = StateGraph(State)
 builder.add_node('splitter_node', splitter_node)
 builder.add_node('preprocessor_node', preprocessor_graph)
-builder.add_node('model_selector', model_selector_node)
+builder.add_node("model_selector_node", model_selector_node)
+builder.add_node("model_trainer_node",model_trainer_node)
+builder.add_node("model_evaluator_node",model_evaluator_node)
 
 builder.add_edge(START, 'splitter_node')
 builder.add_edge('splitter_node', 'preprocessor_node')
-builder.add_edge('preprocessor_node', 'model_selector')
+builder.add_edge('preprocessor_node', "model_selector_node")
+builder.add_edge("model_selector_node", "model_trainer_node")
+builder.add_edge("model_trainer_node","model_evaluator_node")
 graph = builder.compile()
 
 
@@ -55,8 +63,12 @@ graph = builder.compile()
 
 async def automl(project_id,mode,label,features=None,user_preferences=None):
     print("AUTOML STARTED")
-    response=await graph.ainvoke({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'user_preferences':user_preferences})
-    # This will contain everything needed. from steps taken by each agent to the final model(s) and their performance
-    print(response)
-# import asyncio
-# asyncio.run(automl('1','Athena','Survived'))
+    async for chunk in graph.astream({'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'user_preferences':user_preferences}, stream_mode=['updates','values']):
+        if chunk[0] == 'values':
+            response=chunk[1]
+        elif chunk[0] == 'updates':
+            print("Update:",chunk[1])
+
+    print("Final Response:",response)
+import asyncio
+asyncio.run(automl('1','Athena','Survived'))

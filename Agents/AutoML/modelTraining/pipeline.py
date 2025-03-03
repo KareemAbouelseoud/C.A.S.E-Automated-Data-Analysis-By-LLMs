@@ -1,7 +1,7 @@
 import sys
 import os
 
-from modelEvaluation.evaluator import evaluator_node
+from modelTraining.trainer import trainer_node
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing_extensions import TypedDict
 from typing_extensions import TypedDict,Annotated,NotRequired
@@ -11,6 +11,7 @@ from langgraph.graph import END, StateGraph, START
 from typing import Literal
 
 CONFIGURATIONS={
+    'FLAG':'do not reflect',
     'MAX_ITERATIONS': 3
 }
 
@@ -29,8 +30,8 @@ class CoderState(TypedDict):
     mode: str # Mode Selected by the User
     problem_type: NotRequired[str] # Problem Type Identified by the LLM
     splitting_logic: NotRequired[str] # Splitting Steps Documented for the User and rest of Agents
-    X_test: NotRequired[object] # testing Features
-    y_test: NotRequired[object] # testing Target
+    X_train: NotRequired[object] # Training Features
+    y_train: NotRequired[object] # Training Target
 
     preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
     models: NotRequired[list] # Model Names Selected by LLM
@@ -39,7 +40,7 @@ class CoderState(TypedDict):
 
     
     
-def decide_to_finish(state)->Literal["evaluator", "__end__"]:
+def decide_to_finish(state)->Literal["trainer", "__end__"]:
     """
     Determines whether to finish.
 
@@ -57,23 +58,20 @@ def decide_to_finish(state)->Literal["evaluator", "__end__"]:
 
     ModelsCompleted= 1 if state['mode']=='HERMES' else 3 if state['mode']=='ATHENA' else 5
 
-    if (error == "no" or iterations == CONFIGURATIONS["MAX_ITERATIONS"]) and int(state["models_completed"]) == ModelsCompleted:
-        print("---DECISION: FINISHED EVALUATION---")
-        return END
-    else:
-        if  int(state["models_completed"]) != ModelsCompleted:
-            print("---EVALUATING NEXT MODEL---")
+    if iterations == 0:
+        if state['models_completed']>=ModelsCompleted:
+            return END
         else:
-            print("---DECISION: RE-TRY EVALUATION---")
-
-        return "evaluator"
-
+            return "trainer"
+    elif error == "yes" and iterations != 0:
+        return "trainer"
+        
 
 workflow = StateGraph(CoderState)
 # Define the nodes
-workflow.add_node("evaluator", evaluator_node)  # check code
+workflow.add_node("trainer", trainer_node)  # check code
 
 # Build graph
-workflow.add_edge(START, "evaluator")
-workflow.add_conditional_edges("evaluator",decide_to_finish)
-model_evaluator_node = workflow.compile()
+workflow.add_edge(START, "trainer")
+workflow.add_conditional_edges("trainer",decide_to_finish)
+model_trainer_node = workflow.compile()
