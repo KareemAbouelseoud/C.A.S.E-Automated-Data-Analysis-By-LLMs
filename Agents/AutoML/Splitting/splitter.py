@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+import pandas as pd
 load_dotenv()
 
 system_prompt = hub.pull("automl-splitter").messages[0].prompt.template
@@ -20,13 +21,13 @@ class Splitter(BaseModel):
     test_size: float = Field(description="Test size for splitting the data")
     shuffle: bool = Field(description="Whether to shuffle the data before splitting")
     stratify: bool = Field(description="Whether to stratify the data before splitting")
-    logic: str = Field(description="The logic used to split the data")
+    X_columns: list[str] = Field(description="The columns to use as features for training the model, Remove any columns that are not needed such as ID columns")
+    logic: str = Field(description="The logic used to split the data and selection of features")
     problem_type: Literal["classification", "regression"] = Field(description="The problem type of the data")
 
 def train_test_split(df, X_columns, y_column, test_size, shuffle, stratify):
     """ Split the data into training and testing sets. """
     from sklearn.model_selection import train_test_split
-    
     X=df[X_columns]
     y=df[y_column]
 
@@ -40,10 +41,11 @@ def train_test_split(df, X_columns, y_column, test_size, shuffle, stratify):
 
 async def splitter_node(state):
     print("Beginning Splitter Node")
-
+    
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
     data_report=state['data_report']
-    df = state['dataframe']
+    df = None #FIXME: Load the data from the API
+
 
     if 'X_columns' not in state or state['X_columns'] is None:
         X_columns = df.columns.tolist()
@@ -56,15 +58,26 @@ async def splitter_node(state):
     ]
 
     response = await llm.with_structured_output(Splitter).ainvoke(messages)
+
     test_size = response.test_size
     shuffle = response.shuffle
     stratify = response.stratify
-    X_train,X_test, y_train, y_test=train_test_split(df,X_columns, state["y_column"], test_size, shuffle, stratify)
+    new_X_columns = response.X_columns
+
+    new_X_columns = list(set(new_X_columns).intersection(set(X_columns)))
+    X_train,X_test, y_train, y_test=train_test_split(df,new_X_columns, state["y_column"], test_size, shuffle, stratify)
     
+    X_train['row_id'] = range(len(X_train))
+    y_train = pd.DataFrame({'y': y_train, 'row_id': range(len(y_train))})
+
+    X_test['row_id'] = range(len(X_test))
+    y_test = pd.DataFrame({'y': y_test, 'row_id': range(len(y_test))})
+    
+
     return {"X_train": X_train,
             "X_test": X_test,
             "y_train": y_train,
             "y_test": y_test, 
             "splitting_logic": response.logic,
-            'X_columns':X_columns,
+            'X_columns':new_X_columns,
             "problem_type": response.problem_type}

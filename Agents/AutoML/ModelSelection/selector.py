@@ -115,7 +115,11 @@ async def model_selector_node(state):
         }
     ]
     response = await llm.with_structured_output(Selector).ainvoke(messages)
+    for rec in response.models:
+        print(f"this is the reasoning for {rec.model}: {rec.reasoning}")
     
+    print(f"response so far:{response}")
+
     return {
         "models": [
             {"model": rec.model, "reasoning": rec.reasoning}
