@@ -97,6 +97,13 @@ async def model_selector_node(state):
     
     model_list = classification_models if problem_type == 'classification' else regression_models
 
+    try:
+        if 'X_preprocessing_logic' in state or state['X_preprocessing_logic'] is not None: 
+            print (f"\nPreprocessing Logic Found for X_columns: {state['X_preprocessing_logic']}\n")
+        if 'Y_preprocessing_logic' in state or state['Y_preprocessing_logic'] is not None: 
+            print (f"\nPreprocessing Logic Found for y_column: {state['Y_preprocessing_logic']}\n")
+    except:
+        print("\nNo preprocessing logic found, returning to selector node\n")
 
     messages = [
         {
@@ -110,7 +117,8 @@ async def model_selector_node(state):
                 f"this is the model list: {model_list}\n" 
                 f"this is the data report:{data_report}\n"
                 f"this is the X columns: {X_columns}\n And this is the y column: {y_column}\n"
-                f"This is the preprocessing steps that are going to be done: {state['preprocessing_logic']}\n"
+                f"This is the preprocessing steps that are going to be applied for the X_columns: {state['X_preprocessing_logic']}\n"
+                f"This is the preprocessing steps that are going to be applied for the y_column: {state['Y_preprocessing_logic']}\n"
                 "Please provide recommendations strictly following the format requirements."
         }
     ]
