@@ -24,31 +24,27 @@ Variables:
 - chatBaseTemplate: A template for the chat history, ensuring that the system prompt is passed to the model in it's appropriate place.
 """
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
+
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from dotenv import load_dotenv
-from typing import Literal,List
+from typing import Literal
 from langgraph.graph import END
 from langchain import hub
 from langchain_core.runnables import RunnableConfig
-from langchain_core.messages import ToolMessage
-from Agents.Chatbot.botTools import tools
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Database import mainDatabase
-
+from .botTools import tools
 load_dotenv()
 CONFIGURATIONS={
     'temperature':0.7,
-    'model':"gemini-2.0-flash",
+    'model':"gpt-4o-mini",
 }
-llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
+llm=ChatOpenAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 system_prompt = hub.pull("chatbot-chatter").messages[0].prompt.template
 
 
 
 async def chatter_node(state,config: RunnableConfig):
-    project_id = state["project_id"]
-    data_report=mainDatabase.fetch_data_report(project_id)
+    data_report=state['data_report']
     old_messages = state["messages"]
     messages=[
         {"role": "system", "content":system_prompt+f"\n\n Data Report:\n {data_report}" }

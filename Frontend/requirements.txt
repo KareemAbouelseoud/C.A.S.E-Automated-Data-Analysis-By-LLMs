@@ -1,0 +1,11 @@
+numpy==1.26.4
+pandas==2.2.3
+plotly==5.24.1
+requests==2.32.3
+streamlit==1.41.1
+streamlit-cookies-controller==0.0.4
+streamlit-elements-plotly @ git+https://github.com/kareem8996/streamlit-elements-plotly@5d40927fb50fa428f26fe826accb4612ebcbcdeb
+pymongo==4.11.1
+pydantic==2.10.4
+hydralit_components==1.0.10
+streamlit-nested-layout==0.1.4

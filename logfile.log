@@ -22498,3 +22498,15 @@ Bad property path:
 shape
 ^^^^^
 2025-02-11 17:38:27,242 - root - ERROR - An error occurred: Must specify a fill 'value' or 'method'.
+2025-02-22 23:28:48,426 - root - ERROR - An error occurred: Column 'sex' not found in the dataset.
+2025-02-22 23:28:54,712 - root - ERROR - An error occurred: ['sex', 'survived']
+2025-02-22 23:29:00,223 - root - ERROR - An error occurred: ['sex', 'survival rate']
+2025-02-23 00:05:12,760 - root - ERROR - An error occurred: Category column 'Who' is not in the DataFrame.
+2025-02-23 00:05:28,346 - root - ERROR - An error occurred: Specified columns not found in the dataset.
+2025-02-23 00:05:30,675 - root - ERROR - An error occurred: "['Sex', 'Embarked'] not in index"
+2025-02-23 00:16:56,446 - root - ERROR - An error occurred: Specified columns not found in the dataset.
+2025-02-23 00:17:37,280 - root - ERROR - An error occurred: Specified columns not found in the dataset.
+2025-02-23 00:17:57,474 - root - ERROR - An error occurred: "['Embark_town'] not in index"
+2025-02-23 00:27:05,237 - root - ERROR - An error occurred: Specified columns not found in the dataset.
+2025-02-23 00:27:10,024 - root - ERROR - An error occurred: "The following id_vars or value_vars are not present in the DataFrame: ['Family_Size']"
+2025-02-23 00:27:12,205 - root - ERROR - An error occurred: Must specify a fill 'value' or 'method'.

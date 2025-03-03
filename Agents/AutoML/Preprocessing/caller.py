@@ -1,13 +1,9 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
-from typing import Literal,List
+from typing import Literal
 from langgraph.graph import END
 from langchain import hub
 from preprocessingTools import tools
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Database import mainDatabase
 from pydantic import BaseModel,Field
 
 load_dotenv()

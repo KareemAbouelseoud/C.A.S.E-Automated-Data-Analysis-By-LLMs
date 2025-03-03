@@ -1,0 +1,58 @@
+services:
+  Agents:
+    build: 
+      context: ./Agents
+      dockerfile: dockerfile
+    image: agents:1.0
+    networks:
+      - case-pb
+    ports:
+      - "8006:8006"
+    volumes:
+      - ./Agents:/app
+    
+    restart: always
+    
+    env_file:
+      - .env
+
+  Backend:
+    build: 
+      context: ./Backend
+      dockerfile: dockerfile
+    image: backend:1.0
+    networks:
+      - case-pb
+    ports:
+      - "8005:8005"
+    volumes:
+      - ./Backend:/app
+      - ./dataModels:/app/dataModels
+    restart: always
+
+    env_file:
+      - .env
+
+  Frontend:
+    build: 
+      context: ./Frontend
+      dockerfile: dockerfile
+    image: frontend:1.0
+    networks:
+      - case-pb
+    ports:
+      - "8007:8007"
+    volumes:
+      - ./Frontend:/app
+      - ./dataModels:/app/dataModels
+    restart: always
+    environment:
+      - STREAMLIT_SERVER_RUN_ON_SAVE=true
+      - STREAMLIT_SERVER_HEADLESS=true
+    env_file:
+      - .env
+
+
+networks:
+    case-pb:
+      driver: bridge

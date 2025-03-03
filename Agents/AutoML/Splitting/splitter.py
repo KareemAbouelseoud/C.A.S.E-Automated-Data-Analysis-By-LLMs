@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Database import mainDatabase
 import pandas as pd
 load_dotenv()
 
@@ -44,9 +43,9 @@ async def splitter_node(state):
     print("Beginning Splitter Node")
     
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
-    project_id = state["project_id"]
-    data_report=mainDatabase.fetch_data_report(project_id)
-    df = mainDatabase.fetch_dataset(project_id)
+    data_report=state['data_report']
+    df = None #FIXME: Load the data from the API
+
 
     if 'X_columns' not in state or state['X_columns'] is None:
         X_columns = df.columns.tolist()

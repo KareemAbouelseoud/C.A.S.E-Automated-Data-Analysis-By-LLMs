@@ -16,6 +16,7 @@ class State(TypedDict):
     A class to represent the state of the application.
     """
     project_id:str # Project ID
+    data_report: NotRequired[str] # Data Report
     X_columns: NotRequired[list[str]] # X Columns (user then LLM defined)
     y_column: NotRequired[str] # Y Column (user defined)
     X_preprocessing_messages: Annotated[list[AnyMessage], operator.add]

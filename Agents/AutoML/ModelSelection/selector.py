@@ -4,10 +4,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END
 from langchain import hub
 from dotenv import load_dotenv
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Database import mainDatabase
 load_dotenv()
 
 system_prompt = hub.pull("automl-model-selection-planner").messages[0].prompt.template
@@ -92,9 +88,8 @@ async def model_selector_node(state):
         model=CONFIGURATIONS["model"],
         temperature=CONFIGURATIONS["temperature"]
     )
-    
-    project_id = state["project_id"]
-    data_report = mainDatabase.fetch_data_report(project_id)
+
+    data_report = state['data_report']
     problem_type = state['problem_type']
     X_columns = state['X_columns']
     y_column = state['y_column']
