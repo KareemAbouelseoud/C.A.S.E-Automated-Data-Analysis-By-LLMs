@@ -8,6 +8,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 import pandas as pd
+from API.Requests import projectRequests
 load_dotenv()
 
 system_prompt = hub.pull("automl-splitter").messages[0].prompt.template
@@ -44,7 +45,7 @@ async def splitter_node(state):
     
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
     data_report=state['data_report']
-    df = None #FIXME: Load the data from the API
+    df = await projectRequests.get_dataset(state['project_id'])
 
 
     if 'X_columns' not in state or state['X_columns'] is None:
