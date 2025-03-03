@@ -1,5 +1,5 @@
-from Database import mainDatabase
 from sklearn.impute import SimpleImputer
+from API.Requests import projectRequests
 import pandas as pd
 classification_import_block = {
     "Logistic Regression": 
@@ -207,7 +207,7 @@ model = IsotonicRegression()"""
 
 train_code = "model.fit(X_train, y_train)"
 
-def trainer_node(state):
+async def trainer_node(state):
     """
     Check code
 
@@ -234,9 +234,9 @@ def trainer_node(state):
 
 #splitting and preprocessing logic:
 #----------------------------------
-    df=mainDatabase.fetch_dataset(project_id)
-    Xpreprocessing_pipeline=mainDatabase.fetch_pipeline(project_id,"X")
-    Ypreprocessing_pipeline=mainDatabase.fetch_pipeline(project_id,"Y")
+    df= await projectRequests.get_dataset(project_id)
+    Xpreprocessing_pipeline=projectRequests.get_X_pipeline(project_id)
+    Ypreprocessing_pipeline=projectRequests.get_Y_pipeline(project_id)
     
     numerical_cols = X_train.select_dtypes(include=['int64', 'float64']).columns
     categorical_cols = X_train.select_dtypes(include=['object']).columns
@@ -262,8 +262,7 @@ def trainer_node(state):
     X_train = merged.drop(columns=['row_id', 'y'])
     y_train = merged['y']
     
-    globals_dict={'mainDatabase':mainDatabase,
-                    'project_id':state['project_id'],
+    globals_dict={'project_id':state['project_id'],
                     'df':df,
                     'X_train':X_train,
                     'y_train':y_train,
@@ -304,13 +303,12 @@ def trainer_node(state):
     exec(model, globals_dict)
 
     model=globals_dict['model']
-    mainDatabase.save_pipeline(Xpreprocessing_pipeline,project_id,"X")
-    mainDatabase.save_pipeline(Ypreprocessing_pipeline,project_id,"Y")
-    mainDatabase.save_model(project_id, model,state['model'][models_completed]['model'])
+    projectRequests.save_X_pipeline(Xpreprocessing_pipeline,project_id)
+    projectRequests.save_Y_pipeline(Ypreprocessing_pipeline,project_id)
+    projectRequests.save_model(project_id, model,state['model'][models_completed]['model'])
     print("---MODEL SAVED SUCCESSFULLY---")
 
     return {
-        #"messages": messages,
         "iterations": 0,
         "error": "no",
         'models_completed':models_completed+1

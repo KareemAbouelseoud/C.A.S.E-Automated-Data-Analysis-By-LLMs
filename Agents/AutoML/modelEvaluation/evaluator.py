@@ -1,4 +1,4 @@
-from Database import mainDatabase
+from API.Requests import projectRequests
 metrics_block={
     "classification_metrics" :"""
         #import block
@@ -76,10 +76,9 @@ metrics_block={
         plt.show()
     """
     }
-
 eval_code = "y_pred = model.predict(X_test)"
 
-def evaluator_node(state):
+async def evaluator_node(state):
     """
     Check code
 
@@ -103,11 +102,10 @@ def evaluator_node(state):
     models_completed = state["models_completed"]
     mode = state["mode"]
 
-    df=mainDatabase.fetch_dataset(state['project_id'])
-    preprocessing_pipeline=mainDatabase.fetch_pipeline(project_id)
+    df=await projectRequests.get_dataset(state['project_id'])
+    preprocessing_pipeline=projectRequests.get_X_pipeline(project_id)
 
-    globals_dict={'mainDatabase':mainDatabase,
-                    'project_id':state['project_id'],
+    globals_dict={'project_id':state['project_id'],
                     'df':df,
                     'X_train':X_train,
                     'y_train':y_train,
@@ -135,7 +133,7 @@ def evaluator_node(state):
     metrics = globals_dict['metrics']
 
     # Save the model to the database
-    mainDatabase.save_model(project_id, model,state['model'][state['models_completed']]['model'])
+    projectRequests.save_model(project_id, model,state['model'][state['models_completed']]['model'])
     print("---MODEL SAVED SUCCESSFULLY---")  
     
     # No errors
