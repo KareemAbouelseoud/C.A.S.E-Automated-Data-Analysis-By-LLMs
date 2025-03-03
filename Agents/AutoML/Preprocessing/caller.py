@@ -18,9 +18,8 @@ system_prompt = hub.pull("automl-preprocessor-caller").messages[0].prompt.templa
 async def caller_node(state):
 
     print("Calling Preprocessor Tools")
-    project_id = state["project_id"]
-    data_report=mainDatabase.fetch_data_report(project_id)
-    print(f"=======================================\nthis is the state in caller:{state}\n====================================") 
+    data_report=state['data_report']
+    print(f"=======================================\nthis is the state in caller:{state['preprocessing_mode']}\n{state['X_preprocessing_messages']}====================================") 
 
     if state['preprocessing_mode']=='X':
         if 'X_preprocessing_messages' not in state or state['X_preprocessing_messages'] is None:
@@ -49,7 +48,7 @@ async def caller_node(state):
 
 
 
-async def should_continue(state)->Literal['tools','__end__','caller_node']:
+async def should_continue(state)->Literal['tools','__end__','planner_node']:
     if state['preprocessing_mode']=='X':
         messages = state["X_preprocessing_messages"][-1]
     else:
@@ -59,6 +58,5 @@ async def should_continue(state)->Literal['tools','__end__','caller_node']:
         return "tools"
     else:
         if state['preprocessing_mode']=='X':
-            state['preprocessing_mode']='Y'
-            return "caller_node"
+            return "planner_node"
     return END

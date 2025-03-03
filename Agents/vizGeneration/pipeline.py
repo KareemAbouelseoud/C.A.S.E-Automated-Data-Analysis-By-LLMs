@@ -16,7 +16,6 @@ Dependencies:
 - coder
 - os
 - sys
-- Database
 
 Usage:
 1. Ensure that the required dependencies are installed.
@@ -36,7 +35,6 @@ Variables:
 import sys
 
 import os
-import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 
 from typing_extensions import TypedDict,Annotated,NotRequired
@@ -50,7 +48,6 @@ from .coder.coderPipeline import coder
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
 import operator
-import pandas as pd
 
 class State(TypedDict):
     """

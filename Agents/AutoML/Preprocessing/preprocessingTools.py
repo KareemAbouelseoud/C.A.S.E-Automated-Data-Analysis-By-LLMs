@@ -1,5 +1,4 @@
 import pandas as pd
-from langchain_core.tools import tool
 from langchain_core.messages import ToolMessage
 from sklearn.impute import KNNImputer
 from typing import Annotated, Optional,Union
@@ -7,6 +6,9 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder,FunctionTransforme
 from sklearn.compose import ColumnTransformer
 from functools import partial
 from helperFunctions import *
+from API.Requests import projectRequests
+from langchain_core.tools import tool,InjectedToolArg
+
 
 
 
@@ -15,7 +17,7 @@ async def encode_categorical_feature(
     column_name: Annotated[str, 'Column to encode.'],
     method: Annotated[str, 'Method: "onehot" or "label"'] = 'onehot',
     sparse: Annotated[bool, 'Whether to return a sparse matrix (for one-hot encoding ONLY).'] = True,
-    df:Optional[object] = None,
+    project_id: Annotated[str,InjectedToolArg] = None
 ) -> tuple:
     """
     Encodes categorical features and returns a transformer to apply the same encoding to new data.
@@ -33,7 +35,7 @@ async def encode_categorical_feature(
 async def normalize_continous_feature(
     column_name: Annotated[str, 'Column to normalize.'],
     method: Annotated[str, 'Method: "minmax" or "standard" or "log" or "robust"'] = 'minmax',
-    df:Optional[object] = None,
+    project_id: Annotated[str,InjectedToolArg] = None
 ) -> tuple:
     """
     Normalizes continuous features and returns a transformer to apply the same normalization to new data.
@@ -55,7 +57,7 @@ async def normalize_continous_feature(
 async def handle_outliers(
     column_name: Annotated[str, 'column name to be processed'],
     strategy: Annotated[str, "The strategy to handle outliers. Options: 'remove', 'impute_mean', 'impute_median','winsorize','knn"],
-    df: Optional[object] = None,
+    project_id: Annotated[str,InjectedToolArg] = None,
     n_neighbors: Annotated[Optional[int], "Number of neighbors for KNN imputation (if strategy is 'knn')."] = 5, 
     method: Annotated[str, 'Method: "zscore" or "iqr"'] = 'iqr',
     threshold: Annotated[float, 'Threshold for outlier detection.'] = 1.5
@@ -80,6 +82,7 @@ async def handle_outliers(
     """
 
     try:
+        df=await projectRequests.get_dataset(project_id)
         if column_name not in df.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
         if not pd.api.types.is_numeric_dtype(df[column_name]):
@@ -139,7 +142,7 @@ async def handle_outliers(
 @tool
 async def parse_datetime(
     column_name: Annotated[str, 'column name to be processed'],
-    df: Optional[object] = None,
+    project_id: Annotated[str,InjectedToolArg] = None,
 ) -> tuple:
     """
     Parses datetime columns and returns a transformer to apply the same parsing to new data.
@@ -154,6 +157,7 @@ async def parse_datetime(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try:
+        df=await projectRequests.get_dataset(project_id)
         if column_name not in df.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
 
@@ -165,8 +169,8 @@ async def parse_datetime(
 @tool
 async def handle_null_values(
     column_name: Annotated[str, 'column name to be processed'],
-    strategy: Annotated[str, "The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean', 'knn"],
-    df: Optional[object] = None,
+    strategy: Annotated[str, "The strategy to handle null values. only available Options: 'drop', 'fill_value', 'fill_mean', fill_median, 'knn"],
+    project_id: Annotated[str,InjectedToolArg] = None,
     value: Annotated[Optional[Union[float,str,int]], "The value to fill nulls with (if strategy is 'fill_value')."] = None,
     n_neighbors: Annotated[Optional[int], "Number of neighbors for KNN imputation (if strategy is 'knn')."] = 5,
 ) -> tuple:
@@ -188,7 +192,7 @@ async def handle_null_values(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try:
-        
+        df = await projectRequests.get_dataset(project_id)
         if column_name not in df.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
          
@@ -203,7 +207,9 @@ async def handle_null_values(
 
         elif strategy == "fill_mean":
             transformer = FunctionTransformer(fill_mean_transform)
-
+        
+        elif strategy == "fill_median":
+            transformer = FunctionTransformer(fill_median_transform)    
         elif strategy == "knn":
             return ("handle_null_values",KNNImputer(n_neighbors=n_neighbors),[column_name])
             
@@ -219,7 +225,7 @@ async def handle_null_values(
 async def remove_duplicates(
     column_name: Annotated[str, 'column name to be processed'],
     strategy: Annotated[str, "The strategy to handle duplicates. Options: 'rows', 'columns'."],
-    df: Optional[object] = None,
+    project_id: Annotated[str,InjectedToolArg] = None,
     subset: Annotated[Optional[str], "List of columns to consider for row duplicates (if strategy is 'rows')."] = None,
     keep: Annotated[Optional[str], "Whether to keep the 'first', 'last', or False (if strategy is 'rows' or 'columns')."] = "first",
 ) -> tuple:
@@ -240,7 +246,7 @@ async def remove_duplicates(
         3. Column Name: A list containing the name of the column that the transformer will process.
     """
     try :
-        
+        df = await projectRequests.get_dataset(project_id)
         if column_name not in df.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
          
@@ -252,7 +258,8 @@ async def remove_duplicates(
 
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
-    except:
+    except Exception as e:
+        raise e
         raise ValueError(f"Error in remove_duplicates")
     return ("remove_duplicates", transformer, [column_name])
 
@@ -281,7 +288,7 @@ async def tool_node(state):
     for tool_call in last_message.tool_calls:
         try:
             # Invoke the tool based on the tool call
-            tool_call["args"]["df"] = state["dataframe"]
+            tool_call["args"]["project_id"] = state["project_id"]
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             preprocessors.append(tool_result)
             output_messages.append(
@@ -302,18 +309,18 @@ async def tool_node(state):
                 )
             )
     if state['preprocessing_mode']=='X':
-        preprocessor=mainDatabase.fetch_pipeline(state["project_id"],'X')
+        preprocessor=projectRequests.get_X_pipeline(state["project_id"])
         if preprocessor:
             preprocessor.transformers.extend(preprocessors)
         else:
             preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
-        mainDatabase.save_pipeline(preprocessor,state["project_id"],'X')
+        projectRequests.save_X_pipeline(state["project_id"],preprocessor)
         return {'X_preprocessing_messages':output_messages}
     else:
-        preprocessor=mainDatabase.fetch_pipeline(state["project_id"],'Y')
+        preprocessor=projectRequests.get_Y_pipeline(state["project_id"])
         if preprocessor:
             preprocessor.transformers.extend(preprocessors)
         else:
             preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
-        mainDatabase.save_pipeline(preprocessor,state["project_id"],'Y')
+        projectRequests.save_Y_pipeline(state["project_id"],preprocessor)
         return {'Y_preprocessing_messages':output_messages}

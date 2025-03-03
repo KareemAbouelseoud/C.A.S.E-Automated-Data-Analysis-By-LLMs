@@ -46,6 +46,14 @@ def fill_mean_transform(input_data):
         raise ValueError("Failed to fill null values with the mean.")
     return input_data
 
+def fill_median_transform(input_data):
+    input_data = input_data.copy()
+    try:
+        input_data = input_data.fillna(input_data.median())
+    except:
+        raise ValueError("Failed to fill null values with the median.")
+    return input_data
+
 def drop_rows_transform(input_data,subset=None,keep='first'):
     input_data = input_data.copy()
     try:
