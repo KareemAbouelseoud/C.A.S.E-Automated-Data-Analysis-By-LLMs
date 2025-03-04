@@ -6,6 +6,16 @@ from Requests import visualizationRequests
 import hydralit_components as hc
 class Visualizations:
     def __init__(self):
+        self.dimensions={
+            "Pair":{'w':12,'h':10},
+            "Bar":{'w':6,'h':9},
+            "Histogram":{'w':6,'h':9},
+            "Violin":{'w':6,'h':9},
+            "Box":{'w':6,'h':9},
+            "Line":{'w':7.5,'h':7},
+            "Pie":{'w':4.5,'h':7},
+
+        }
         self.viz_session=st.session_state['user_data']['projects']['current_project']
 
         if 'viz' not in self.viz_session:
@@ -15,7 +25,11 @@ class Visualizations:
 
     def create(self,fig_dict):
         if isinstance(fig_dict,dict):
-            plot=Plot.Plots(self.viz_session['viz']['board'], 12,  7, w=5, h=7, minW=2, minH=4,fig=fig_dict)
+            try:
+                plot=Plot.Plots(self.viz_session['viz']['board'], 0,  0, w=6, h=6,fig=fig_dict['figure_data'],name=fig_dict['name'])
+            except:
+                plot=Plot.Plots(self.viz_session['viz']['board'], 0,  0, w=6, h=6,fig=fig_dict)
+
             return plot
         else:
             for i in fig_dict:
@@ -86,6 +100,6 @@ class Visualizations:
 
             with elements("demo"):
                 event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
-                with self.viz_session['viz']['board'](rowHeight=57):
+                with self.viz_session['viz']['board'](compactType='horizontal',rowHeight=57):
                     for i in w.visualizations:
                         i()

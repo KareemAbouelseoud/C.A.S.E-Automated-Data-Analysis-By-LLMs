@@ -31,6 +31,25 @@ class Plots(Dashboard.Item):
         super().__init__(*args, **kwargs)
         # self.type=kwargs['type']
         self.fig_dict=kwargs['fig']
+        self.name=kwargs['name'] if 'name' in kwargs else 'PLOT'
+        self.icons={
+               'Line':"mui.icon.Radar()",
+               'Scatter':"mui.icon.ScatterPlotRounded()",
+                'Pie':"mui.icon.PieChartRounded()",
+                'Bubble':"mui.icon.BubbleChartRounded()",
+                'Swarm':"mui.icon.DeblurRounded()",
+                'Grouped Bar':"mui.icon.BarChartRounded()",
+                'Pair':"mui.icon.TroubleshootRounded()",
+                'Radar':"mui.icon.RadarRounded()",
+                'Treemap':"mui.icon.AccountTreeRounded()",
+                'Heatmap':"mui.icon.LocalFireDepartmentRounded()",
+                'Faceted Bar':"mui.icon.StackedBarChartRounded()",
+                'Histogram':"mui.icon.InsertChartRounded()",
+                'Area':"mui.icon.QueryStatsRounded()",
+                'Box':"mui.icon.DashboardRounded()",
+                'Violin':"mui.icon.DiamondRounded()",
+
+        }
 
     def create_plot(self):
         fig_dict=self.fig_dict
@@ -61,25 +80,12 @@ class Plots(Dashboard.Item):
                         }, 
                         elevation=1):
                                     with self.title_bar():
-                                        mui.icon.Radar()
-                                        mui.Typography('PLOT')
+                                        if self.name is not 'PLOT':
+                                            exec(self.icons[self.name])
+                                        else:
+                                            mui.icon.TimelineRounded()
+                                        mui.Typography(self.name)
                                     self.create_plot()
-            # with html.Div():
-            #     html.div(
-            #         html.details(
-            #             html.summary("Options"),
-            #             html.select(
-            #                 html.option("Option 1", value="1"),
-            #                 html.option("Option 2", value="2"),
-            #                 html.option("Option 3", value="3"),
-            #                 style={"width": "50%"}
-            #             ),
-            #             open=True,
-            #             style={"marginTop": "10px"}
-            #         ),
-            #         style={"padding": "10px"}
-            #     )
-                
 
 
                 
