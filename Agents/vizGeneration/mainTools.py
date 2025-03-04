@@ -102,7 +102,7 @@ async def create_line_plot(x: str, y: str,title: str , color: str = None,x_label
             title=title,
             template="plotly_dark",
         )
-        return make_serializable(fig.to_dict())
+        return {'name':'Line','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         print(f"Error creating line plot: {e}")
 
@@ -155,7 +155,7 @@ async def create_scatter_plot(x: str, y: str,title: str, color: Optional[str] = 
             title=title,
             template='plotly_dark',
         )
-        return make_serializable(fig.to_dict())
+        return {'name':'Scatter','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         print(f"Error creating scatter plot: {e}")
 
@@ -202,7 +202,7 @@ async def create_bubble_plot(x: str, y: str, title: str, color: Optional[str] = 
             title=title,
             template="plotly_dark",
         )
-        return make_serializable(fig.to_dict())
+        return {'name':'Bubble','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         print(f"Error creating bubble plot: {e}")
 
@@ -250,7 +250,7 @@ async def create_swarm_plot(x: str, y: str,title: str , color: Optional[str] = N
             title=title, 
             template="plotly_dark", 
         )
-        return make_serializable(fig.to_dict())
+        return {'name':'Swarm','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         print(f"Error creating swarm plot: {e}")
 
@@ -291,7 +291,7 @@ async def grouped_bar_plot(x: str, y: str,title:str, color: Optional[str] = None
             title=title, 
             barmode="group"
             )
-        return make_serializable(fig.to_dict())
+        return {'name':'Grouped Bar','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         print(f"Error creating grouped bar plot: {e}")
 
@@ -324,7 +324,7 @@ async def create_pairplot(color: Optional[str] = None, dimensions: List[str] = N
         logger.info(f"Pair Plot Created Successfully")
         fig.update_layout(
                 template="plotly_dark",)
-        return make_serializable(fig.to_dict())
+        return {'name':'Pair','figure_data':make_serializable(fig.to_dict())}
         
     except ValueError as e:
         logger.error(f"ValueError: {e}")
@@ -388,7 +388,7 @@ async def create_radar_chart(category_column: str,title: str, value_columns: Lis
 
         fig.update_layout(
                 template="plotly_dark",)
-        return make_serializable(fig.to_dict())  
+        return {'name':'Radar','figure_data':make_serializable(fig.to_dict())}
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
@@ -455,7 +455,7 @@ async def create_treemap(path_columns: List[str],title: str, value_column: Optio
 
         fig.update_layout(
                 template="plotly_dark",)
-        return make_serializable(fig.to_dict())
+        return {'name':'Treemap','figure_data':make_serializable(fig.to_dict())}
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
@@ -498,7 +498,7 @@ async def create_correlation_heatmap(columns: List[str] = None,title: Optional[s
             fig.update_traces(text=correlation_matrix.values, texttemplate="%{text:.2f}", textfont_size=12)
 
         fig.update_layout(template="plotly_dark")
-        return make_serializable(fig.to_dict())
+        return {'name':'Correlation Heatmap','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
@@ -542,7 +542,7 @@ async def create_faceted_bar_chart(x: str, y: str,title: str, color: Optional[st
             font=dict(size=12),
             template="plotly_dark"
         )
-        return make_serializable(fig.to_dict())
+        return {'name':'Faceted Bar','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
@@ -567,7 +567,7 @@ async def create_histogram(x: str, color: Optional[str] = None, x_label: Optiona
             raise ValueError(f"Column '{x}' not found in the dataset.")
 
         fig = px.histogram(df, x=x, color=color)
-        return make_serializable(fig.to_dict())
+        return{'name':'Histogram','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
@@ -592,7 +592,7 @@ async def create_pie_chart(values: str, names: str,title: str, color: Optional[s
             raise ValueError("Specified columns not found in the dataset.")
 
         fig = px.pie(df, values=values, names=names, color=color, title=title)
-        return make_serializable(fig.to_dict())
+        return {'name':'Pie','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
@@ -619,7 +619,7 @@ async def create_area_chart(x: str, y: str, title: str,color: Optional[str] = No
             raise ValueError("Specified columns not found in the dataset.")
 
         fig = px.area(df, x=x, y=y, color=color, title=title, labels={'x': x_label, 'y': y_label})
-        return make_serializable(fig.to_dict())
+        return {'name':'Area','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
@@ -650,7 +650,7 @@ async def create_boxplot(x: Optional[str] = None, y: Optional[str] = None, color
             fig.update_xaxes(title_text=x_label)
         if y_label:
             fig.update_yaxes(title_text=y_label)
-        return make_serializable(fig.to_dict())
+        return {'name':'Box','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
@@ -683,7 +683,7 @@ async def create_violin_plot(x: Optional[str] = None, y: Optional[str] = None, c
             fig.update_xaxes(title_text=x_label)
         if y_label:
             fig.update_yaxes(title_text=y_label)
-        return make_serializable(fig.to_dict())
+        return {'name':'Violin','figure_data':make_serializable(fig.to_dict())}
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
