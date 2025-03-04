@@ -11,6 +11,9 @@ from AutoML.modelTraining.pipeline import model_trainer_node
 from AutoML.modelEvaluation.pipeline import model_evaluator_node
 from API.Requests import projectRequests
 
+CONFIGURATIONS= {
+    'recursion_limit': 100,
+}
 class State(TypedDict):
     """
     A class to represent the state of the application.
@@ -61,7 +64,7 @@ graph = builder.compile()
 
 async def automl(project_id,data_report,mode,label,features=None,user_preferences=None):
     print("AUTOML STARTED")
-    async for chunk in graph.astream({'data_report':data_report,'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'user_preferences':user_preferences}, stream_mode=['updates','values']):
+    async for chunk in graph.astream({'data_report':data_report,'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'user_preferences':user_preferences},config=CONFIGURATIONS, stream_mode=['updates','values']):
         if chunk[0] == 'values':
             response=chunk[1]
         elif chunk[0] == 'updates':

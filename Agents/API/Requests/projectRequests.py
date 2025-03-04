@@ -20,38 +20,38 @@ async def get_dataset(project_id):
     return pd.read_json(StringIO(dataset))
 
 def get_X_pipeline(project_id):
-    pipeline_path = f"../AutoML/static/{project_id}_X_pipeline.pkl"
+    pipeline_path = f"./static/{project_id}_X_pipeline.pkl"
     if os.path.exists(pipeline_path):
         return joblib.load(pipeline_path)
     else:
         return None
 
 def save_X_pipeline(project_id, pipeline_data):
-    pipeline_path = f"../AutoML/static/{project_id}_X_pipeline.pkl"
+    pipeline_path = f"./static/{project_id}_X_pipeline.pkl"
     os.makedirs(os.path.dirname(pipeline_path), exist_ok=True)
     joblib.dump(pipeline_data, pipeline_path)
 
 def get_Y_pipeline(project_id):
-    pipeline_path = f"../AutoML/static/{project_id}_Y_pipeline.pkl"
+    pipeline_path = f"./static/{project_id}_Y_pipeline.pkl"
     if os.path.exists(pipeline_path):
         return joblib.load(pipeline_path)
     else:
         return None
 
 def save_Y_pipeline(project_id, pipeline_data):
-    pipeline_path = f"../AutoML/static/{project_id}_Y_pipeline.pkl"
+    pipeline_path = f"./static/{project_id}_Y_pipeline.pkl"
     os.makedirs(os.path.dirname(pipeline_path), exist_ok=True)
     joblib.dump(pipeline_data, pipeline_path)
 
 def get_model(project_id, model_name):
-    model_path = f"../AutoML/static/{project_id}_{model_name}_model.pkl"
+    model_path = f"./static/{project_id}_{model_name}_model.pkl"
     if os.path.exists(model_path):
         return joblib.load(model_path)
     else:
         return None
 
 def save_model(project_id, model_name, model_data):
-    model_path = f"../AutoML/static/{project_id}_{model_name}_model.pkl"
+    model_path = f"./static/{project_id}_{model_name}_model.pkl"
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model_data, model_path)
 

@@ -29,7 +29,7 @@ async def encode_categorical_feature(
     else:
         raise ValueError(f"Unknown method: {method}")
 
-    return ("encode_categorical_feature",encoder,[column_name])
+    return (f"{column_name}_encode_categorical_feature",encoder,[column_name])
 
 @tool
 async def normalize_continous_feature(
@@ -51,7 +51,7 @@ async def normalize_continous_feature(
     else:
         raise ValueError(f"Unknown method: {method}")
 
-    return ("normalize_continous_feature",transformer,[column_name])
+    return (f"{column_name}_normalize_continous_feature",transformer,[column_name])
 
 @tool
 async def handle_outliers(
@@ -131,10 +131,10 @@ async def handle_outliers(
             
                 
         elif strategy == "knn":
-            return KNNImputer(n_neighbors=n_neighbors)
+            return (f"{column_name}_handle_outliers",KNNImputer(n_neighbors=n_neighbors),[column_name])
     
         
-        return ("handle_outliers",transformer,[column_name])
+        return (f"{column_name}_handle_outliers",transformer,[column_name])
     
     except Exception as e:
         print(f"Error in handle_outliers: {e}") #can we make it more descriptive? LLM generated msg?
@@ -161,7 +161,7 @@ async def parse_datetime(
         if column_name not in df.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
 
-        return ("parse_datetime",FunctionTransformer(datetime_transform),[column_name])
+        return (f"{column_name}_parse_datetime",FunctionTransformer(datetime_transform),[column_name])
 
     except Exception as e:
         print(f"Error in parse_datetime: {e}")
@@ -211,7 +211,7 @@ async def handle_null_values(
         elif strategy == "fill_median":
             transformer = FunctionTransformer(fill_median_transform)    
         elif strategy == "knn":
-            return ("handle_null_values",KNNImputer(n_neighbors=n_neighbors),[column_name])
+            return (f"{column_name}_handle_null_values",KNNImputer(n_neighbors=n_neighbors),[column_name])
             
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
@@ -219,7 +219,7 @@ async def handle_null_values(
     except Exception as e:
         raise e
 
-    return ("handle_null_values", transformer, [column_name])
+    return (f"{column_name}_handle_null_values", transformer, [column_name])
 
 @tool
 async def remove_duplicates(
@@ -261,7 +261,7 @@ async def remove_duplicates(
     except Exception as e:
         raise e
         raise ValueError(f"Error in remove_duplicates")
-    return ("remove_duplicates", transformer, [column_name])
+    return (f"{column_name}_remove_duplicates", transformer, [column_name])
 
 tools=[
     handle_outliers,
@@ -310,17 +310,22 @@ async def tool_node(state):
             )
     if state['preprocessing_mode']=='X':
         preprocessor=projectRequests.get_X_pipeline(state["project_id"])
+        
         if preprocessor:
+            print("Preprocessor Exists")
             preprocessor.transformers.extend(preprocessors)
         else:
             preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
+        print("Saving X Preprocessor")
         projectRequests.save_X_pipeline(state["project_id"],preprocessor)
         return {'X_preprocessing_messages':output_messages}
     else:
         preprocessor=projectRequests.get_Y_pipeline(state["project_id"])
         if preprocessor:
+            print("Preprocessor Exists")
             preprocessor.transformers.extend(preprocessors)
         else:
             preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
+        print("Saving Y Preprocessor")
         projectRequests.save_Y_pipeline(state["project_id"],preprocessor)
         return {'Y_preprocessing_messages':output_messages}

@@ -16,10 +16,7 @@ llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURAT
 system_prompt = hub.pull("automl-preprocessor-caller").messages[0].prompt.template
 
 async def caller_node(state):
-
-    print("Calling Preprocessor Tools")
     data_report=state['data_report']
-    print(f"=======================================\nthis is the preprocessing_mode caller:{state['preprocessing_mode']}")
     print(f"=======================================\nthis is the {state['preprocessing_mode']}_preprocessing_messages caller:{state[state['preprocessing_mode']+'_preprocessing_messages']}")  
     if state['preprocessing_mode']=='X':
         if 'X_preprocessing_messages' not in state or state['X_preprocessing_messages'] is None:
@@ -58,5 +55,6 @@ async def should_continue(state)->Literal['tools','__end__','planner_node']:
         return "tools"
     else:
         if state['preprocessing_mode']=='X':
+            print("X Preprocessing Done, Moving to Y Preprocessing")
             return "planner_node"
     return END
