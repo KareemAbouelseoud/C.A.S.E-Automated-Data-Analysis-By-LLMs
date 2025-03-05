@@ -19,13 +19,16 @@ class State(TypedDict):
     data_report: NotRequired[str] # Data Report
     X_columns: NotRequired[list[str]] # X Columns (user then LLM defined)
     y_column: NotRequired[str] # Y Column (user defined)
-    preprocessing_messages: Annotated[list[AnyMessage], operator.add]
-    preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
+    X_preprocessing_messages: Annotated[list[AnyMessage], operator.add]
+    X_preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
+    preprocessing_mode: NotRequired[str]='X'
+    Y_preprocessing_messages: Annotated[list[AnyMessage], operator.add]
+    Y_preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
 
 builder = StateGraph(State)
 
-builder.add_node("caller_node", caller_node) 
 builder.add_node("planner_node", planner_node) 
+builder.add_node("caller_node", caller_node) 
 builder.add_node("tools",tool_node)
 
 builder.add_edge(START, "planner_node")

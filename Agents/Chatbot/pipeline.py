@@ -91,6 +91,10 @@ async def chat(user_input,thread_id=None):
             if 'tools' in chunk[1]:
                 if 'visual' in chunk[1]['tools']:
                     for visual in chunk[1]['tools']['visual']:
+                        try:
+                            visual=visual['figure_data']
+                        except:
+                            pass
                         visuals.append(visual)
     
     for visual in visuals:

@@ -268,7 +268,12 @@ tools=[
 async def tool_node(state):
     print("Executing Tool Calls")
     tools_by_name = {tool.name: tool for tool in tools}
-    messages = state["preprocessing_messages"]
+
+    if state['preprocessing_mode']=='X':
+        messages = state["X_preprocessing_messages"]
+    else:
+        messages = state['Y_preprocessing_messages']
+
     # get the last message of this state
     last_message = messages[-1]
     preprocessors = []
@@ -281,7 +286,7 @@ async def tool_node(state):
             preprocessors.append(tool_result)
             output_messages.append(
                 ToolMessage(
-                    content=f"Preprocessing step completed: {tool_call['name']} for column {tool_call['args']['column_name']} no need to call this function for this column again",
+                    content=f"Preprocessing step completed: {tool_call['name']} for column {tool_call['args']['column_name']} no need to call this function with this exact column again",
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
                 )
@@ -296,13 +301,19 @@ async def tool_node(state):
                     status="error",
                 )
             )
-    #TODO Kareem to Fouad: We need to save pkl file in MongoDB and create Endpoints so we can fetch and update
-
-    # preprocessor=await _project_service.fetch_pipeline(state["project_id"])
-    # if preprocessor:
-    #     preprocessor.transformers.extend(preprocessors)
-    # else:
-    # preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
-    # _project_service.save_pipeline(preprocessor,state["project_id"])
-    
-    return {'preprocessing_messages':output_messages}
+    if state['preprocessing_mode']=='X':
+        preprocessor=mainDatabase.fetch_pipeline(state["project_id"],'X')
+        if preprocessor:
+            preprocessor.transformers.extend(preprocessors)
+        else:
+            preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
+        mainDatabase.save_pipeline(preprocessor,state["project_id"],'X')
+        return {'X_preprocessing_messages':output_messages}
+    else:
+        preprocessor=mainDatabase.fetch_pipeline(state["project_id"],'Y')
+        if preprocessor:
+            preprocessor.transformers.extend(preprocessors)
+        else:
+            preprocessor=ColumnTransformer(transformers=preprocessors,remainder='passthrough')
+        mainDatabase.save_pipeline(preprocessor,state["project_id"],'Y')
+        return {'Y_preprocessing_messages':output_messages}

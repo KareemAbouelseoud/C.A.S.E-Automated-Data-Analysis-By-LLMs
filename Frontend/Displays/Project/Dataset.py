@@ -50,7 +50,10 @@ class Dataset:
             
             
         }
-        self.run()
+        try:
+            self.run()
+        except Exception as e:
+            pass
 
     def InsightsShown(self):
         self.dataset_session['dataset_session']['Insights']=True
