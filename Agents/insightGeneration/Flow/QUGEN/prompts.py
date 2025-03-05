@@ -1,5 +1,6 @@
 from typing import Dict
-
+import pandas as pd
+from io import StringIO
 def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     """Construct QUGEN prompt with dynamic card count and validation rules"""
     examples = "\n\n".join(
@@ -10,8 +11,12 @@ def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
         f"MEASURE: {c['measure']}"
         for c in state.get("insight_cards", [])[-3:]  
     )
+    file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
+    dataset = pd.read_csv(file_path)
+    schema = dataset.columns.tolist()
+    basic_stats = dataset.describe(include='all').reset_index()
 
-    schema_list = ', '.join(state["schema"])
+    schema_list = ', '.join(schema)
     
     return f"""
     Generate {num_cards} analytical questions about this dataset:
@@ -22,8 +27,8 @@ def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     Schema: {schema_list}
     
     Statistics:
-    Numerical: {state['basic_stats']['numerical'].to_markdown()}
-    Categorical: {state['basic_stats']['categorical'].to_markdown()}
+    Numerical: { basic_stats.select_dtypes(include=['number']).to_markdown()}
+    Categorical: { basic_stats.select_dtypes(include=['object', 'category']).to_markdown()}
     
     Use format:
     ### Insight Card [NUMBER]

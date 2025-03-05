@@ -1,20 +1,31 @@
 import sys
 import os
-from data_description_rlhf import AgentGraphState, data_description_generator_node,human_input,end_node
 from langgraph.graph import StateGraph, END,START
-from langgraph.types import Command,interrupt
+from langgraph.types import Command
 from langgraph.checkpoint.memory import MemorySaver
-from genai_config import model
+from Flow.QUGEN.node import qugen_node
+from Flow.Data_description_generator.data_description_node import data_description_generator_node
+from Flow.Data_description_generator.human_node import human_input
 import uuid
+from typing import Dict, Annotated,List
+from langgraph.graph import add_messages
 import pandas as pd
 sys.path.append(os.getcwd())
+
+#define states
+class AgentGraphState(Dict):
+    df: str
+    description:  Annotated[list[str], 'k']
+    human_feedback: Annotated[list[str], add_messages]
+    insight_cards: List[Dict[str, str]]
+   
 
 #GRAPH PIPELINE
 graph_builder = StateGraph(AgentGraphState)
 #define nodes
-graph_builder.add_node("data_description", data_description_generator_node)
+graph_builder.add_node("data_description",  data_description_generator_node)
 graph_builder.add_node("human_node", human_input)
-graph_builder.add_node("end_node", end_node)
+graph_builder.add_node("QUGEN",qugen_node)
 #define edges
 graph_builder.add_edge(START, "data_description")
 graph_builder.add_edge("data_description", "human_node")
@@ -29,7 +40,11 @@ graph = graph_builder.compile(checkpointer=checkpointer)
 #TEST
 thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
 #mock dataset
-df = "first column:200,300 and second column:john,mary"
+file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
+dataset = pd.read_csv(file_path)
+
+
+df = dataset.to_string()
 state = AgentGraphState({"df": df})  
 
 for chunk in graph.stream(state, config=thread_config):
