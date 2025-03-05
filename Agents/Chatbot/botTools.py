@@ -8,12 +8,12 @@ from typing import Annotated
 
 @tool
 async def visualizer(
-    visualization_request: Annotated[str,'The visualization request created by the assistant according to the user intent and data report, atleast give plot type and columns to plot'],
+    visualization_request: Annotated[str,'The visualization request created by the assistant according to the user intent and data report, atleast give plot type and columns to plot. Specify the columns as they are in the data report.'],
     data_report:str=None,
     project_id:str=None
     ):
     """
-     Visualizes the user's query using a graph.
+     Visualizes the user's query using a graph. Write the column names as given in the data report
     Args:
         visualization_request (str): The visualization request created by the assistant according to the user intent and data report.
     Returns:

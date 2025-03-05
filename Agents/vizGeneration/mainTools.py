@@ -717,6 +717,7 @@ async def tool_node(state)->Literal["caller", "__end__"]:
             # Invoke the tool based on the tool call
             tool_call["args"]["project_id"] = state['project_id']
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
+            print(tool_result['name'])
             return {"next": "__end__",'visualization':tool_result}
         
         except Exception as e:
