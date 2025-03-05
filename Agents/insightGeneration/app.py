@@ -3,7 +3,9 @@ import os
 import plotly.express as px
 from genai_config import model
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
+sys.path.insert(0, project_root)
 
 from Frontend.config.styles import set_page_config, load_custom_css
 from Flow.data_description_generator import (

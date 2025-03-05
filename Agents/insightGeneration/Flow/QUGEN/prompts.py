@@ -1,4 +1,8 @@
 from typing import Dict
+from dotenv import load_dotenv , find_dotenv
+load_dotenv(find_dotenv)
+
+
 
 def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     """Construct QUGEN prompt with dynamic card count and validation rules"""
