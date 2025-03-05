@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 
 class createDashboard(BaseModel):
-    dataframe: str
+    project_id: str
     data_report: str
 
 class Chat(BaseModel):

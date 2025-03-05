@@ -1,5 +1,6 @@
 from API.Requests.projectRequests import get_dataset
 import numpy as np
+import pandas as pd
 async def checker_node(state):
     """
     Check code
