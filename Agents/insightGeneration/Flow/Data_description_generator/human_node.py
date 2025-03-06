@@ -25,7 +25,4 @@ def human_input(state):
 
 # #for testing purposes
 # def end_node(state):
-#     file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
-#     dataset = pd.read_csv(file_path)
-#     basic_stats = dataset.describe(include='all').reset_index()
-#     print(basic_stats)
+#    print("end")

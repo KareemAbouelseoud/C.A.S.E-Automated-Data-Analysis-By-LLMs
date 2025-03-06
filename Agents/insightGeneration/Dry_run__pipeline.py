@@ -4,7 +4,7 @@ from langgraph.graph import StateGraph, END,START
 from langgraph.types import Command
 from langgraph.checkpoint.memory import MemorySaver
 from Flow.QUGEN.node import qugen_node
-from Flow.Data_description_generator.data_description_node import data_description_generator_node
+from Flow.Data_description_generator.data_description_node import data_description_generator_node,DataDescription
 from Flow.Data_description_generator.human_node import human_input
 import uuid
 from typing import Dict, Annotated,List
@@ -15,7 +15,7 @@ sys.path.append(os.getcwd())
 #define states
 class AgentGraphState(Dict):
     df: str
-    description:  Annotated[list[str], 'k']
+    description: str
     human_feedback: Annotated[list[str], add_messages]
     insight_cards: List[Dict[str, str]]
    
@@ -29,9 +29,6 @@ graph_builder.add_node("QUGEN",qugen_node)
 #define edges
 graph_builder.add_edge(START, "data_description")
 graph_builder.add_edge("data_description", "human_node")
-graph_builder.add_edge("human_node", "data_description")
-# graph_builder.add_edge("human_node", "end_node") 
-# graph_builder.set_finish_point("end_node")
 
 #compile the graph
 checkpointer=MemorySaver()
@@ -40,11 +37,11 @@ graph = graph_builder.compile(checkpointer=checkpointer)
 #TEST
 thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
 #mock dataset
-file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
-dataset = pd.read_csv(file_path)
+# file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
+# dataset = pd.read_csv(file_path)
 
 
-df = dataset.to_string()
+df = "first col:200,100 ,second col:ok hi"
 state = AgentGraphState({"df": df})  
 
 for chunk in graph.stream(state, config=thread_config):

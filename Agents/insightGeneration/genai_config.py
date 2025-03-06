@@ -1,7 +1,7 @@
 import google.generativeai as genai
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-GENAI_API_KEY = "AIzaSyDphGovO3le5oZMfdCdVSuObg_9kz2tBWg"
+GENAI_API_KEY = "AIzaSyDYhbWgJ2IbVOSxAsPyCQQxYuw_4ifCgEo"
 
 def configure_model():
     genai.configure(api_key=GENAI_API_KEY)

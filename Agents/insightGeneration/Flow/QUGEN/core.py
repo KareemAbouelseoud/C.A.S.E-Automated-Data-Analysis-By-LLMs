@@ -4,25 +4,26 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 semantic_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 import pandas as pd
+from .prompts import QUGEN
 from io import StringIO
+from typing import List, Union
+from pydantic import ValidationError
 
-#pasrse 
-def parse_insight_cards(response_text: str) -> List[Dict[str, str]]:
+def parse_insight_cards(response: Union[str, QUGEN, List[QUGEN]]) -> List[QUGEN]:
+    if isinstance(response, QUGEN):
+        return [response] 
+    elif isinstance(response, list) and all(isinstance(card, QUGEN) for card in response):
+        return response 
     
     cards = []
-    
-    card_blocks = re.split(r'### Insight Card \d+', response_text)
+    card_blocks = re.split(r'### Insight Card \d+', response)
     
     for idx, block in enumerate(card_blocks[1:], start=1):
         block = block.strip()
         if not block:
             continue
-            
+        
         components = {
-            
-            # """ \s*	Matches any ( spaces or tabs) after "REASON:", if present
-            #      2ai txt (.*?) , ensures non-greedy matching
-            #      """
             'reason': re.search(r'REASON:\s*(.*?)(?=\nQUESTION|\n$)', block, re.DOTALL),
             'question': re.search(r'QUESTION:\s*(.*?)(?=\nBREAKDOWN|\n$)', block, re.DOTALL),
             'breakdown': re.search(r'BREAKDOWN:\s*(.*?)(?=\nMEASURE|\n$)', block, re.DOTALL),
@@ -30,15 +31,19 @@ def parse_insight_cards(response_text: str) -> List[Dict[str, str]]:
         }
         
         if all(components.values()):
-            cards.append({
-                'id': idx,
-                'reason': components['reason'].group(1).strip(),
-                'question': components['question'].group(1).strip(),
-                'breakdown': components['breakdown'].group(1).strip(),
-                'measure': components['measure'].group(1).strip()
-            })
+            try:
+                card = QUGEN(
+                    id=idx,
+                    reason=components['reason'].group(1).strip(),
+                    question=components['question'].group(1).strip(),
+                    breakdown=components['breakdown'].group(1).strip(),
+                    measure=components['measure'].group(1).strip()
+                )
+                cards.append(card)
+            except ValidationError as e:
+                print(f"Error validating card {idx}: {e}")
+    
     return cards
-
 def validate_insight_card(card: Dict[str, str], schema) -> bool:
     """Validate insight card structure and schema compliance"""
     try:
@@ -52,15 +57,28 @@ def validate_insight_card(card: Dict[str, str], schema) -> bool:
         ])
     except Exception:
         return False
-def semantic_filter(q1,q2,threshold=0) ->bool:
-    """ Return True if a "question" in an insight card is semantically similar to another """
 
-    #embedding & cos similarity
-    emb1 =semantic_model .encode(q1).reshape(1, -1)
-    emb2 = semantic_model .encode(q2).reshape(1, -1)
-    similarity = cosine_similarity(emb1, emb2)[0][0]
 
-    return similarity>threshold
+from sklearn.metrics.pairwise import cosine_similarity
+
+def filter_unique_cards(valid_cards, state, threshold=0.6):
+
+    existing_questions = {c["question"].lower() for c in state.get("insight_cards", [])}
+    unique_cards = []
+    for c in valid_cards:
+     current_question = c["question"].lower()
+     for existing_q in existing_questions:
+                similarity = cosine_similarity(
+                    semantic_model.encode(current_question).reshape(1, -1),
+                    semantic_model.encode(existing_q).reshape(1, -1)
+                )[0][0]
+                print(f"Comparing:\n - New: {current_question}\n - Existing: {existing_q}\n - Similarity: {similarity:.4f}")
+    
+
+        
+
+    return unique_cards 
+
 
 def pandas_query_filter (card: Dict[str, str],df_str:str) ->bool:
     """Returns True if a card retrieves 1 row when converting the card to a pandas query then apply it on df"""

@@ -1,6 +1,17 @@
 from typing import Dict
 import pandas as pd
 from io import StringIO
+from genai_config import model,llm
+from pydantic import BaseModel, Field
+
+class QUGEN(BaseModel):
+    """ Structured output schema for data description node. """
+    id: int=Field(description="id of the insight card")
+    reason: str = Field(description="Analysis rationale")
+    question:str=Field(description="Natural language question")
+    breakdown: str=Field(description="Grouping column")
+    measure: str=Field(description="[Aggregation function]([Target column])")
+
 def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     """Construct QUGEN prompt with dynamic card count and validation rules"""
     examples = "\n\n".join(
@@ -17,6 +28,9 @@ def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     basic_stats = dataset.describe(include='all').reset_index()
 
     schema_list = ', '.join(schema)
+   
+
+    
     
     return f"""
     Generate {num_cards} analytical questions about this dataset:

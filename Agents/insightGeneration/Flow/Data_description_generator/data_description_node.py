@@ -3,8 +3,8 @@ from genai_config import model,llm
 from pydantic import BaseModel, Field
 import pandas as pd
 from io import StringIO
-
-
+from langchain import hub
+from langsmith import Client
 
 
 class DataDescription(BaseModel):
@@ -34,14 +34,15 @@ def data_description_generator_node(state):
     """
     Generates or refines the dataset description considering human feedback if provided.
     """
+
     if "df" not in state:
         raise ValueError("No dataset provided in state.")
 
     df = state["df"]
     feedback = state.get("human_feedback", ["No feedback yet"])
-    prompt = data_description_prompt(df, feedback)
-
-    # Invoke LLM with structured output
+    prompt=data_description_prompt(df, feedback)
+    
+  
     structured_llm = llm.with_structured_output(DataDescription, include_raw=False)
     response = structured_llm.invoke(prompt)
 
@@ -51,5 +52,5 @@ def data_description_generator_node(state):
     
 
 
-    return {"description": [description], "human_feedback": feedback}
+    return {"description": response, "human_feedback": feedback}
 
