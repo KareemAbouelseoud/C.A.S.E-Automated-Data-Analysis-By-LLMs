@@ -50,7 +50,7 @@ def get_model(project_id, model_name):
     else:
         return None
 
-def save_model(project_id, model_name, model_data):
+def save_model(model_name, model_data,project_id):
     model_path = f"./static/{project_id}_{model_name}_model.pkl"
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model_data, model_path)
