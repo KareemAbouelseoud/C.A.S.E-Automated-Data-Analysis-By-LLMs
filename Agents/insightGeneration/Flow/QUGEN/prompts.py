@@ -5,17 +5,18 @@ load_dotenv()
 
 import pandas as pd
 from io import StringIO
-from ...genai_config import model,llm
 from pydantic import BaseModel, Field
 
-class QUGEN(BaseModel):
+class InsightCard(BaseModel):
     """ Structured output schema for data description node. """
     id: int=Field(description="id of the insight card")
     reason: str = Field(description="Analysis rationale")
     question:str=Field(description="Natural language question")
     breakdown: str=Field(description="Grouping column")
     measure: str=Field(description="[Aggregation function]([Target column])")
-
+##TODO: Add Class List QUGEN
+class QUGEN(BaseModel):
+    insight_cards: list[InsightCard] = Field(description="List of insight cards")
 def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     """Construct QUGEN prompt with dynamic card count and validation rules"""
     examples = "\n\n".join(
@@ -26,8 +27,9 @@ def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
         f"MEASURE: {c['measure']}"
         for c in state.get("insight_cards", [])[-3:]  
     )
-    file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
-    dataset = pd.read_csv(file_path)
+    print(state.keys())
+    
+    dataset = pd.read_json(StringIO(state['df']))
     schema = dataset.columns.tolist()
     basic_stats = dataset.describe(include='all').reset_index()
 

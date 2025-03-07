@@ -1,19 +1,10 @@
-import sys
-import os
-from langgraph.graph import StateGraph, END,START
-from langgraph.types import Command
-from langgraph.checkpoint.memory import MemorySaver
-from Flow.QUGEN.node import qugen_node
-from Flow.Data_description_generator.data_description_node import data_description_generator_node,DataDescription
-from Flow.Data_description_generator.human_node import human_input
-import uuid
-from typing import Dict, Annotated,List
-from langgraph.graph import add_messages
-import pandas as pd
+from typing import TypedDict
+from .config import *
 sys.path.append(os.getcwd())
 
+
 #define states
-class AgentGraphState(Dict):
+class AgentGraphState(TypedDict):
     df: str
     description: str
     human_feedback: Annotated[list[str], add_messages]
@@ -35,24 +26,67 @@ checkpointer=MemorySaver()
 graph = graph_builder.compile(checkpointer=checkpointer)
 
 #TEST
-thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
+
 #mock dataset
 # file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
 # dataset = pd.read_csv(file_path)
 
+async def Start_Auto_InsightGen(project_id:str=None):
+    df = await get_dataset(project_id)
+    print("Dataset loaded")
+    state = AgentGraphState({"df": df.to_json()})  
+    thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
+    try:
+        async for chunk in graph.astream(state, config=thread_config):
+            for node_id, value in chunk.items():
+                print(f"Processing node {node_id}")  # Debug logging
+                if node_id == "__interrupt__":
+                    yield tuple((value[0],{"thread_id":thread_config["configurable"]["thread_id"]}))
+                else:
+                    print(f"Node {node_id} output: {value}")
+    except Exception as e:
+        print(f"Error in test(): {str(e)}")
+        raise
 
-df = "first col:200,100 ,second col:ok hi"
-state = AgentGraphState({"df": df})  
-
-for chunk in graph.stream(state, config=thread_config):
-    for node_id, value in chunk.items():
-        if node_id == "__interrupt__":
-            
-            while True:
-                user_feedback = input("Provide feedback (or type 'done' to finish): ")
-                graph.invoke(Command(resume=user_feedback), config=thread_config)
-                #break if user says "done"
-                if user_feedback.lower() == "done":
-                    break
+async def Continue_Auto_InsightGen(feedback: str, thread_id: str):
+    config = {'configurable': {'thread_id': uuid.UUID(thread_id)}}
+    result = graph.get_state(config=config)
+    
+    print(f"Retrieved state: {type(result)}")  # Debug logging
+    
+    if not result[0]:
+        raise ValueError(f"No state found for thread_id: {thread_id}")
+    
+    state = result[0].values()  # Get the actual state
+    
+    # Create a new state with the required fields
+    updated_state = AgentGraphState({
+        'human_feedback': [feedback],  # Add new feedback as a list
+    })
+    if feedback.lower()=='done':
+        try:
+            async for chunk in graph.invoke(Command(resume=feedback), config=config):
+                print(f"Received chunk: {chunk}")  # Debug logging
+                for node_id, value in chunk.items():
+                    print(f"Processing node {node_id}")  # Debug logging
+                    if node_id == "__interrupt__":
+                        yield tuple((value[0], {"thread_id": str(config["configurable"]["thread_id"])}))
+                    else:
+                        print(f"Node {node_id} output: {value}")
+        except Exception as e:
+            print(f"Error in Continue_Auto_InsightGen: {str(e)}")
+            raise
+    else:
+        try:
+            async for chunk in graph.astream(updated_state, config=config):
+                for node_id, value in chunk.items():
+                    print(f"Processing node {node_id}")  # Debug logging
+                    if node_id == "__interrupt__":
+                        yield tuple((value[0],{"thread_id":config["configurable"]["thread_id"]}))
+                    else:
+                        print(f"Node {node_id} output: {value}")
+        except Exception as e:
+            print(f"Error in test(): {str(e)}")
+            raise
 
 
