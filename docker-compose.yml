@@ -3,7 +3,7 @@ services:
     build: 
       context: ./Agents
       dockerfile: dockerfile
-    image: agents:1.0
+    image: agents:testing
     networks:
       - case-pb
     ports:
@@ -20,7 +20,7 @@ services:
     build: 
       context: ./Backend
       dockerfile: dockerfile
-    image: backend:1.0
+    image: backend:testing
     networks:
       - case-pb
     ports:
@@ -37,7 +37,7 @@ services:
     build: 
       context: ./Frontend
       dockerfile: dockerfile
-    image: frontend:1.0
+    image: frontend:testing
     networks:
       - case-pb
     ports:

@@ -8,7 +8,7 @@ project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
 sys.path.insert(0, project_root)
 
 from Frontend.config.styles import set_page_config, load_custom_css
-from Flow.data_description_generator import (
+from data_description_rlhf import (
     AgentGraphState,
     data_description_generator_node,
 )
@@ -104,7 +104,8 @@ def main():
             # Initialize analysis state
             state = AgentGraphState({"df": df, "dataset_name": clean_name})
             with st.spinner("🔍 Analyzing dataset structure..."):
-                state = data_description_generator_node(state, model)
+                state = data_description_generator_node(state)
+                
                 state = generate_report(state)
 
             # Main content columns

@@ -439,3 +439,5 @@ class visualizationsService:
         # For your service
         return fig.to_json()
     #endregion
+
+    

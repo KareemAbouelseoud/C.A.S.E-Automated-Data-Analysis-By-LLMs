@@ -1,6 +1,6 @@
 from typing import Dict
 from dotenv import load_dotenv , find_dotenv
-load_dotenv(find_dotenv)
+load_dotenv()
 
 
 import pandas as pd
