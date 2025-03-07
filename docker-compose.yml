@@ -20,7 +20,7 @@ services:
     build: 
       context: ./Backend
       dockerfile: dockerfile
-    image: backend:testing
+    image: backend:blobstorage
     networks:
       - case-pb
     ports:

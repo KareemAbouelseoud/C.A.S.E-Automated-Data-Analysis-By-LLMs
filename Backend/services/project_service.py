@@ -1,6 +1,7 @@
 
 from config import *
 import uuid
+
 def get_repo():
     repo = ProjectRepository()
     return repo
@@ -27,16 +28,27 @@ class ProjectService:
         # 1. Validate file type (ensure it's a CSV)
         if file.filename[-4:].lower().strip() != ".csv":
             raise HTTPException(status_code=400, detail="Invalid file type. Only CSV files are allowed.")
-        # 2. Read the CSV file content
-        contents = await file.read()
-        decoded_contents = contents.decode('utf-8') # Decode bytes to string
-        # 3. Convert CSV to JSON using pandas
+        # 2. Upload CSV to the BlobStorage
         try:
-            df = pd.read_csv(io.StringIO(decoded_contents))  # Read from string buffer
-            dataframe = df.to_json(orient="records") # If you want a raw JSON string
+            connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+            blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+            container_client = blob_service_client.get_container_client("datasets")
+            
+            # Read the uploaded file content
+            contents = await file.read()
+            
+            # Generate unique blob name
+            blob_name = f"{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
+            
+            # Upload to blob storage
+            blob_client = container_client.upload_blob(name=blob_name, data=contents)
+            
+            # Read the CSV content for processing
+            
+            dataframe = blob_client.url
             
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Error converting CSV to JSON: {e}")
+            raise HTTPException(status_code=400, detail=f"Error Uploading the csv to teh blob storage: {e}")
         
         new_project = Project(name=name, user_id=user_id,Dataset=dataframe,created_Date=datetime.now())
         new_project.model_Chat=projectChat(last_update=datetime.now())
@@ -189,7 +201,9 @@ class ProjectService:
             
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
-        return pd.read_json(StringIO(project.Dataset))
+        datasetUrl=f"{project.Dataset}{os.environ.get('AZURE_STORAGE_SAS_TOKEN')}"
+        print(datasetUrl)
+        return pd.read_csv(datasetUrl)
 
     async def fetch_thread_id(self, project_id: str) -> Optional[str]:
         try:
