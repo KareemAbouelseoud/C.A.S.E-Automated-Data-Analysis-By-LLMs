@@ -1,6 +1,6 @@
 from typing import Dict
 from langgraph.types import interrupt,Command
-from Flow.QUGEN.node import qugen_node
+from QUGEN.node import qugen_node
 import pandas as pd
 from io import StringIO
 import json

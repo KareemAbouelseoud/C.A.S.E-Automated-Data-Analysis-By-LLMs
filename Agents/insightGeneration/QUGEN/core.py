@@ -1,8 +1,6 @@
 import re
 from typing import List, Dict 
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-semantic_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
 import pandas as pd
 from .prompts import QUGEN
 from io import StringIO
@@ -44,40 +42,9 @@ def parse_insight_cards(response: Union[str, QUGEN, List[QUGEN]]) -> List[QUGEN]
                 print(f"Error validating card {idx}: {e}")
     
     return cards
-def validate_insight_card(card: Dict[str, str], schema) -> bool:
-    """Validate insight card structure and schema compliance"""
-    try:
-        breakdown_col = card['breakdown'].split('(')[-1].split(')')[0].strip()
-        measure_col = card['measure'].split('(')[-1].split(')')[0].strip()
-        return all([
-            breakdown_col in schema,
-            measure_col in schema,
-            'reason' in card,
-            'question' in card
-        ])
-    except Exception:
-        return False
 
 
-from sklearn.metrics.pairwise import cosine_similarity
 
-def filter_unique_cards(valid_cards, state, threshold=0.6):
-
-    existing_questions = {c["question"].lower() for c in state.get("insight_cards", [])}
-    unique_cards = []
-    for c in valid_cards:
-     current_question = c["question"].lower()
-     for existing_q in existing_questions:
-                similarity = cosine_similarity(
-                    semantic_model.encode(current_question).reshape(1, -1),
-                    semantic_model.encode(existing_q).reshape(1, -1)
-                )[0][0]
-                print(f"Comparing:\n - New: {current_question}\n - Existing: {existing_q}\n - Similarity: {similarity:.4f}")
-    
-
-        
-
-    return unique_cards 
 
 
 def pandas_query_filter (card: Dict[str, str],df_str:str) ->bool:

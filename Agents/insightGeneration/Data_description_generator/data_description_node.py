@@ -1,11 +1,11 @@
 from typing import Dict
-from genai_config import model,llm
+
 from pydantic import BaseModel, Field
 import pandas as pd
 from io import StringIO
 from langchain import hub
 from langsmith import Client
-
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 class DataDescription(BaseModel):
     """ Structured output schema for data description node. """
@@ -34,7 +34,12 @@ def data_description_generator_node(state):
     """
     Generates or refines the dataset description considering human feedback if provided.
     """
-
+    CONFIGURATIONS={
+        'temperature':0.0,
+        'model':"gemini-2.0-flash",
+        'number of retries':3
+    }
+    llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
     if "df" not in state:
         raise ValueError("No dataset provided in state.")
 
