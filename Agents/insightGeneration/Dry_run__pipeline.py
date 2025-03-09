@@ -57,41 +57,33 @@ async def Continue_Auto_InsightGen(feedback: str, thread_id: str):
     config = {'configurable': {'thread_id': uuid.UUID(thread_id)}}
     result = graph.get_state(config=config)
     
-    print(f"Retrieved state: {type(result)}")  # Debug logging
-    
     if not result[0]:
         raise ValueError(f"No state found for thread_id: {thread_id}")
     
-    state = result[0].values()  # Get the actual state
+    # Get the current state directly from result[0]
+    current_state = result[0]
     
-    # Create a new state with the required fields
+    
+    # Preserve existing state and append new feedback
     updated_state = AgentGraphState({
-        'human_feedback': [feedback],  # Add new feedback as a list
+        'df': current_state.get('df', ''),
+        'description': current_state.get('description', ''),
+        'human_feedback': current_state.get('human_feedback', []) + [feedback],
+        'insight_cards': current_state.get('insight_cards', [])
     })
-    if feedback.lower()=='done':
-        try:
-            async for chunk in graph.invoke(Command(resume=feedback), config=config):
-                print(f"Received chunk: {chunk}")  # Debug logging
-                for node_id, value in chunk.items():
-                    print(f"Processing node {node_id}")  # Debug logging
-                    if node_id == "__interrupt__":
-                        yield tuple((value[0], {"thread_id": str(config["configurable"]["thread_id"])}))
-                    else:
-                        print(f"Node {node_id} output: {value}")
-        except Exception as e:
-            print(f"Error in Continue_Auto_InsightGen: {str(e)}")
-            raise
-    else:
-        try:
+    
+    try:
+        if feedback.lower() == 'done':
+            # Use await instead of async for with ainvoke
+            result = await graph.ainvoke(Command(resume=feedback), config=config)
+            yield tuple((result, {"thread_id": str(config["configurable"]["thread_id"])}))
+        else:
             async for chunk in graph.astream(updated_state, config=config):
                 for node_id, value in chunk.items():
-                    print(f"Processing node {node_id}")  # Debug logging
                     if node_id == "__interrupt__":
-                        yield tuple((value[0],{"thread_id":config["configurable"]["thread_id"]}))
-                    else:
-                        print(f"Node {node_id} output: {value}")
-        except Exception as e:
-            print(f"Error in test(): {str(e)}")
-            raise
+                        yield tuple((value[0], {"thread_id": config["configurable"]["thread_id"]}))
+    except Exception as e:
+        print(f"Error in Continue_Auto_InsightGen: {str(e)}")
+        raise
 
 

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 from dotenv import load_dotenv , find_dotenv
 load_dotenv()
 
@@ -8,15 +8,19 @@ from io import StringIO
 from pydantic import BaseModel, Field
 
 class InsightCard(BaseModel):
-    """ Structured output schema for data description node. """
-    insight_type: str = Field(description="Type of insight card")
+    """Structured output schema for insight cards."""
+    insight_type: str = Field(description="Type of insight (e.g., distribution, trend, difference)")
     reason: str = Field(description="Analysis rationale")
-    question:str=Field(description="Natural language question")
-    breakdown: str=Field(description="Grouping column")
-    measure: str=Field(description="[Aggregation function]([Target column])")
-##TODO: Add Class List QUGEN
+    question: str = Field(description="Natural language question")
+    breakdown: str = Field(description="Grouping column name")
+    measure: str = Field(description="Aggregation function and target column")
+
 class QUGEN(BaseModel):
-    insight_cards: list[InsightCard] = Field(description="List of insight cards")
+    """Container for multiple insight cards."""
+    insight_cards: List[InsightCard] = Field(
+        description="List of generated insight cards",
+        min_items=1
+    )
     
 def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     """Construct QUGEN prompt with dynamic card count and validation rules"""

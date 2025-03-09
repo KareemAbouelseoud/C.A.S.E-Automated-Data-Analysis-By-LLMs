@@ -9,19 +9,25 @@ def human_input(state):
     Interrupts graph execution for capturing human feedback and stores it in the state for the description
     node to process.
     """
-    description= state["description"]
+    if not isinstance(state, dict) or "description" not in state:
+        raise ValueError("Invalid state: missing description")
+
+    description = state["description"]
+    current_feedback = state.get("human_feedback", [])
 
     user_feedback = interrupt(
         {"description": description, "message": "Provide feedback or type 'done' to finish."})
-    # print(f"[human_input] Received human feedback: {user_feedback}")
 
-    #if user types 'done', transition to qugen_node
     if user_feedback.lower() == "done":
-        
-        return Command(update={"human_node": state["human_feedback"] + ["Finalized"]}, goto="QUGEN")
+        return Command(
+            update={"human_feedback": current_feedback + ["Finalized"]},
+            goto="qugen_node"
+        )
     
-    #otherwise,update feedback and return to first_node for re-generation
-    return Command(update={"human_feedback": state["human_feedback"] + [user_feedback]}, goto="data_description")
+    return Command(
+        update={"human_feedback": current_feedback + [user_feedback]},
+        goto="data_description"
+    )
 
 # #for testing purposes
 # def end_node(state):

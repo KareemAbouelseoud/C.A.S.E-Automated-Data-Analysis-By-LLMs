@@ -7,26 +7,44 @@ from langchain import hub
 semantic_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-system_prompt = hub.pull("qugen-system-prompt").messages[0].prompt.template
+system_prompt = hub.pull("qugen-system-prompt").messages[0].content
 CONFIGURATIONS={
-    'temperature':0.0,
+    'temperature':1.0,
     'model':"gemini-2.0-flash",
     'number of retries':3
 }
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
-def qugen_node(state: Dict) -> Dict:
-    """Generate questions based on current data description"""
-    messages = [
-        {
-            "role": "system",
-            "content": system_prompt
-        },
-        ]
-    prompt = generate_qugen_prompt(state)
-  
-    structured_llm = llm.with_structured_output(QUGEN).ainvoke(messages)
 
-    return structured_llm
+async def qugen_node(state: Dict) -> Dict:
+    """Generate questions based on current data description"""
+    print("Generating questions using QUGEN...")
+    print(f"Current state:\n{state.keys()}\n")
+    
+    try:
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {
+                "role": "user",
+                "content": generate_qugen_prompt(state)
+            }
+        ]
+
+        structured_llm = await llm.with_structured_output(QUGEN, include_raw=True).ainvoke(messages)
+        print(f"LLM Raw Output: {structured_llm}")  # Debug output
+        
+        # Validate the output matches our schema
+        if not isinstance(structured_llm, QUGEN):
+            raise ValueError(f"Expected QUGEN type, got {type(structured_llm)}")
+            
+        return structured_llm
+
+    except Exception as e:
+        print(f"Error in qugen_node: {str(e)}")
+        print(f"Raw LLM output: {getattr(structured_llm, 'raw', 'No raw output')}")
+        raise
 
 async def should_continue(state) -> str:
     """Determine workflow continuation based on state validation"""
@@ -41,4 +59,3 @@ async def should_continue(state) -> str:
     else:
         print("No recommendations found, returning to selector node")
         return "selector_node"
-    
