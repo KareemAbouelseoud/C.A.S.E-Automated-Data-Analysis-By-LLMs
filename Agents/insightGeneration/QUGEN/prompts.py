@@ -6,23 +6,24 @@ load_dotenv()
 import pandas as pd
 from io import StringIO
 from pydantic import BaseModel, Field
+import os
 
 class InsightCard(BaseModel):
     """Structured output schema for insight cards."""
-    insight_type: str = Field(description="Type of insight (e.g., distribution, trend, difference)")
-    reason: str = Field(description="Analysis rationale")
-    question: str = Field(description="Natural language question")
-    breakdown: str = Field(description="Grouping column name")
-    measure: str = Field(description="Aggregation function and target column")
+    insight_type: str = Field(description="Type of insight (e.g., distribution, trend, difference)",alias="insight_type")
+    reason: str = Field(description="Analysis rationale",alias="reason")
+    question: str = Field(description="Natural language question",alias="question")
+    breakdown: str = Field(description="Grouping column name",alias="breakdown")
+    measure: str = Field(description="Aggregation function and target column",alias="measure")
 
-class QUGEN(BaseModel):
+class InsightCards(BaseModel):
     """Container for multiple insight cards."""
     insight_cards: List[InsightCard] = Field(
         description="List of generated insight cards",
         min_items=1
     )
     
-def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
+def generate_qugen_prompt(state: Dict) -> str:
     """Construct QUGEN prompt with dynamic card count and validation rules"""
     examples = "\n\n".join(
         f"### Insight Card {i+1}\n"
@@ -49,10 +50,8 @@ def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     print(f"Numerical Stats: {numerical_stats.to_markdown()}")
     print(f"Categorical Stats: {categorical_stats.to_markdown()}")
 
-    
-    
-    return f"""
-    Generate {num_cards} analytical questions about this dataset:
+    prompt = f"""
+    Generate {os.getenv("Insight_cards_number")} analytical questions about this dataset:
     
     Dataset Description:
     {state['description']}
@@ -78,3 +77,4 @@ def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     Also here are some examples of previous cards:
     {examples}
     """
+    return prompt

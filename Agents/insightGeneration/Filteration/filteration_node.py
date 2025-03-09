@@ -33,12 +33,12 @@ def validate_insight_card(card: Dict[str, str], schema) -> bool:
     except Exception:
         return False
 async def filterationA_node(state) -> str:
-    pass
-    # """
-    # Filteration A: Filter out invalid or duplicate insight cards.
-    # """
-    # if "insight_cards" not in state:
-    #     raise ValueError("No insight cards provided in state.")
+    
+    """
+    Filteration A: Filter out invalid or duplicate insight cards.
+    """
+    if "insight_cards" not in state:
+        raise ValueError("No insight cards provided in state.")
     
     # # Extracting the DataFrame from the state
     # df = pd.read_json(StringIO(state['df']))

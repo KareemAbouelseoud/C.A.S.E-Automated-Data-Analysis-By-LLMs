@@ -1,25 +1,32 @@
 from typing import Dict
-from .prompts import generate_qugen_prompt,QUGEN
+import os
+from dotenv import load_dotenv
+load_dotenv()
+from .prompts import generate_qugen_prompt,InsightCards
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain import hub
+import re
+import json
 semantic_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-system_prompt = hub.pull("qugen-system-prompt").messages[0].content
-CONFIGURATIONS={
-    'temperature':1.0,
-    'model':"gemini-2.0-flash",
-    'number of retries':3
-}
-llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
+
 
 async def qugen_node(state: Dict) -> Dict:
     """Generate questions based on current data description"""
     print("Generating questions using QUGEN...")
     print(f"Current state:\n{state.keys()}\n")
-    
+
+    system_prompt = hub.pull("qugen-system-prompt").messages[0].content
+    CONFIGURATIONS={
+        'temperature':1.0,
+        'model':"gemini-2.0-flash",
+        'number of retries':3
+    }
+
+    llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
     try:
         messages = [
             {
@@ -32,25 +39,39 @@ async def qugen_node(state: Dict) -> Dict:
             }
         ]
 
-        structured_llm = await llm.with_structured_output(QUGEN, include_raw=True).ainvoke(messages)
-        print(f"LLM Raw Output: {structured_llm}")  # Debug output
-        
-        # Validate the output matches our schema
-        if not isinstance(structured_llm, QUGEN):
-            raise ValueError(f"Expected QUGEN type, got {type(structured_llm)}")
+        response = llm.invoke(messages)
+        # Parse the response to extract the JSON data
+        insight_cards_containter = parse_qugen_response(response)
+
             
-        return structured_llm
+        return {"insight_cards": insight_cards_containter.insight_cards, "num_cards": int(os.getenv("Insight_cards_number"))}
 
     except Exception as e:
         print(f"Error in qugen_node: {str(e)}")
-        print(f"Raw LLM output: {getattr(structured_llm, 'raw', 'No raw output')}")
         raise
 
+def parse_qugen_response(response):
+    
+    text = response.content
+    # Define the regular expression pattern to match JSON blocks
+    pattern = r"```json(.*?)```"
+
+    # Find all non-overlapping matches of the pattern in the string
+    matches = re.findall(pattern, text, re.DOTALL)
+    # Return the list of matched JSON strings, stripping any leading or trailing whitespace
+    try:
+        data =json.loads(matches[0].strip())
+        return InsightCards(**data)  
+    except Exception:
+        raise ValueError(f"Failed to parse Insight cards: {text}")
+    
 async def should_continue(state) -> str:
     """Determine workflow continuation based on state validation"""
+    print("Checking if we should continue to the next node...")
+    cards=state["insight_cards"]
     if "insight_cards" in state:
-        cards_count = len(state["insight_cards"])
-        if cards_count<state["num_cards"]:
+        cards_count = len(cards)
+        if cards_count<state['num_cards']:
             print(f"Generated {cards_count} cards, expected {state['num_cards']}")
             return "qugen_node"
         else:

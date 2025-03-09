@@ -15,16 +15,16 @@ class AgentGraphState(TypedDict):
 #GRAPH PIPELINE
 graph_builder = StateGraph(AgentGraphState)
 #define nodes
-graph_builder.add_node("data_description",  data_description_generator_node)
+graph_builder.add_node("data_description", data_description_generator_node)
 graph_builder.add_node("human_node", human_input)
-graph_builder.add_node("qugen_node",qugen_node)
+graph_builder.add_node("qugen_node", qugen_node)
 graph_builder.add_node("filteration_node", filterationA_node)
 #define edges
 graph_builder.add_edge(START, "data_description")
 graph_builder.add_edge("data_description", "human_node")
 graph_builder.add_edge("human_node", "qugen_node")
-graph_builder.add_conditional_edges("qugen_node", should_continue)
-graph_builder.add_edge("qugen_node", "filteration_node")
+graph_builder.add_conditional_edges("qugen_node", should_continue, {"qugen_node": "qugen_node", "filteration_node": "filteration_node"})
+graph_builder.add_edge("filteration_node", END)
 #verify and display the graph
 #compile the graph
 checkpointer=MemorySaver()
