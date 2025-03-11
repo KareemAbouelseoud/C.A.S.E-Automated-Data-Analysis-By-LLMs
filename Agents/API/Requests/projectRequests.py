@@ -4,6 +4,7 @@ from io import StringIO
 from joblib import Memory
 import os
 import joblib
+import json
 url="http://Backend:8005"
 
 # Create a memory cache in a temporary directory
@@ -54,5 +55,12 @@ def save_model(model_name, model_data,project_id):
     model_path = f"./static/{project_id}_{model_name}_model.pkl"
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model_data, model_path)
+
+def save_model_report(project_id,report):
+    report_path = f"./static/{project_id}_report.json"
+    os.makedirs(os.path.dirname(report_path), exist_ok=True)
+    with open(report_path, 'w') as f:
+        json.dump(report, f,indent=4)
+    
 
 
