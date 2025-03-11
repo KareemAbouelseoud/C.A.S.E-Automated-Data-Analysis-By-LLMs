@@ -1,7 +1,7 @@
 from typing import List
 from pydantic import BaseModel,Field
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langgraph.graph import END
+from typing import Literal
 from langchain import hub
 from dotenv import load_dotenv
 load_dotenv()
@@ -97,7 +97,6 @@ async def model_selector_node(state):
     
     model_list = classification_models if problem_type == 'classification' else regression_models
 
-
     messages = [
         {
             "role": "system",
@@ -110,15 +109,13 @@ async def model_selector_node(state):
                 f"this is the model list: {model_list}\n" 
                 f"this is the data report:{data_report}\n"
                 f"this is the X columns: {X_columns}\n And this is the y column: {y_column}\n"
-                f"This is the preprocessing steps that are going to be done: {state['preprocessing_logic']}\n"
+                f"This is the preprocessing steps that are going to be applied for the X_columns: {state['X_preprocessing_logic']}\n"
+                f"This is the preprocessing steps that are going to be applied for the y_column: {state['Y_preprocessing_logic']}\n"
                 "Please provide recommendations strictly following the format requirements."
         }
     ]
     response = await llm.with_structured_output(Selector).ainvoke(messages)
-    for rec in response.models:
-        print(f"this is the reasoning for {rec.model}: {rec.reasoning}")
     
-    print(f"response so far:{response}")
 
     return {
         "models": [
@@ -128,24 +125,9 @@ async def model_selector_node(state):
     }
 
 
-async def should_continue(state) -> str:
+async def brancher(state) -> Literal["model_trainer_node", "model_tuner_node"]:
     """Determine workflow continuation based on state validation"""
-    if "recommendations" in state:
-        rec_count = len(state["recommendations"])
-        mode = state["mode"]
-        
-        if mode == "HERMES" and rec_count != 1:
-            print(f"Hermes mode requires 1 recommendation, got {rec_count}, returning to selector node")
-            return "selector_node"
-            
-        elif mode == "ATHENA" and rec_count != 3:
-            print(f"Athena mode requires 3 recommendations, got {rec_count}, returning to selector node")
-            return "selector_node"
-            
-        elif mode == "HEPHAESTUS" and rec_count != 5:
-            print(f"Hephaestus mode requires 5 recommendations, got {rec_count}, returning to selector node")
-            return "selector_node"
+    if state['mode']=='HERMES':
+        return "model_trainer_node"
     else:
-        print("No recommendations found, returning to selector node")
-        return "selector_node"
-    return END
+        return "model_tuner_node"

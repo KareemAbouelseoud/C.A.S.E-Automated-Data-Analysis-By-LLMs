@@ -21,7 +21,7 @@ class State(TypedDict):
     y_column: NotRequired[str] # Y Column (user defined)
     X_preprocessing_messages: Annotated[list[AnyMessage], operator.add]
     X_preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
-    preprocessing_mode: NotRequired[str]='X'
+    preprocessing_mode: NotRequired[str]
     Y_preprocessing_messages: Annotated[list[AnyMessage], operator.add]
     Y_preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
 

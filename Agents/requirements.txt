@@ -13,3 +13,6 @@ scikit_learn==1.6.1
 typing_extensions==4.12.2
 uvicorn==0.34.0
 langchain-openai
+lightgbm==4.6.0
+xgboost==2.1.4
+catboost==1.2.7
