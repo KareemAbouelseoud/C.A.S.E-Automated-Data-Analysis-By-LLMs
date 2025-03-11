@@ -1,211 +1,87 @@
 from sklearn.impute import SimpleImputer
 from API.Requests import projectRequests
 import pandas as pd
-classification_import_block = {
-    "Logistic Regression": 
-        """from sklearn.linear_model import LogisticRegression
-model = LogisticRegression()""",
-    
-    "Stochastic Gradient Descent (SGD) Classifier": 
-        """from sklearn.linear_model import SGDClassifier
-model = SGDClassifier()""",
-    
-    "Gaussian Naive Bayes": 
-        """from sklearn.naive_bayes import GaussianNB
-model = GaussianNB()""",
-    
-    "Multinomial Naive Bayes": 
-        """from sklearn.naive_bayes import MultinomialNB
-model = MultinomialNB()""",
-    
-    "Bernoulli Naive Bayes": 
-        """from sklearn.naive_bayes import BernoulliNB
-model = BernoulliNB()""",
-    
-    "K-Nearest Neighbors (KNN) Classifier": 
-        """from sklearn.neighbors import KNeighborsClassifier
-model = KNeighborsClassifier()""",
-    
-    "Decision Tree Classifier": 
-        """from sklearn.tree import DecisionTreeClassifier
-model = DecisionTreeClassifier()""",
-    
-    "Random Forest Classifier": 
-        """from sklearn.ensemble import RandomForestClassifier
-model = RandomForestClassifier()""",
-    
-    "Gradient Boosting Classifier (GBM)": 
-        """from sklearn.ensemble import GradientBoostingClassifier
-model = GradientBoostingClassifier()""",
-    
-    "Extreme Gradient Boosting (XGBoost) Classifier": 
-        """from xgboost import XGBClassifier
-model = XGBClassifier()""",
+from typing import Literal
+from sklearn import model_selection
+import importlib
+from sklearn.metrics import mean_squared_error
+from sklearn.base import clone
 
-    "Light Gradient Boosting Machine (LightGBM) Classifier": 
-        """from lightgbm import LGBMClassifier
-model = LGBMClassifier()""",
-
-    "Categorical Boosting (CatBoost) Classifier": 
-        """from catboost import CatBoostClassifier
-model = CatBoostClassifier()""",
-
-    "Support Vector Machine (SVM) Classifier": 
-        """from sklearn.svm import SVC
-model = SVC()""",
-    
-    "Multi-layer Perceptron (MLP) Classifier": 
-        """from sklearn.neural_network import MLPClassifier
-model = MLPClassifier()""",
-    
-    "AdaBoost Classifier": 
-        """from sklearn.ensemble import AdaBoostClassifier
-model = AdaBoostClassifier()""",
-    
-    "Extra Trees Classifier": 
-        """from sklearn.ensemble import ExtraTreesClassifier
-model = ExtraTreesClassifier()""",
-    
-    "Linear Discriminant Analysis (LDA)": 
-        """from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-model = LinearDiscriminantAnalysis()""",
-    
-    "Quadratic Discriminant Analysis (QDA)": 
-        """from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-model = QuadraticDiscriminantAnalysis()""",
-    
-    "Gaussian Process Classifier": 
-        """from sklearn.gaussian_process import GaussianProcessClassifier
-model = GaussianProcessClassifier()""",
-    
-    "Histogram-based Gradient Boosting Classifier": 
-        """from sklearn.ensemble import HistGradientBoostingClassifier
-model = HistGradientBoostingClassifier()""",
-    
-    "Bagging Classifier": 
-        """from sklearn.ensemble import BaggingClassifier
-model = BaggingClassifier()""",
-    
-    "Ridge Classifier": 
-        """from sklearn.linear_model import RidgeClassifier
-model = RidgeClassifier()""",
-    
-    "Passive-Aggressive Classifier": 
-        """from sklearn.linear_model import PassiveAggressiveClassifier
-model = PassiveAggressiveClassifier()""",
-    
-    "Quadratic Support Vector Classifier (QSVC)": 
-        """from sklearn.svm import SVC
-model   = SVC(kernel""",
-    
-    "Nearest Centroid Classifier": 
-        """from sklearn.neighbors import NearestCentroid
-model = NearestCentroid()"""
+classification_models = {
+    "Logistic Regression": ("sklearn.linear_model", "LogisticRegression"),
+    "Stochastic Gradient Descent (SGD) Classifier": ("sklearn.linear_model", "SGDClassifier"),
+    "Gaussian Naive Bayes": ("sklearn.naive_bayes", "GaussianNB"),
+    "Multinomial Naive Bayes": ("sklearn.naive_bayes", "MultinomialNB"),
+    "Bernoulli Naive Bayes": ("sklearn.naive_bayes", "BernoulliNB"),
+    "K-Nearest Neighbors (KNN) Classifier": ("sklearn.neighbors", "KNeighborsClassifier"),
+    "Decision Tree Classifier": ("sklearn.tree", "DecisionTreeClassifier"),
+    "Random Forest Classifier": ("sklearn.ensemble", "RandomForestClassifier"),
+    "Gradient Boosting Classifier (GBM)": ("sklearn.ensemble", "GradientBoostingClassifier"),
+    "Extreme Gradient Boosting (XGBoost) Classifier": ("xgboost", "XGBClassifier"),
+    "Light Gradient Boosting Machine (LightGBM) Classifier": ("lightgbm", "LGBMClassifier"),
+    "Categorical Boosting (CatBoost) Classifier": ("catboost", "CatBoostClassifier"),
+    "Support Vector Machine (SVM) Classifier": ("sklearn.svm", "SVC"),
+    "Multi-layer Perceptron (MLP) Classifier": ("sklearn.neural_network", "MLPClassifier"),
+    "AdaBoost Classifier": ("sklearn.ensemble", "AdaBoostClassifier"),
+    "Extra Trees Classifier": ("sklearn.ensemble", "ExtraTreesClassifier"),
+    "Linear Discriminant Analysis (LDA)": ("sklearn.discriminant_analysis", "LinearDiscriminantAnalysis"),
+    "Quadratic Discriminant Analysis (QDA)": ("sklearn.discriminant_analysis", "QuadraticDiscriminantAnalysis"),
+    "Gaussian Process Classifier": ("sklearn.gaussian_process", "GaussianProcessClassifier"),
+    "Histogram-based Gradient Boosting Classifier": ("sklearn.ensemble", "HistGradientBoostingClassifier"),
+    "Bagging Classifier": ("sklearn.ensemble", "BaggingClassifier"),
+    "Ridge Classifier": ("sklearn.linear_model", "RidgeClassifier"),
+    "Passive-Aggressive Classifier": ("sklearn.linear_model", "PassiveAggressiveClassifier"),
+    "Nearest Centroid Classifier": ("sklearn.neighbors", "NearestCentroid"),
 }
 
-regression_import_block = {
-    "Ordinary Least Squares (OLS) Linear Regression": 
-        """from sklearn.linear_model import LinearRegression
-model = LinearRegression()""",
-    
-    "Ridge Regression (L2 Regularization)": 
-        """from sklearn.linear_model import Ridge
-model = Ridge()""",
-    
-    "Lasso Regression (L1 Regularization)": 
-        """from sklearn.linear_model import Lasso
-model = Lasso()""",
-    
-    "ElasticNet Regression (L1+L2)": 
-        """from sklearn.linear_model import ElasticNet
-model = ElasticNet()""",
-    
-    "Stochastic Gradient Descent (SGD) Regressor": 
-        """from sklearn.linear_model import SGDRegressor
-model = SGDRegressor()""",
-    
-    "Decision Tree Regressor": 
-        """from sklearn.tree import DecisionTreeRegressor
-model = DecisionTreeRegressor()""",
-    
-    "Random Forest Regressor": 
-        """from sklearn.ensemble import RandomForestRegressor
-model = RandomForestRegressor()""",
-    
-    "Gradient Boosting Regressor (GBR)": 
-        """from sklearn.ensemble import GradientBoostingRegressor
-model = GradientBoostingRegressor()""",
-    
-    "Extreme Gradient Boosting (XGBoost) Regressor":
-        """from xgboost import XGBRegressor
-model = XGBRegressor()""",
-    
-    "Light Gradient Boosting Machine (LightGBM) Regressor": 
-        """from lightgbm import LGBMRegressor
-model = LGBMRegressor()""",
-    
-    "Categorical Boosting (CatBoost) Regressor": 
-        """from catboost import CatBoostRegressor
-model = CatBoostRegressor()""",
-    
-    "Support Vector Regression (SVR)": 
-        """from sklearn.svm import SVR
-model = SVR()""",
-    
-    "Multi-layer Perceptron (MLP) Regressor": 
-        """from sklearn.neural_network import MLPRegressor
-model = MLPRegressor()""",
-    
-    "AdaBoost Regressor": 
-        """from sklearn.ensemble import AdaBoostRegressor
-model = AdaBoostRegressor()""",
-    
-    "Extra Trees Regressor": 
-        """from sklearn.ensemble import ExtraTreesRegressor
-model = ExtraTreesRegressor()""",
-    
-    "Bayesian Ridge Regression": 
-        """from sklearn.linear_model import BayesianRidge
-model = BayesianRidge()""",
-    
-    "Huber Regressor (Robust Regression)": 
-        """from sklearn.linear_model import HuberRegressor
-model = HuberRegressor()""",
-    
-    "Theil-Sen Regressor": 
-        """from sklearn.linear_model import TheilSenRegressor
-model = TheilSenRegressor()""",
-    
-    "Quantile Regression": 
-        """from sklearn.linear_model import QuantileRegressor
-model = QuantileRegressor()""",
-    
-    "Kernel Ridge Regression": 
-        """from sklearn.kernel_ridge import KernelRidge
-model = KernelRidge()""",
-    
-    "Partial Least Squares Regression": 
-        """from sklearn.cross_decomposition import PLSRegression
-model = PLSRegression()""",
-    
-    "Passive-Aggressive Regressor": 
-        """from sklearn.linear_model import PassiveAggressiveRegressor
-model = PassiveAggressiveRegressor()""",
-    
-    "Gaussian Process Regressor": 
-        """from sklearn.gaussian_process import GaussianProcessRegressor
-model = GaussianProcessRegressor()""",
-    
-    "Histogram-based Gradient Boosting Regressor": 
-        """from sklearn.ensemble import HistGradientBoostingRegressor
-model = HistGradientBoostingRegressor()""",
-    
-    "Isotonic Regression": 
-        """from sklearn.isotonic import IsotonicRegression
-model = IsotonicRegression()"""
+regression_models = {
+    "Ordinary Least Squares (OLS) Linear Regression": ("sklearn.linear_model", "LinearRegression"),
+    "Ridge Regression (L2 Regularization)": ("sklearn.linear_model", "Ridge"),
+    "Lasso Regression (L1 Regularization)": ("sklearn.linear_model", "Lasso"),
+    "ElasticNet Regression (L1+L2)": ("sklearn.linear_model", "ElasticNet"),
+    "Stochastic Gradient Descent (SGD) Regressor": ("sklearn.linear_model", "SGDRegressor"),
+    "Decision Tree Regressor": ("sklearn.tree", "DecisionTreeRegressor"),
+    "Random Forest Regressor": ("sklearn.ensemble", "RandomForestRegressor"),
+    "Gradient Boosting Regressor (GBR)": ("sklearn.ensemble", "GradientBoostingRegressor"),
+    "Extreme Gradient Boosting (XGBoost) Regressor": ("xgboost", "XGBRegressor"),
+    "Light Gradient Boosting Machine (LightGBM) Regressor": ("lightgbm", "LGBMRegressor"),
+    "Categorical Boosting (CatBoost) Regressor": ("catboost", "CatBoostRegressor"),
+    "Support Vector Regression (SVR)": ("sklearn.svm", "SVR"),
+    "Multi-layer Perceptron (MLP) Regressor": ("sklearn.neural_network", "MLPRegressor"),
+    "AdaBoost Regressor": ("sklearn.ensemble", "AdaBoostRegressor"),
+    "Extra Trees Regressor": ("sklearn.ensemble", "ExtraTreesRegressor"),
+    "Bayesian Ridge Regression": ("sklearn.linear_model", "BayesianRidge"),
+    "Huber Regressor (Robust Regression)": ("sklearn.linear_model", "HuberRegressor"),
+    "Theil-Sen Regressor": ("sklearn.linear_model", "TheilSenRegressor"),
+    "Quantile Regression": ("sklearn.linear_model", "QuantileRegressor"),
+    "Kernel Ridge Regression": ("sklearn.kernel_ridge", "KernelRidge"),
+    "Partial Least Squares Regression": ("sklearn.cross_decomposition", "PLSRegression"),
+    "Passive-Aggressive Regressor": ("sklearn.linear_model", "PassiveAggressiveRegressor"),
+    "Gaussian Process Regressor": ("sklearn.gaussian_process", "GaussianProcessRegressor"),
+    "Histogram-based Gradient Boosting Regressor": ("sklearn.ensemble", "HistGradientBoostingRegressor"),
+    "Isotonic Regression": ("sklearn.isotonic", "IsotonicRegression"),
 }
 
-train_code = "model.fit(X_train, y_train)"
+def get_model(model_name, task="classification"):
+    """
+    Dynamically loads a model based on the given name.
+    
+    Parameters:
+    - model_name (str): The name of the model.
+    - task (str): "classification" or "regression".
+    
+    Returns:
+    - model instance
+    """
+    model_dict = classification_models if task == "classification" else regression_models
+
+    if model_name not in model_dict:
+        raise ValueError(f"Model '{model_name}' not found in {task} models")
+
+    module_name, class_name = model_dict[model_name]
+    module = importlib.import_module(module_name)
+    model_class = getattr(module, class_name)
+    return model_class()  # Instantiate the model
 
 async def trainer_node(state):
     """
@@ -218,98 +94,243 @@ async def trainer_node(state):
         state (dict): New key added to state, error
     """
 
-    print("---CHECKING CODE---")
-    print(f"=======================================\nthis is the state in trainer:{state}\n====================================")
-    # State
-    if "models_completed" not in state:
-        state["models_completed"] = 0
-    #messages = state["messages"]
-    mode = state["mode"]
-    #models_selected = state["models_selected"]
     problem_type = state["problem_type"]
-    X_train = state["X_train"]
-    y_train = state["y_train"]
     project_id = state["project_id"]
-    models_completed = state["models_completed"]
-
-#splitting and preprocessing logic:
-#----------------------------------
-    df= await projectRequests.get_dataset(project_id)
+    models_completed = state["models_completed"] if 'models_completed' in state else 0
+    model_name = state["models"][models_completed]['model']
     Xpreprocessing_pipeline=projectRequests.get_X_pipeline(project_id)
     Ypreprocessing_pipeline=projectRequests.get_Y_pipeline(project_id)
+
+    print(f"---Splitting---")
+    #region Splitting
+    df= await projectRequests.get_dataset(project_id)
+    X=df[state['X_columns']]
+    y=df[state['y_column']]
+
+    X_train,X_test, y_train, y_test=model_selection.train_test_split(X,y,test_size=state['test_size'],shuffle=state['shuffle'],stratify=y if state['stratify'] else None,random_state=42)
     
-    numerical_cols = X_train.select_dtypes(include=['int64', 'float64']).columns
-    categorical_cols = X_train.select_dtypes(include=['object']).columns
+    if state["cross_validation"]:
+         if state['stratify']:
+              kf=model_selection.StratifiedKFold(n_splits=state['n_splits'], shuffle=state['shuffle'], random_state=42)
+         else:
+              kf=model_selection.KFold(n_splits=state['n_splits'], shuffle=state['shuffle'], random_state=42)
+    
+    else:
+         X_train, X_val, y_train, y_val = model_selection.train_test_split(X_train, y_train, test_size=state['val_size'], shuffle=state['shuffle'], stratify=y_train if state['stratify'] else None, random_state=42)
 
-    Xpreprocessing_pipeline.transformers = [t for t in Xpreprocessing_pipeline.transformers if t is not None]
-    Ypreprocessing_pipeline.transformers = [t for t in Ypreprocessing_pipeline.transformers if t is not None]
+    #endregion
+    
+    print(f"---Preprocessing---")
+    #region Preprocessing
+    
+    # Giving each row a unique identifier so we can merge them back together later on.
+    # This is important because when dropping rows with missing values, the normal row indices will no longer match between X and y.
+    X_train['row_id'] = range(len(X_train))
+    y_train = pd.DataFrame({state['y_column']: y_train, 'row_id': range(len(y_train))})
+    X_val['row_id'] = range(len(X_val))
+    y_val = pd.DataFrame({state['y_column']: y_val, 'row_id': range(len(y_val))})
+    
+    if Xpreprocessing_pipeline:
+        if Xpreprocessing_pipeline.transformers[-1][0]=='Final Imputer':
+            final_imputer=Xpreprocessing_pipeline.transformers.pop(-1)[1]
+        else:
+            final_imputer=SimpleImputer(strategy='median')
+
+        X_temp,final_imputer,X_Dropper,Xpreprocessing_pipeline=preprocess(data=X_train,preprocessor=Xpreprocessing_pipeline,final_imputer=final_imputer,fit=True)
+        X_val_temp,_,_,_=preprocess(data=X_val,preprocessor=Xpreprocessing_pipeline,Dropper=X_Dropper, final_imputer=final_imputer,fit=False)
+    
+    else:
+        final_imputer=SimpleImputer(strategy='median')
+        X_temp= final_imputer.fit_transform(X_train)
+        X_temp=pd.DataFrame(X_temp,columns=X_train.columns.tolist())
+        X_val_temp=final_imputer.transform(X_val)
+        X_val_temp=pd.DataFrame(X_val_temp,columns=X_val.columns.tolist())
+
+    
+    if Ypreprocessing_pipeline:
+        y_temp,_,Y_Dropper,Ypreprocessing_pipeline=preprocess(data=y_train,preprocessor=Ypreprocessing_pipeline,fit=True)
+        y_val_temp,_,_,_=preprocess(data=y_val,preprocessor=Ypreprocessing_pipeline,Dropper=Y_Dropper,fit=False)
+    else:
+        y_temp=y_train.dropna()
+        y_val_temp=y_val.dropna()
+
+    X_train,y_train=merge_data(X_temp,y_temp,state['y_column'])
+        
+    X_val,y_val=merge_data(X_val_temp,y_val_temp,state['y_column'])
+
+    print(f"Object columns in X_train: {X_train.select_dtypes(include=['object']).columns.tolist()}")
+    print(f"Object columns in X_val: {X_val.select_dtypes(include=['object']).columns.tolist()}")
+    
+    X_train = X_train.select_dtypes(exclude=['object'])
+    X_val = X_val.select_dtypes(exclude=['object'])
+
+    # Ensure both X_train and X_val contain the same features
+    common_columns = X_train.columns.intersection(X_val.columns)
+    X_train = X_train[common_columns]
+    X_val = X_val[common_columns]
+    #endregion
+    
+    
+    #region Training
+    print(f"---Training {model_name}---")
+
+    model = get_model(model_name, problem_type)
+    try: 
+        if state['mode']=='HERMES':        
+            model.fit(X_train, y_train)
+            best_model = model
+        
+        elif state['mode']=='ATHENA':
+            if state['cross_validation']:
+                random_search =model_selection.RandomizedSearchCV(
+                    model,
+                    state['params_distribution'],
+                    n_iter=state['n_iter'], 
+                    scoring='accuracy' if problem_type == 'classification' else 'neg_mean_squared_error',
+                    n_jobs=-1, cv=kf,
+                    random_state=42
+                )
+                random_search.fit(X_train, y_train)
+                best_model = random_search.best_estimator_
+            else:
+                # Generate random parameter combinations
+                param_list = list(model_selection.ParameterSampler(state['params_distribution'], n_iter=state['n_iter'], random_state=42))
+                best_model = train_model(param_list, model, X_train, y_train, X_val, y_val, problem_type)
+
+        else:
+            if state['cross_validation']:
+                grid_search = model_selection.GridSearchCV(
+                    model,
+                    state['params_distribution'],
+                    scoring='accuracy' if problem_type == 'classification' else 'neg_mean_squared_error',
+                    n_jobs=-1, cv=kf,
+                )
+                grid_search.fit(X_train, y_train)
+                best_model = grid_search.best_estimator_
+            
+            else:
+                param_list = list(model_selection.ParameterGrid(state['params_distribution']))
+                best_model = train_model(param_list, model, X_train, y_train, X_val, y_val, problem_type)
+        #endregion
+        print("---MODEL TRAINED SUCCESSFULLY---")   
+        
+        if Xpreprocessing_pipeline:
+            if X_Dropper:
+                Xpreprocessing_pipeline.transformers.insert(0,X_Dropper)
+            Xpreprocessing_pipeline.transformers.append(('Final Imputer',final_imputer, X_train.columns))
+            projectRequests.save_X_pipeline(project_id,Xpreprocessing_pipeline)
+        
+        if Ypreprocessing_pipeline:
+            if Y_Dropper:
+                Ypreprocessing_pipeline.transformers.insert(0,Y_Dropper)
+            
+            projectRequests.save_Y_pipeline(project_id,Ypreprocessing_pipeline)
+        
+        projectRequests.save_model(model_name,best_model,project_id) 
+        print("---MODEL SAVED SUCCESSFULLY---")
+        
+        
+        models=state['models']
+        models[models_completed]['completed']=True
+        return {
+            'models_completed':models_completed+1,
+            'models':models
+        }
+    
+    except Exception as e:
+        print(f"---ERROR TRAINING MODEL {model_name}---")
+        print(e)
+        return {
+            'models_completed':models_completed+1
+        }
     
 
-    final_step=[('categorical_imputer', SimpleImputer(strategy='most_frequent'), categorical_cols),('numerical_imputer', SimpleImputer(strategy='median'), numerical_cols)]
-    Xpreprocessing_pipeline.transformers.extend(final_step)
+def train_model(param_list,model,X_train,y_train,X_val,y_val,problem_type):
+    best_model = None
+    best_score = float('-inf')
 
-    print(f"=======================================\nthis is the Xpreprocessing_pipeline:{Xpreprocessing_pipeline.transformers}\n====================================")
-    print(f"=======================================\nthis is the Ypreprocessing_pipeline:{Ypreprocessing_pipeline.transformers}\n====================================")
+    # Loop through sampled parameter sets
+    for params in param_list:
+        # Clone the model to ensure independence
+        model_clone = clone(model)
+        model_clone.set_params(**params)
+        model_clone.fit(X_train, y_train)  # Train on full training set
 
-    X_train=Xpreprocessing_pipeline.fit_transform(X_train)
-    y_train=Ypreprocessing_pipeline.fit_transform(y_train)
+        # Evaluate on validation data
+        if problem_type == 'classification':
+            score = model_clone.score(X_val, y_val)  # Higher is better
+        else:
+            y_pred = model_clone.predict(X_val)
+            score = -mean_squared_error(y_val, y_pred)  # Lower MSE is better, so negate
 
-    feature_names = Xpreprocessing_pipeline.get_feature_names_out()
-    X_processed = pd.DataFrame(X_processed, columns=feature_names)
-    y_processed = pd.DataFrame(y_processed, columns=['y','row_id'])
-
-    merged=X_processed.merge(y_processed, on='row_id',how='inner')
-    X_train = merged.drop(columns=['row_id', 'y'])
-    y_train = merged['y']
+        if score > best_score:
+            best_score = score
+            best_model = model_clone
+    return best_model
     
-    globals_dict={'project_id':state['project_id'],
-                    'df':df,
-                    'X_train':X_train,
-                    'y_train':y_train,
-                    }
+def merge_data(X,y,y_column):
+    merged=X.merge(y, on='row_id',how='inner')
+    X_new = merged.drop(columns=['row_id', y_column])
+    y_new = merged[y_column]
+    return X_new,y_new
 
-# modelling logic:
-#-----------------
-    import_block = ""
-    if mode == "HERMES" and models_completed < 1:
-        if problem_type == "classification":
-            if model in classification_import_block:
-                import_block = classification_import_block[model]
-                
-        elif problem_type == "regression":
-            if model in regression_import_block:
-                import_block = regression_import_block[model]
-        model = train_code
+def preprocess(data,preprocessor,final_imputer=None,Dropper=None,fit=True):
+    preprocessor.transformers = [t for t in preprocessor.transformers if t is not None]
 
-    elif mode == "ATHENA" and models_completed < 3:
-        if problem_type == "classification":
-            if model in classification_import_block:
-                import_block = classification_import_block[model]
-        elif problem_type == "regression":
-            if model in regression_import_block:
-                import_block = regression_import_block[model]
-        model = train_code
+    # Remove duplicates from transformers
+    if fit:
+        seen_transformers = set()
+        unique_transformers = []
+        for transformer in preprocessor.transformers:
+            if not transformer[1].steps:
+                    continue
+            if transformer[0] not in seen_transformers:
+                unique_transformers.append(transformer)
+                seen_transformers.add(transformer[0])
+        preprocessor.transformers = unique_transformers
     
-    elif mode == "HEPHAESTUS" and models_completed < 5:
-        if problem_type == "classification":
-            if model in classification_import_block:
-                import_block = classification_import_block[model]
-        elif problem_type == "regression":
-            if model in regression_import_block:
-                import_block = regression_import_block[model]
-        model = train_code
-                    
-    exec(import_block, globals_dict)
-    exec(model, globals_dict)
+    # Separate the Dropper transformer if it exists
+    if Dropper:
+        temp_data = Dropper[1].fit_transform(data) if fit else Dropper[1].transform(data)
+    else:
+        if preprocessor.transformers[0][0]=='Drop':
+            Dropper=preprocessor.transformers.pop(0)
+            temp_data=Dropper[1].fit_transform(data) if fit else Dropper[1].transform(data)
+        else:
+            temp_data=data
 
-    model=globals_dict['model']
-    projectRequests.save_X_pipeline(Xpreprocessing_pipeline,project_id)
-    projectRequests.save_Y_pipeline(Ypreprocessing_pipeline,project_id)
-    projectRequests.save_model(project_id, model,state['model'][models_completed]['model'])
-    print("---MODEL SAVED SUCCESSFULLY---")
+    # if there are any transformers left, apply them
+    if preprocessor.transformers:
+        temp_data=preprocessor.fit_transform(temp_data) if fit else preprocessor.transform(temp_data)
 
-    return {
-        "iterations": 0,
-        "error": "no",
-        'models_completed':models_completed+1
-    }
+        # temp_data is a numpy array, so we need to convert it to a DataFrame and assign column names
+        columns=preprocessor.get_feature_names_out()
+        # The names of the columns are in the format 'step__column_name', so we need to remove the 'step__' part
+        columns=[column.split('__',1)[1] if '__' in column else column for column in columns]
+        temp_data=pd.DataFrame(temp_data,columns=columns)
+    
+    # Last Defence for any missing values
+    if final_imputer:
+        temp_data=final_imputer.fit_transform(temp_data) if fit else final_imputer.transform(temp_data)
+        temp_data=pd.DataFrame(temp_data,columns=columns)
+    else:
+        temp_data=temp_data.dropna()
+    
+    return temp_data,final_imputer,Dropper,preprocessor
+
+def decide_to_finish(state)->Literal["model_tuner_node", "model_evaluator_node"]:
+    """
+    Determines whether to finish training.
+
+    Args:
+        state (dict): The current graph state
+
+    Returns:
+        str: Next node to call
+    """
+    length = len(state['models'])
+
+    if state['models_completed']>=length:
+            return "model_evaluator_node"
+    else:
+        return "model_tuner_node"
