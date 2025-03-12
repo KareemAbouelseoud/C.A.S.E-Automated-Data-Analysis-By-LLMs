@@ -4,7 +4,10 @@ from sklearn import model_selection
 import pandas as pd
 from sklearn.metrics import accuracy_score,precision_score, recall_score, f1_score, roc_auc_score,confusion_matrix,precision_recall_curve,roc_curve
 import json
-from modelTraining.trainer import preprocess,merge_data
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','modelTraining')))
+from trainer import preprocess_without_cross_validation,merge_data
 import numpy as np
 
 def make_serializable(obj):
@@ -51,8 +54,8 @@ async def evaluator_node(state):
     df= await projectRequests.get_dataset(project_id)
     X=df[state['X_columns']]
     y=df[state['y_column']]
-
-    _,X_test, _, y_test=model_selection.train_test_split(X,y,test_size=state['test_size'],shuffle=state['shuffle'],stratify=y if state['stratify'] else None,random_state=42)
+    stratify = state['stratify'] if 'stratify' in state else False
+    _,X_test, _, y_test=model_selection.train_test_split(X,y,test_size=state['test_size'],shuffle=state['shuffle'],stratify=y if stratify else None,random_state=42)
     
     Xpreprocessing_pipeline=projectRequests.get_X_pipeline(project_id)
     Ypreprocessing_pipeline=projectRequests.get_Y_pipeline(project_id)
@@ -61,18 +64,27 @@ async def evaluator_node(state):
     y_test = pd.DataFrame({state['y_column']: y_test, 'row_id': range(len(y_test))})
     
     if Xpreprocessing_pipeline:
-        X_temp_test,_,_,_=preprocess(X_test,Xpreprocessing_pipeline,fit=False)
+        X_temp_test,_,_,_=preprocess_without_cross_validation(X_test,Xpreprocessing_pipeline,fit=False)
     else:
         X_temp_test=X_test
 
     if Ypreprocessing_pipeline:
-        y_temp_test,_,_,_=preprocess(y_test,Ypreprocessing_pipeline,fit=False)
+        y_temp_test,_,_,_=preprocess_without_cross_validation(y_test,Ypreprocessing_pipeline,fit=False)
     else:
         y_temp_test=y_test
 
-    X_test,y_test=merge_data(X_temp_test,y_temp_test,state['y_column'])
+    try:
+        X_test,y_test=merge_data(X_temp_test,y_temp_test,state['y_column'])
+    except:
+        # If merging fails, try to adjust the dataframes by dropping the row_id columns
+        # which were only added for merging purposes
+        X_test = X_temp_test
+        y_test = y_temp_test[state['y_column']]  # Keep only the target column
+    
+    # Exclude object columns that might cause issues during prediction
+    X_test = X_test.select_dtypes(exclude=['object'])
+    
     #endregion
-
     #region Evaluating
     reports=[]
     for model_dict in completed_models:
@@ -99,7 +111,7 @@ async def evaluator_node(state):
     #endregion
 
 def classification_metrics(model,X_test,y_true):
-
+    print(X_test)
     y_pred=model.predict(X_test)
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average='weighted')
