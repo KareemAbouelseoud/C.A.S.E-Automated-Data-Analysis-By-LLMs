@@ -16,4 +16,11 @@ class Chat(BaseModel):
 
 class Recommender(BaseModel):
     prompt:str
-    data_report:str
+    project_id:Optional[str]=None
+class Train(BaseModel):
+    target_feature:str
+    training_features:List[str]
+    mode:str
+    user_input:Optional[str]=None
+    project_id:Optional[str]=None
+    data_report:Optional[str]=None
