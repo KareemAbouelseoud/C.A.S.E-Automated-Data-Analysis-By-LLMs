@@ -173,6 +173,29 @@ async def handle_null_values(
         if column_name not in df.columns:
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
          
+        # Check if the strategy and provided value match the column type
+        if strategy == "fill_value" and value is not None:
+            column_type = df[column_name].dtype
+            value_type = type(value)
+            
+            # For numeric columns
+            if pd.api.types.is_numeric_dtype(column_type):
+                if not isinstance(value, (int, float)):
+                    raise ValueError(f"Column '{column_name}' is numeric but provided value is {value_type}")
+            
+            # For string/object columns
+            elif pd.api.types.is_string_dtype(column_type) or pd.api.types.is_object_dtype(column_type):
+                if not isinstance(value, str):
+                    raise ValueError(f"Column '{column_name}' is string/object but provided value is {value_type}")
+            
+            # For datetime columns
+            elif pd.api.types.is_datetime64_dtype(column_type):
+                if not pd.api.types.is_datetime64_dtype(pd.Series([value])):
+                    try:
+                        pd.to_datetime(value)  # Try to convert to datetime
+                    except:
+                        raise ValueError(f"Column '{column_name}' is datetime but provided value cannot be converted to datetime")
+                    
         if strategy == "drop":
             return (f"Drop Nulls {column_name}", NullValueTransformer(feature_name=column_name,strategy=strategy,fill_value=value))
         # if strategy == 'knn':
