@@ -44,6 +44,7 @@ class Project(BaseModel):
     dataset_description:Optional[str]= Field(default=None, alias="dataset_description")
     created_Date:Optional[datetime]= Field(default=None, alias="created_Date")
     thread_id: Optional[str] = Field(default=None, alias="thread_id")
+    temp_dataset: Optional[str] = Field(default=None, alias="temp_dataset")
     
     @classmethod
     def from_mongo(cls, document):
