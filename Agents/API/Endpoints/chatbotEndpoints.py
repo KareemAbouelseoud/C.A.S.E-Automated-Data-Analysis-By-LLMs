@@ -13,4 +13,4 @@ async def chat(body:Chat):
     
 @chatbot_router.post("/recommend",tags=["Chat"])
 async def recommend(item: Recommender):
-    return {"data":json.dumps(await recommender.recommender(json.loads(item.prompt),item.data_report))}
+    return {"data":json.dumps(await recommender.recommender(json.loads(item.prompt),item.project_id))}
