@@ -27,16 +27,16 @@ class AutoML:
 
     def run(self):
         st.write("\n\n\n\n\n")
-        if 'df' not in self.autoML_session['autoML'] or self.autoML_session['autoML']['df'] is None:
+        if 'raw_dataset' not in self.autoML_session['dataset_session'] or self.autoML_session['dataset_session']['raw_dataset'] is None:
             df=databaseRequests.fetch_dataset(self.autoML_session['project_id'])
-            self.autoML_session['autoML']['df']=df
+            self.autoML_session['dataset_session']['raw_dataset']=df
         else:
-            df=self.autoML_session['autoML']['df']
+            df=self.autoML_session['dataset_session']['raw_dataset']
         
         if 'autoML_data' not in self.autoML_session['autoML']:
             self.autoML_session['autoML']['autoML_data']={}
         
-            
+        print(df)
         with st.form('AutoML'):
             cols=st.columns([1,2,1])
             with cols[0]:
@@ -49,7 +49,7 @@ class AutoML:
             with cols[1]:
                 c=st.columns([2,1])
                 with c[1]:
-                    feature_selection_mode = st.radio('Feature selection mode', ['Include', 'Exclude'], horizontal=True)
+                    feature_selection_mode = st.radio('Feature selection mode', ['Exclude', 'Include'], horizontal=True)
                 with c[0]:
                     if df is not None:
                         if feature_selection_mode == 'Include':
@@ -60,12 +60,12 @@ class AutoML:
                             features = [feature for feature in df.columns.tolist() if feature not in features and feature != target_feature]
                             self.autoML_session['autoML']['autoML_data']['features']=features
             with cols[2]:
-                mode = st.selectbox('Select the mode', ['⚡HERMES', '⚖️ ATHENA', '🔨 HEPHAESTUS'],help='HERMES is extremely fast, but sacrifices accuracy\n\n ATHENA is the balanced mode\n\n HEPHAESTUS is the slowest, but guarantess the highest accuracy')
+                mode = st.selectbox('Select the mode', ['⚡ HERMES', '⚖️ ATHENA', '🔨 HEPHAESTUS'],help='HERMES is extremely fast, but sacrifices accuracy\n\n ATHENA is the balanced mode\n\n HEPHAESTUS is the slowest, but guarantess the highest accuracy')
                 self.autoML_session['autoML']['mode'] = mode
             c=st.columns([1,2,1])
             # with c[-1]:
                 # if st.session_state['mode'] == '⚡HERMES':
-                #     st.info('**⚡HERMES**: Results before you blink!\n\n  Hermes is that intern who drinks five espressos before 9 AM and delivers results before you even finish explaining the problem.\n\nIt might cut a few corners, make some wild assumptions, and occasionally hallucinate correlations, but hey—speed is the name of the game!')
+                #     st.info('**⚡ HERMES**: Results before you blink!\n\n  Hermes is that intern who drinks five espressos before 9 AM and delivers results before you even finish explaining the problem.\n\nIt might cut a few corners, make some wild assumptions, and occasionally hallucinate correlations, but hey—speed is the name of the game!')
                 # elif st.session_state['mode'] == '⚖️ ATHENA':
                 #     st.warning('**⚖️ ATHENA**: Smart, steady, and allergic to bad decisions. \n\n Athena balances speed and accuracy like a pro—quick enough to be useful, careful enough to avoid embarrassing mistakes. The safe bet, unless you enjoy chaos.')
                 # elif st.session_state['mode'] == '🔨 HEPHAESTUS':
@@ -124,10 +124,8 @@ class AutoML:
 
 
     def trainPage(self,target_feature,features,model_preferences=None):
-        print( target_feature,features,model_preferences)
-        print(self.autoML_session['project_id'])
-        print(self.autoML_session['mode'])
-        # automlRequests.train(st.session_state['Project'],target_feature,training_features,st.session_state['mode'],user_input)
+        
+        automlRequests.train(self.autoML_session['project_id'],target_feature,features,self.autoML_session['autoML']['mode'][2:],model_preferences)
 
         
             
