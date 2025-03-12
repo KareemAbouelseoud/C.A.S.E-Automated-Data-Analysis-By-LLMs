@@ -48,7 +48,6 @@ class State(TypedDict):
     Y_preprocessing_logic: NotRequired[str] # Preprocessing Steps Documented for the User and rest of Agents
     
     #Model
-    training_logic: NotRequired[str] # Training Steps Documented for the User and rest of Agents
     models: NotRequired[list] # Model Names Selected by LLM
     models_completed: NotRequired[int] # Number of Models Completed
 
@@ -82,12 +81,33 @@ async def automl(project_id,data_report,mode,label,features=None,user_preference
         if chunk[0] == 'values':
             response=chunk[1]
         elif chunk[0] == 'updates':
-            # print("Update:",chunk[1])
-            pass
-
-    print("Final Response:",response)
+            for node,update in chunk[1].items():
+                yield node
+    
+    models = [i for i in response['models'] if 'completed' in i]
+    final_response = {
+        'mode':response['mode'],
+        'user_preferences':response['user_preferences'],
+        'X_columns':response['X_columns'],
+        'y_column':response['y_column'],
+        'problem_type':response['problem_type'],
+        'splitting_logic':response['splitting_logic'],
+        'X_preprocessing_logic':response['X_preprocessing_logic'],
+        'Y_preprocessing_logic':response['Y_preprocessing_logic'],
+        'test_size':response['test_size'],
+        'shuffle':response['shuffle'],
+        'stratify':response['stratify'],
+        'cross_validation':response['cross_validation'],
+        'n_splits':response['n_splits'] if 'n_splits' in response else None,
+        'val_size':response['val_size'] if  'val_size' in response else None,
+        'n_iter':response['n_iter'] if 'n_iter' in response else None,
+        'models':models,
+        'evaluation_reports':response['evaluation_reports']
+    }
+    yield final_response
 import asyncio
-asyncio.run(automl('67c1ba76e833b024ca9cb615',
+async def main():
+    async for response in automl('67c1ba76e833b024ca9cb615',
                    """{
   "General Info": {
       "Number of Rows": 891,
@@ -297,4 +317,6 @@ asyncio.run(automl('67c1ba76e833b024ca9cb615',
   }
 }
 """,
-                        'ATHENA','Survived'))
+                        'ATHENA','Survived',user_preferences="Use cross validation"):
+        pass
+asyncio.run(main())
