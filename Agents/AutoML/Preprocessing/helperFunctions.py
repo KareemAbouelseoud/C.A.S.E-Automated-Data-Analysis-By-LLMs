@@ -79,28 +79,64 @@ class NullValueTransformer(BaseEstimator, TransformerMixin):
         self.feature_name = feature_name
 
     def fit(self, X, y=None):
-        X = pd.Series(X.toarray().ravel()) if isinstance(X, csr_matrix) else pd.Series(X) if isinstance(X, np.ndarray) else X
-        if self.strategy == 'fill_mean':
-            self.fill_value = X.mean()
-        elif self.strategy == 'fill_median':
-            self.fill_value = X.median()
-        elif self.strategy == 'fill_value' and self.fill_value is None:
-            raise ValueError("fill_value must be specified when strategy is 'constant'")
+        # Convert different input formats to pandas if needed
+        if isinstance(X, csr_matrix):
+            X = pd.DataFrame(X.toarray())
+        elif isinstance(X, np.ndarray):
+            if X.ndim > 1 and X.shape[1] > 1:  # Multi-column array
+                X = pd.DataFrame(X)
+            else:
+                X = pd.Series(X.ravel())
+        
+        # For single series/column, calculate statistics
+        if isinstance(X, pd.Series) or (isinstance(X, pd.DataFrame) and X.shape[1] == 1):
+            if self.strategy == 'mean':
+                self.fill_value = X.mean()
+            elif self.strategy == 'median':
+                self.fill_value = X.median()
+            elif self.strategy == 'value' and self.fill_value is None:
+                raise ValueError("fill_value must be specified when strategy is 'value'")
+        
         return self
 
     def transform(self, X):
-        X = pd.Series(X.toarray().ravel()) if isinstance(X, csr_matrix) else pd.Series(X) if isinstance(X, np.ndarray) else X
+        # Convert different input formats to pandas if needed
+        if isinstance(X, csr_matrix):
+            X = pd.DataFrame(X.toarray())
+        elif isinstance(X, np.ndarray):
+            if X.ndim > 1 and X.shape[1] > 1:  # Multi-column array
+                X = pd.DataFrame(X)
+            else:
+                X = pd.Series(X.ravel())
+        
         X = X.copy()
-        if self.strategy in ['fill_mean', 'fill_median']:
-            X_filled = X.fillna(self.fill_value)
-        elif self.strategy == 'fill_value':
+        
+        # If X is multi-column DataFrame, we need to handle just the specified feature
+        if isinstance(X, pd.DataFrame) and X.shape[1] > 1:
+            if self.strategy == 'drop':
+                # Drop rows where the specified feature is null
+                X = X.dropna(subset=[self.feature_name]).reset_index(drop=True)
+            else:
+                # Only fill nulls in the specified feature
+                if self.feature_name in X.columns:
+                    if self.strategy in ['mean', 'median', 'value']:
+                        X[self.feature_name] = X[self.feature_name].fillna(self.fill_value)
+                else:
+                    raise ValueError(f"Feature {self.feature_name} not found in data")
+            
+            return X
+        
+        # For single column/series
+        if self.strategy in ['mean', 'median', 'value']:
             X_filled = X.fillna(self.fill_value)
         elif self.strategy == 'drop':
             X_filled = X.dropna().reset_index(drop=True)
         else:
             raise ValueError(f"Unknown strategy: {self.strategy}")
-
-        return X_filled.values.reshape(-1, 1) if X_filled.ndim == 1 else X_filled
+        
+        # Return as properly shaped array
+        return X_filled.values.reshape(-1, 1) if (isinstance(X_filled, pd.Series) or 
+                                                (isinstance(X_filled, pd.DataFrame) and X_filled.shape[1] == 1)) else X_filled
 
     def fit_transform(self, X, y=None):
         return self.fit(X).transform(X)
