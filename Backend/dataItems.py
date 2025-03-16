@@ -42,3 +42,15 @@ class Train(BaseModel):
 class DatasetVis(BaseModel):
     column_name:str
     plot_type:Optional[str]=None
+class SplitDistribution(BaseModel):
+    train_size: int
+    test_size: int
+    val_size: int = 0
+    total_rows: int = None
+
+class ClassificationModel(BaseModel):
+    accuracy: float
+    precision: Optional[float] = None
+    recall: Optional[float] = None
+    f1_score: Optional[float] = None
+    roc_auc: Optional[float] = None

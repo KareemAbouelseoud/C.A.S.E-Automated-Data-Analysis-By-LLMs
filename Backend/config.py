@@ -42,7 +42,7 @@ def make_serializable(obj):
 # Add the parent directory to the sys.path (do this ONLY ONCE)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from dataItems import Chat, Recommender, StHistory, SignUpRequest, LoginRequest, Train,DatasetVis
+from dataItems import Chat, Recommender, StHistory, SignUpRequest, LoginRequest, Train,DatasetVis,SplitDistribution,ClassificationModel
 from dataModels.project import Project
 from dataModels.project import Chat as projectChat
 from dataModels.user import User
