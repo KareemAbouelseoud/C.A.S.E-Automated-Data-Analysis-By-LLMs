@@ -147,9 +147,9 @@ async def parse_datetime(
 @tool
 async def handle_null_values(
     column_name: Annotated[str, 'column name to be processed'],
-    strategy: Annotated[str, "The strategy to handle null values. only available Options: 'drop', 'fill_value', 'fill_mean', fill_median"],
+    strategy: Annotated[str, "The strategy to handle null values. only available Options: 'drop', 'value', 'mean', 'median'"],
     project_id: Annotated[str,InjectedToolArg] = None,
-    value: Annotated[Optional[Union[float,str,int]], "The value to fill nulls with (if strategy is 'fill_value')."] = None,
+    value: Annotated[Optional[Union[float,str,int]], "The value to fill nulls with (if strategy is 'value')."] = None,
     # n_neighbors: Annotated[Optional[int], "Number of neighbors for KNN imputation (if strategy is 'knn')."] = 5,
 ) -> tuple:
     """
@@ -157,9 +157,9 @@ async def handle_null_values(
     
     Args:
         column_name: Name of the column to process.
-        strategy : The strategy to handle null values. Options: 'drop', 'fill_value', 'fill_mean'.
+        strategy : The strategy to handle null values. Options: 'drop', 'value', 'mean'.
         project_id: ID of the project to fetch the dataset.
-        value: The value to fill nulls with (if strategy is 'fill_value').
+        value: The value to fill nulls with (if strategy is 'value').
         
 
     Returns:
@@ -174,9 +174,10 @@ async def handle_null_values(
             raise ValueError(f"Column '{column_name}' not found in the dataset.")
          
         # Check if the strategy and provided value match the column type
-        if strategy == "fill_value" and value is not None:
+        if strategy == "value" and value is not None:
             column_type = df[column_name].dtype
             value_type = type(value)
+            print(column_name, column_type, value, value_type)
             
             # For numeric columns
             if pd.api.types.is_numeric_dtype(column_type):
