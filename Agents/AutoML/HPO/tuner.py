@@ -6,6 +6,8 @@ import sys
 import os
 import json
 from typing import Literal
+import re
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 load_dotenv()
 
@@ -17,7 +19,7 @@ CONFIGURATIONS={
 
 class Splitter(BaseModel):
     """ A Pydantic model to structure the output of the language model. """
-    n_iter: int = Field(description="Number of iterations for the hyperparameter search")
+    n_iter: int = Field(description="Number of iterations for the hyperparameter search",default=None)
     params_distribution: str = Field(description="The grid that will be searched for the best hyperparameters (in JSON string format. None should be null. There is no such parameter as 'none')")
 
 async def tuner_node(state):
@@ -53,9 +55,18 @@ async def tuner_node(state):
         params_string=response.params_distribution.replace("None","null")
         params_string=params_string.replace('True','true')
         params_string=params_string.replace('False','false')
+        # Handle tuples specially - convert them to lists
+        # This regex matches patterns like (64,) or (128, 64)
+        # Convert tuple representations like (64,) to JSON array format
+        params_string = re.sub(r'\((\d+),\)', r'[\1]', params_string)
+        # Convert tuple representations like (128, 64) to JSON array format
+        params_string = re.sub(r'\((\d+(?:,\s*\d+)+)\)', r'[\1]', params_string)
+        
         print(params_string)
         params=json.loads(params_string)
-    except:
+    except Exception as e:
+        print("Error in parsing the params")
+        raise e
         params=None
 
     return {
