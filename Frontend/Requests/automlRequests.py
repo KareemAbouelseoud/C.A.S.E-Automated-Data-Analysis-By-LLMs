@@ -11,6 +11,6 @@ def train(project_id,target_feature,training_features,mode,user_input=None):
                              json={ 'target_feature':target_feature,
                                        'training_features':training_features,
                                        'mode':mode,
-                                       'user_input':user_input})
+                                       'user_input':user_input},stream=True)
     
-    return response.json()['data']
+    return response
