@@ -33,13 +33,7 @@ async def planner_node(state):
     
     response= await llm.ainvoke(messages)
     if 'preprocessing_mode' not in state:
-        if response.tool_calls!=[]:
-            return {"X_preprocessing_messages": [response],"preprocessing_mode":mode}
-        else:
-            return {"X_preprocessing_logic": response,"preprocessing_mode":mode}
+        return {"X_preprocessing_logic": response,"preprocessing_mode":mode}
     else:
-        if response.tool_calls!=[]:
-            return {"Y_preprocessing_messages": [response],"preprocessing_mode":mode}
-        else:
-            return {"Y_preprocessing_logic": response,"preprocessing_mode":mode}
+        return {"Y_preprocessing_logic": response,"preprocessing_mode":mode}
     

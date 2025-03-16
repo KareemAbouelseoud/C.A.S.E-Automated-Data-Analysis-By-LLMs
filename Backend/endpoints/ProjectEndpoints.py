@@ -59,7 +59,7 @@ async def fetchDataset(project_id:str):
 
 
 @Project_router.get("/project/{project_id}/fetchDataReport",tags=["Project"])
-async def fetchDataset(project_id:str):
+async def fetchDataReport(project_id:str):
     """
     API endpoint to receive and save uploaded files.
     """

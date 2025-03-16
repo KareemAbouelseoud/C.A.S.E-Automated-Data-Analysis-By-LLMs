@@ -29,7 +29,7 @@ async def caller_node(state):
         
     messages=[
         {"role": "system", "content":system_prompt },
-        {"role": "user", "content": f"Data Report:\n {data_report} \n\nTrain Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']}\n Preprocessing Logic: {state['X_preprocessing_logic'] if state['preprocessing_mode']=='X' else state['Y_preprocessing_logic']}"},
+        {"role": "user", "content": f"Train Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']}\n Preprocessing Logic: {state['X_preprocessing_logic'] if state['preprocessing_mode']=='X' else state['Y_preprocessing_logic']}"},
     ]+old_messages
     model=llm.bind_tools(tools=tools)
     response= await model.ainvoke(messages)

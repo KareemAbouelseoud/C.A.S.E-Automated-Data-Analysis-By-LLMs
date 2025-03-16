@@ -438,4 +438,68 @@ class visualizationsService:
         
         # For your service
         return fig.to_json()
+    
+    async def plot_data_split_distribution(self, project_id: str, train_size: int, test_size: int, val_size: int = 0, total_rows: int = None) -> str:
+        """
+        Creates a pie chart showing how data is distributed between train, test, and validation sets.
+        Also calculates and displays dropped rows if total_rows is provided.
+        
+        Args:
+            project_id (str): The ID of the project
+            train_size (int): Number of rows in the training set
+            test_size (int): Number of rows in the test set
+            val_size (int): Number of rows in the validation set (default 0)
+            total_rows (int, optional): Total rows in the original dataset for calculating dropped rows
+            
+        Returns:
+            str: Plotly figure as JSON string
+        """
+        try:
+            project = await self.project_repository.get_by_id(project_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error retrieving project from MongoDB: {e}")
+        
+        if project is None:
+            raise HTTPException(status_code=400, detail="Invalid project_id. Please provide an existing Project id.")
+        
+        # Prepare data for pie chart
+        labels = ['Train', 'Test']
+        values = [train_size, test_size]
+        
+        # Add validation set if it exists
+        if val_size > 0:
+            labels.append('Validation')
+            values.append(val_size)
+        
+        # Calculate and add dropped rows if total_rows is provided
+        if total_rows is not None:
+            used_rows = sum(values)
+            if total_rows > used_rows:
+                dropped_rows = total_rows - used_rows
+                labels.append('Dropped')
+                values.append(dropped_rows)
+        
+        # Create pie chart
+        fig = px.pie(
+            names=labels,
+            values=values,
+            title='Data Split Distribution',
+            color=labels,
+            color_discrete_sequence=px.colors.qualitative.Set3,
+            hole=0.3
+        )
+        
+        # Add percentage to hover information
+        fig.update_traces(
+            textinfo='percent+label',
+            hovertemplate='<b>%{label}</b><br>Rows: %{value}<br>Percentage: %{percent}'
+        )
+        
+        fig.update_layout(
+            plot_bgcolor='rgba(0,0,0,0.05)',
+            font=dict(size=12)
+        )
+        
+        # Return the figure as JSON
+        return make_serializable(fig.to_json())
     #endregion

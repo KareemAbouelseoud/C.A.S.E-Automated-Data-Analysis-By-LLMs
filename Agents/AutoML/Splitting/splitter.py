@@ -43,7 +43,7 @@ async def splitter_node(state):
     
     messages=[
         {"role": "system", "content":system_prompt+f"\n\n Data Report:\n {data_report}" },
-        {"role": "user", "content": f"Train Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']}"},
+        {"role": "user", "content": f"Train Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']}\n Here are the user preferences:{state['user_preferences'] if 'user_preferences' in state else ''}\n"},
     ]
 
     response = await llm.with_structured_output(Splitter).ainvoke(messages)

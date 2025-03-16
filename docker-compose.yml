@@ -12,7 +12,9 @@ services:
       - ./Agents:/app
     
     restart: always
-    
+    environment:
+      - PYTHONUNBUFFERED=1
+
     env_file:
       - .env
 
@@ -49,6 +51,7 @@ services:
     environment:
       - STREAMLIT_SERVER_RUN_ON_SAVE=true
       - STREAMLIT_SERVER_HEADLESS=true
+      - PYTHONUNBUFFERED=1
     env_file:
       - .env
 

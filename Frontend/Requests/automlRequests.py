@@ -7,11 +7,10 @@ url="http://Backend:8005"
 
 
 def train(project_id,target_feature,training_features,mode,user_input=None):
-    response = requests.post(url+'/project/{project_id}/AutoML/train/',
-                             json={'project_id':project_id,
-                                       'target_feature':target_feature,
+    response = requests.post(url+f'/project/{project_id}/AutoML/train/',
+                             json={ 'target_feature':target_feature,
                                        'training_features':training_features,
                                        'mode':mode,
-                                       'user_input':user_input})
+                                       'user_input':user_input},stream=True)
     
-    return response.json()['data']
+    return response

@@ -17,10 +17,7 @@ async def chat(body:Chat):
 async def recommend(item: Recommender):
 
     prompt = item.prompt
-    project_id = item.project_id
-
-    data_report=await project_service.fetch_data_report(project_id)
-    response=requests.post(url+"/recommend",json={"prompt":prompt,"data_report":data_report,'thread_id':item.thread_id})
+    response=requests.post(url+"/recommend",json={"prompt":prompt,'project_id':item.project_id})
     recommendations=response.json()['data']
 
     return {"data":recommendations}
