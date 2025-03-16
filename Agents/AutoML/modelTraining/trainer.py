@@ -7,6 +7,10 @@ import importlib
 from sklearn.metrics import mean_squared_error
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline
+from sklearn.utils import estimator_html_repr
+from joblib import Parallel, delayed
+from tqdm import tqdm
+from AutoML.Deployment.deployer import deployer_node
 
 classification_models = {
     "Logistic Regression": ("sklearn.linear_model", "LogisticRegression"),
@@ -118,7 +122,7 @@ async def trainer_node(state):
     try:
         
         if state['cross_validation']:
-            best_model,X_Dropper,Xpreprocessing_pipeline,Y_Dropper,Ypreprocessing_pipeline,final_imputer=train_with_cross_validation(X_train=X_train,
+            best_model,X_Dropper,Xpreprocessing_pipeline,Y_Dropper,Ypreprocessing_pipeline,final_imputer,train_count,val_count=train_with_cross_validation(X_train=X_train,
                                                                                                                                      y_train=y_train,
                                                                                                                                      model=model,
                                                                                                                                      Xpreprocessing_pipeline=Xpreprocessing_pipeline,
@@ -126,7 +130,7 @@ async def trainer_node(state):
                                                                                                                                      state=state,
                                                                                                                                      stratify=stratify)
         else:
-            best_model,X_Dropper,Xpreprocessing_pipeline,Y_Dropper,Ypreprocessing_pipeline,final_imputer=train_without_cross_validation(X_train=X_train,
+            best_model,X_Dropper,Xpreprocessing_pipeline,Y_Dropper,Ypreprocessing_pipeline,final_imputer,train_count,val_count=train_without_cross_validation(X_train=X_train,
                                                                                                                                         y_train=y_train,
                                                                                                                                         state=state,
                                                                                                                                         stratify=stratify,
@@ -154,47 +158,70 @@ async def trainer_node(state):
         
         models=state['models']
         models[models_completed]['completed']=True
+        if 'params_distribution' in state:
+            models[models_completed]['params_distribution']=state['params_distribution']
+        deployment_features = await deployer_node(data_report=state['data_report'],X_columns=state['X_columns'])
+        if deployment_features:
+            deployment_features = [feature.dict() if hasattr(feature, 'dict') else 
+                                   feature.model_dump() if hasattr(feature, 'model_dump') else 
+                                   vars(feature) 
+                                   for feature in deployment_features]
+        models[models_completed]['deployment'] = deployment_features
         return {
             'models_completed':models_completed+1,
-            'models':models
+            'models':models,
+            'val_count': val_count,
+            'train_count': train_count,
+            'X_pipeline_html':estimator_html_repr(Xpreprocessing_pipeline) if Xpreprocessing_pipeline else None,
+            'Y_pipeline_html':estimator_html_repr(Ypreprocessing_pipeline) if Ypreprocessing_pipeline else None,
         }
     
     except Exception as e:
-        raise e
         print(f"---ERROR TRAINING MODEL {model_name}---")
-        print(e)
+        raise (e)
         return {
             'models_completed':models_completed+1
         }
     
 
-def train_model(param_list,model,X_train,y_train,X_val,y_val,problem_type):
-    best_model = None
-    best_score = float('-inf')
+def train_model(param_list, model, X_train, y_train, X_val, y_val, problem_type):
+        # Define a function to evaluate a single parameter set
+        def evaluate_params(params):
+            model_clone = clone(model)
+            model_clone.set_params(**params)
+            model_clone.fit(X_train, y_train)
+            
+            if problem_type == 'classification':
+                score = model_clone.score(X_val, y_val)
+            else:
+                y_pred = model_clone.predict(X_val)
+                score = -mean_squared_error(y_val, y_pred)
+                
+            return score, model_clone, params
 
-    # Loop through sampled parameter sets
-    for params in param_list:
-        # Clone the model to ensure independence
-        model_clone = clone(model)
-        model_clone.set_params(**params)
-        model_clone.fit(X_train, y_train)  # Train on full training set
-
-        # Evaluate on validation data
-        if problem_type == 'classification':
-            score = model_clone.score(X_val, y_val)  # Higher is better
-        else:
-            y_pred = model_clone.predict(X_val)
-            score = -mean_squared_error(y_val, y_pred)  # Lower MSE is better, so negate
-
-        if score > best_score:
-            best_score = score
-            best_model = model_clone
-    return best_model
+        # Parallel execution with all available cores (n_jobs=-1)
+        results = Parallel(n_jobs=-1)(delayed(evaluate_params)(params) for params in tqdm(param_list, desc="Evaluating parameters"))
+        
+        # Find the best model from results
+        best_score = float('-inf')
+        best_model = None
+        for score, model_clone, params in results:
+            if score > best_score:
+                best_score = score
+                best_model = model_clone
+                
+        return best_model
     
 def merge_data(X,y,y_column):
-    merged=X.merge(y, on='row_id',how='inner')
-    X_new = merged.drop(columns=['row_id', y_column])
-    y_new = merged[y_column]
+    try:
+        merged=X.merge(y, on='row_id',how='inner')
+        X_new = merged.drop(columns=['row_id', y_column])
+        y_new = merged[y_column]
+    except:
+        X_new=X
+        y_new=y
+        if y_new.shape[1]>1:
+            y_new[y_column]
     return X_new,y_new
 
 def preprocess_without_cross_validation(data,preprocessor,final_imputer=None,Dropper=None,fit=True):
@@ -205,7 +232,7 @@ def preprocess_without_cross_validation(data,preprocessor,final_imputer=None,Dro
         seen_transformers = set()
         unique_transformers = []
         for transformer in preprocessor.transformers:
-            if not transformer[1].steps:
+            if not hasattr(transformer[1], 'steps') or not transformer[1].steps:
                     continue
             if transformer[0] not in seen_transformers:
                 unique_transformers.append(transformer)
@@ -357,7 +384,7 @@ def train_with_cross_validation(X_train,y_train,model,Xpreprocessing_pipeline,Yp
     final_imputer = pipeline.steps.pop(-1)[1]
     Xpreprocessing_pipeline = pipeline.steps.pop(0)[1]
 
-    return best_model,X_Dropper,Xpreprocessing_pipeline,Y_Dropper,Ypreprocessing_pipeline,final_imputer
+    return best_model,X_Dropper,Xpreprocessing_pipeline,Y_Dropper,Ypreprocessing_pipeline,final_imputer,X_train.shape[0],None
 
 def train_without_cross_validation(X_train,y_train,state,stratify,Xpreprocessing_pipeline,Ypreprocessing_pipeline,model_name,model):
     X_train, X_val, y_train, y_val = model_selection.train_test_split(X_train, y_train, test_size=state['val_size'], shuffle=state['shuffle'], stratify=y_train if stratify else None, random_state=42)
@@ -421,7 +448,7 @@ def train_without_cross_validation(X_train,y_train,state,stratify,Xpreprocessing
     else:
         param_list = list(model_selection.ParameterGrid(state['params_distribution']))
         best_model = train_model(param_list, model, X_train, y_train, X_val, y_val, state['problem_type'])
-    return best_model,X_Dropper,Xpreprocessing_pipeline,Y_Dropper,Ypreprocessing_pipeline,final_imputer
+    return best_model,X_Dropper,Xpreprocessing_pipeline,Y_Dropper,Ypreprocessing_pipeline,final_imputer,X_train.shape[0],X_val.shape[0]
     
 def decide_to_finish(state)->Literal["model_tuner_node", "model_evaluator_node"]:
     """
