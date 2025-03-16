@@ -146,3 +146,28 @@ async def wordcloud(project_id: str,item:DatasetVis):
     
     plot_data = await viz_service.plot_word_cloud(project_id=project_id,column_name=item.column_name)
     return plot_data
+
+@viz_router.get('/project/{project_id}/visualization/split_distribution', tags=["Visualizations"])
+async def split_distribution(project_id: str, item: SplitDistribution):
+    """
+    Endpoint to plot a distribution split by another categorical variable.
+
+    Args:
+        project_id (str): Project ID to retrieve visualization data for.
+        item (DatasetVis): Object containing column name and plot type.
+
+    Returns:
+        dict: JSON with plot data.
+    """
+    
+    plot_data = await viz_service.plot_data_split_distribution(
+        project_id=project_id,
+        train_size=item.train_size,
+        test_size=item.test_size,
+        val_size=item.val_size,
+        total_rows=item.total_rows
+    )
+    return plot_data
+
+
+
