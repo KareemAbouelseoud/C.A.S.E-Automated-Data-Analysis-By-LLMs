@@ -1,12 +1,23 @@
 import numpy as np
 from scipy.stats import entropy
+import numpy as np
+import pymannkendall as mk
 
 
-def score_attribution(values):
-    if len(values) == 0:
-        return 0.0
-    total = sum(values)
-    return max(values) / total if total != 0 else 0.0
+def score_trend(values):
+    """ Calculates the trend score using the Mann-Kendall Trend Test. """
+    if len(values) < 2:
+        return 0 
+    p_value = mk.original_test(values).p
+    return 1 - p_value if p_value < 0.05 else 0
+
+def score_outstanding_value(values):
+    """ Calculates the outstanding value score as vmax1 / vmax2. """
+    abs_values = np.abs(values)
+    sorted_values = np.sort(abs_values)[::-1]
+    if len(sorted_values) < 2 or sorted_values[1] == 0:
+        return 0  
+    return sorted_values[0] / sorted_values[1] if sorted_values[0] / sorted_values[1] >= 1.4 else 0
 
 
 # quantify how much a distribution has changed over time or between groups
