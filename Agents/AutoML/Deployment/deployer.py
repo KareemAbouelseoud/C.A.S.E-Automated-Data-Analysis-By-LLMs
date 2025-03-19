@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field
 from typing import List,Literal
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain import hub
-from API.Requests import projectRequests
 
 class Feature(BaseModel):
     feature_name: str = Field(description="Name of the feature")

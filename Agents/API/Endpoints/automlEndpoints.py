@@ -5,7 +5,7 @@ from .dataItems import Train
 autoML_router = APIRouter()
 
 @autoML_router.post("/autoML/train", tags=["AutoML"])
-async def predict(item: Train):
+async def train(item: Train):
     return StreamingResponse(pipeline.automl(
         project_id=item.project_id,
         data_report=item.data_report,

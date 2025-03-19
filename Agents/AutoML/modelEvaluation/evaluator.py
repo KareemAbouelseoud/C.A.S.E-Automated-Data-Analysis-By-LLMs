@@ -8,7 +8,7 @@ import json
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','modelTraining')))
-from trainer import preprocess_without_cross_validation,merge_data
+from trainer import preprocess_without_cross_validation,merge_data,get_cached_pipeline,fetch_model
 import numpy as np
 def make_serializable(obj):
     """
@@ -57,8 +57,8 @@ async def evaluator_node(state):
     stratify = state['stratify'] if 'stratify' in state else False
     _,X_test, _, y_test=model_selection.train_test_split(X,y,test_size=state['test_size'],shuffle=state['shuffle'],stratify=y if stratify else None,random_state=42)
     
-    Xpreprocessing_pipeline=projectRequests.get_X_pipeline(project_id)
-    Ypreprocessing_pipeline=projectRequests.get_Y_pipeline(project_id)
+    Xpreprocessing_pipeline=await get_cached_pipeline(project_id,'X')
+    Ypreprocessing_pipeline=await get_cached_pipeline(project_id,'Y')
 
     X_test['row_id'] = range(len(X_test))
     y_test = pd.DataFrame({state['y_column']: y_test, 'row_id': range(len(y_test))})
@@ -85,10 +85,10 @@ async def evaluator_node(state):
     for model_dict in completed_models:
 
         model_name=model_dict['model']
-        model=projectRequests.get_model(project_id,model_name)
+        model=await fetch_model(project_id,model_name)
 
         if state['problem_type']=='classification':
-            metrics=classification_metrics(model,X_test,y_test)
+            metrics=classification_metrics(model,X_test,y_test,state['y_column'])
         else:
             metrics=regression_metrics(model,X_test,y_test)
 
@@ -101,15 +101,20 @@ async def evaluator_node(state):
         reports.append(report)
     reports=make_serializable(reports)
     
-    projectRequests.save_model_report(project_id,reports)
+    await projectRequests.save_model_report(project_id,reports)
     return {"evaluation_reports":json.dumps(reports)}
     
     #endregion
 
-def classification_metrics(model,X_test,y_true):
-    print(X_test)
+def classification_metrics(model,X_test,y_true,y_column):
     y_pred=model.predict(X_test)
-    print(y_true,y_pred)
+    print(y_pred,flush=True)
+    print(y_true,flush=True)
+
+    # If y_true is a 2D array, select the first column
+    if len(y_true.shape) > 1 and y_true.shape[1] > 1:
+        y_true = y_true[y_column]
+    
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average='weighted')
     recall = recall_score(y_true, y_pred, average='weighted')
@@ -142,12 +147,12 @@ def classification_metrics(model,X_test,y_true):
         "f1_score": f1,
         "roc_auc": roc_auc,
         "confusion_matrix": cm,
-        "precision_recall_curve": (precision_curve, recall_curve),
-        "roc_curve": (fpr, tpr),
+        "precision_recall_curve": [precision_curve, recall_curve],
+        "roc_curve": [fpr, tpr],
     }
     feat_importance=get_feature_importance(model,X_test,y_true,feature_names=X_test.columns.tolist())
     if feat_importance:
-        metrics['feature_importance']=json.dumps(make_serializable(feat_importance))
+        metrics['feature_importance']=make_serializable(feat_importance)
         
     return metrics
 

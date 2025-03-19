@@ -31,7 +31,8 @@ services:
       - ./Backend:/app
       - ./dataModels:/app/dataModels
     restart: always
-
+    environment:
+      - PYTHONUNBUFFERED=1
     env_file:
       - .env
 
