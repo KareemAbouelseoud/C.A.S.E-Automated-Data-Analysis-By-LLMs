@@ -44,13 +44,6 @@ class Project(BaseModel):
     dataset_description:Optional[str]= Field(default=None, alias="dataset_description")
     created_Date:Optional[datetime]= Field(default=None, alias="created_Date")
     thread_id: Optional[str] = Field(default=None, alias="thread_id")
-
-    #autoML
-    Xpreproceesing_pipeline: Optional[List[str]] = Field(default=[], alias="Xpreproceesing_pipeline")
-    Ypreproceesing_pipeline: Optional[List[str]] = Field(default=[], alias="Ypreproceesing_pipeline")
-    model: Optional[List[str]] = Field(default=None, alias="model")
-    model_report: Optional[str] = Field(default=None, alias="model_report")
-
     
     @classmethod
     def from_mongo(cls, document):

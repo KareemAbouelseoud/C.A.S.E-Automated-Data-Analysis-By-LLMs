@@ -17,6 +17,7 @@ from typing import List, Optional
 from bson.objectid import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
 from azure.storage.blob import BlobServiceClient
+import azure
 
 def make_serializable(obj):
     """
