@@ -4,6 +4,8 @@ from typing import Literal
 from langgraph.graph import END
 from langchain import hub
 from preprocessingTools import tools
+from API.Requests import projectRequests
+
 
 load_dotenv()
 CONFIGURATIONS={
@@ -15,7 +17,7 @@ llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURAT
 system_prompt = hub.pull("automl-preprocessor-caller").messages[0].prompt.template
 
 async def caller_node(state):
-    data_report=state['data_report']
+    # data_report=state['data_report']
     if state['preprocessing_mode']=='X':
         if 'X_preprocessing_messages' not in state or state['X_preprocessing_messages'] is None:
             old_messages= []
@@ -42,17 +44,15 @@ async def caller_node(state):
 
 
 
+async def should_continue(state) -> Literal['tools','__end__','planner_node']:
+    mode = state['preprocessing_mode']
+    
+    messages = state["X_preprocessing_messages"][-1] if mode == 'X' else state["Y_preprocessing_messages"][-1]
 
-async def should_continue(state)->Literal['tools','__end__','planner_node']:
-    if state['preprocessing_mode']=='X':
-        messages = state["X_preprocessing_messages"][-1]
-    else:
-        messages = state["Y_preprocessing_messages"][-1]
-
-    if messages.tool_calls!=[]:
+    if messages.tool_calls:
         return "tools"
     else:
-        if state['preprocessing_mode']=='X':
+        if mode == 'X':
             print("X Preprocessing Done, Moving to Y Preprocessing")
             return "planner_node"
-    return END
+    return '__end__'

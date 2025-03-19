@@ -3,12 +3,13 @@ from langchain_core.messages import ToolMessage
 from sklearn.impute import KNNImputer
 from typing import Annotated, Optional,Union,List
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder,FunctionTransformer,OrdinalEncoder,MinMaxScaler,StandardScaler,RobustScaler
-from sklearn.compose import ColumnTransformer,make_column_selector
 from functools import partial
 from helperFunctions import *
 from API.Requests import projectRequests
 from langchain_core.tools import tool,InjectedToolArg
 from sklearn.pipeline import Pipeline
+from pipeline_cache import get_cached_pipeline, update_cached_pipeline, remove_project_pipelines,save_model,fetch_model,remove_project_models # leave them
+
 
 @tool
 async def encode_categorical_feature(
@@ -253,27 +254,14 @@ async def tool_node(state):
 
     if state['preprocessing_mode']=='X':
         messages = state["X_preprocessing_messages"]
+        mode='X'
     else:
         messages = state['Y_preprocessing_messages']
+        mode='Y'
     # get the last message of this state
     last_message = messages[-1]
-    if state['preprocessing_mode']=='X':
-        
-        preprocessor=projectRequests.get_X_pipeline(state["project_id"])
-        if not preprocessor:
-            #If no ColumnTransformer exists, create a new one
-            droper=('Drop',Pipeline(steps=[]),state["X_columns"])
-
-            preprocessor=ColumnTransformer([droper],
-                                           remainder='passthrough',sparse_threshold=0)
-    else:
-        
-        preprocessor=projectRequests.get_Y_pipeline(state["project_id"])
-        if not preprocessor:
-            #If no ColumnTransformer exists, create a new one
-            droper=('Drop',Pipeline(steps=[]),state['y_column'])
-            preprocessor=ColumnTransformer([droper],
-                                            remainder='passthrough',sparse_threshold=0)
+    project_id = state["project_id"]
+    preprocessor = await get_cached_pipeline(project_id, mode, state)
 
     output_messages = []
     for tool_call in last_message.tool_calls:
@@ -282,7 +270,7 @@ async def tool_node(state):
         try:
             
             # Invoke the tool based on the tool call
-            tool_call["args"]["project_id"] = state["project_id"]
+            tool_call["args"]["project_id"] = project_id
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             
             if tool_result[0][:4]=='Drop':
@@ -335,10 +323,9 @@ async def tool_node(state):
                     status="error",
                 )
             )
-        
-    if state['preprocessing_mode']=='X':
-        projectRequests.save_X_pipeline(state["project_id"],preprocessor)
+            print(f"Error in tool_node: {e}")
+    await update_cached_pipeline(project_id,mode, preprocessor)
+    if mode=='X':
         return {'X_preprocessing_messages':output_messages}
     else:
-        projectRequests.save_Y_pipeline(state["project_id"],preprocessor)
         return {'Y_preprocessing_messages':output_messages}

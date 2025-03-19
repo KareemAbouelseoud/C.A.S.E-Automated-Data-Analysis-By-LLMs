@@ -11,7 +11,7 @@ from sklearn.utils import estimator_html_repr
 from joblib import Parallel, delayed
 from tqdm import tqdm
 from AutoML.Deployment.deployer import deployer_node
-
+from AutoML.Preprocessing.preprocessingTools import get_cached_pipeline,update_cached_pipeline,save_model,fetch_model
 classification_models = {
     "Logistic Regression": ("sklearn.linear_model", "LogisticRegression"),
     "Stochastic Gradient Descent (SGD) Classifier": ("sklearn.linear_model", "SGDClassifier"),
@@ -105,8 +105,10 @@ async def trainer_node(state):
     model_name = state["models"][models_completed]['model']
     model = get_model(model_name, problem_type)
 
-    Xpreprocessing_pipeline=projectRequests.get_X_pipeline(project_id)
-    Ypreprocessing_pipeline=projectRequests.get_Y_pipeline(project_id)
+    Xpreprocessing_pipeline=await get_cached_pipeline(project_id,'X')
+    Ypreprocessing_pipeline=await get_cached_pipeline(project_id,'Y')
+    print("Xpreprocessing_pipeline",Xpreprocessing_pipeline,flush=True)
+    print("Ypreprocessing_pipeline",Ypreprocessing_pipeline,flush=True)
     stratify=state['stratify'] if 'stratify' in state else False
 
     print(f"---Splitting---")
@@ -145,15 +147,18 @@ async def trainer_node(state):
             if X_Dropper:
                 Xpreprocessing_pipeline.transformers.insert(0,X_Dropper)
             Xpreprocessing_pipeline.transformers.append(('Final Imputer',final_imputer, X_train.columns))
-            projectRequests.save_X_pipeline(project_id,Xpreprocessing_pipeline)
+            await projectRequests.send_preprocessing_pipeline(project_id,'X',Xpreprocessing_pipeline)
+            await update_cached_pipeline(project_id,'X',Xpreprocessing_pipeline)
         
         if Ypreprocessing_pipeline:
             if Y_Dropper:
                 Ypreprocessing_pipeline.transformers.insert(0,Y_Dropper)
             
-            projectRequests.save_Y_pipeline(project_id,Ypreprocessing_pipeline)
+            await projectRequests.send_preprocessing_pipeline(project_id,'Y',Ypreprocessing_pipeline)
+            await update_cached_pipeline(project_id,'Y',Ypreprocessing_pipeline)
         
-        projectRequests.save_model(model_name,best_model,project_id) 
+        await projectRequests.save_model(project_id, model_name, best_model)
+        await save_model(project_id,best_model,model_name)
         print("---MODEL SAVED SUCCESSFULLY---")
         
         models=state['models']
