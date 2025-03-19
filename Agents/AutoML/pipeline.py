@@ -12,7 +12,8 @@ from AutoML.modelEvaluation.evaluator import evaluator_node
 from AutoML.HPO.tuner import tuner_node,tuner_decide_to_finish
 from AutoML.Explanation.explainer import explainer_node
 import json
-
+from AutoML.Preprocessing.preprocessingTools import remove_project_pipelines,remove_project_models
+from API.Requests import projectRequests
 
 CONFIGURATIONS= {
     'recursion_limit': 100,
@@ -85,6 +86,10 @@ graph = builder.compile()
 
 
 async def automl(project_id,data_report,mode,label,features=None,user_preferences=None):
+    print("Removing Project Pipelines and Models",flush=True)
+    await remove_project_pipelines(project_id)
+    await remove_project_models(project_id)
+    await projectRequests.delete_all_automl_data(project_id)
     print("AUTOML STARTED")
     async for chunk in graph.astream({'data_report':data_report,'project_id':project_id,'mode':mode,'X_columns':features,'y_column':label,'user_preferences':user_preferences},config=CONFIGURATIONS, stream_mode=['updates','values']):
         if chunk[0] == 'values':
