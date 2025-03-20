@@ -224,12 +224,8 @@ async def save_model_report(project_id, report):
                 params={'report': report_str}
             )
         except:
-            # Fallback to localhost
-            response = requests.post(
-                f"http://localhost:8005/project/{project_id}/AutoML/save-model-report",
-                params={'report': report_str}
-            )
-            
+            raise e
+        
         if response.status_code == 200:
             return response.json()
         else:

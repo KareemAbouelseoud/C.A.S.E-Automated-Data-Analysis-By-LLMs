@@ -289,9 +289,9 @@ async def tool_node(state):
                         print("Pipeline Exists")
                         #Pipeline Exists
                         for step in transformer[1].steps:
-                            print("Step Exists")
                             #Pipeline Exists AND Step Exists (Duplicate so skip)
                             if step[0]==tool_result[0]:
+                                print("Step Exists")
                                 break
                         else:
                             print("Step Does Not Exist")

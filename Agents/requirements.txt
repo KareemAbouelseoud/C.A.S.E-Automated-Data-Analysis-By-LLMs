@@ -16,3 +16,5 @@ langchain-openai
 lightgbm==4.6.0
 xgboost==2.1.4
 catboost==1.2.7
+statsmodels==0.14.4
+beautifulsoup4==4.13.3

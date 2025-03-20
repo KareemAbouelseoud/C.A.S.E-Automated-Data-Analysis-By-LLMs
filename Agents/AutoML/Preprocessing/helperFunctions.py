@@ -90,13 +90,17 @@ class NullValueTransformer(BaseEstimator, TransformerMixin):
         
         # For single series/column, calculate statistics
         if isinstance(X, pd.Series) or (isinstance(X, pd.DataFrame) and X.shape[1] == 1):
-            if self.strategy == 'mean':
-                self.fill_value = X.mean()
-            elif self.strategy == 'median':
-                self.fill_value = X.median()
-            elif self.strategy == 'value' and self.fill_value is None:
-                raise ValueError("fill_value must be specified when strategy is 'value'")
-        
+            try:
+                if self.strategy == 'mean':
+                    self.fill_value = X.mean()
+                elif self.strategy == 'median':
+                    self.fill_value = X.median()
+                elif self.strategy == 'value' and self.fill_value is None:
+                    raise ValueError("fill_value must be specified when strategy is 'value'")
+            
+            except Exception as e: 
+                print(X)
+                raise e
         return self
 
     def transform(self, X):
@@ -122,6 +126,7 @@ class NullValueTransformer(BaseEstimator, TransformerMixin):
                     if self.strategy in ['mean', 'median', 'value']:
                         X[self.feature_name] = X[self.feature_name].fillna(self.fill_value)
                 else:
+                    print(X)  
                     raise ValueError(f"Feature {self.feature_name} not found in data")
             
             return X

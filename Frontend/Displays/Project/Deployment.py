@@ -1,8 +1,9 @@
 import streamlit as st
 import json
+import uuid
 def display_feature_form(features):
     # Wrap everything in a form
-    with st.form("feature_form"):
+    with st.form(key=f"feature_form_{uuid.uuid4()}"):
         st.write("Fill out the form below:")
 
         # Determine number of columns to use per row
