@@ -8,6 +8,7 @@ import plotly.io as pio
 import hydralit_components as hc
 import json
 from .Deployment import display_feature_form
+import uuid
 
 
 
@@ -187,7 +188,7 @@ class AutoML:
                     if fig_data is not None:
                         with st.expander('Split Distribution'):
                             fig = pio.from_json(fig_data)
-                            st.plotly_chart(fig,use_container_width=True)
+                            st.plotly_chart(fig,use_container_width=True,key=f"split_distribution_{uuid.uuid4()}")
                         
 
             
@@ -320,18 +321,18 @@ class AutoML:
         with cols[0]:
             if 'confusion_matrix' in model_evaluation['metrics']:
                 with st.expander('Confusion Matrix'):
-                    st.plotly_chart(visualizationRequests.plot_confusion_matrix(model_evaluation['metrics']['confusion_matrix']),use_container_width=True)
+                    st.plotly_chart(visualizationRequests.plot_confusion_matrix(model_evaluation['metrics']['confusion_matrix']),use_container_width=True,key=f"confusion_matrix_{uuid.uuid4()}")
         if col_number==2:
             with cols[1]:
                 with st.expander('Feature Importance'):
-                    st.plotly_chart(visualizationRequests.plot_feature_importance(model_evaluation['metrics']['feature_importance']),use_container_width=True)
+                    st.plotly_chart(visualizationRequests.plot_feature_importance(model_evaluation['metrics']['feature_importance']),use_container_width=True,key=f"feature_importance_{uuid.uuid4()}")
         cols=st.columns(2)
         with cols[1]:
             with st.expander('Precision-Recall Curve'):
-                st.plotly_chart(visualizationRequests.plot_precision_recall_curve(model_evaluation['metrics']['precision_recall_curve']),use_container_width=True)
+                st.plotly_chart(visualizationRequests.plot_precision_recall_curve(model_evaluation['metrics']['precision_recall_curve']),use_container_width=True,key=f"precision_recall_curve_{uuid.uuid4()}")
         with cols[0]:
             with st.expander('ROC Curve'):
-                st.plotly_chart(visualizationRequests.plot_roc_curve(model_evaluation['metrics']['roc_curve']),use_container_width=True)
+                st.plotly_chart(visualizationRequests.plot_roc_curve(model_evaluation['metrics']['roc_curve']),use_container_width=True,key=f"roc_curve_{uuid.uuid4()}")
             
             
     def visualize_regression(self,model_evaluation):
