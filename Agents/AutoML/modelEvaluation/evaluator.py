@@ -78,19 +78,21 @@ async def evaluator_node(state):
     # Exclude object columns that might cause issues during prediction
     X_test = X_test.select_dtypes(exclude=['object'])
     
-    #endregion
 
+
+    #endregion
     #region Evaluating
     reports=[]
     for model_dict in completed_models:
 
         model_name=model_dict['model']
+        X_test_copy=X_test[model_dict['X_columns'] if 'X_columns' in model_dict else X_test.columns]
         model=await fetch_model(project_id,model_name)
 
         if state['problem_type']=='classification':
-            metrics=classification_metrics(model,X_test,y_test,state['y_column'])
+            metrics=classification_metrics(model,X_test_copy,y_test,state['y_column'])
         else:
-            metrics=regression_metrics(model,X_test,y_test)
+            metrics=regression_metrics(model,X_test_copy,y_test)
 
         report={
             "model":model_name,
