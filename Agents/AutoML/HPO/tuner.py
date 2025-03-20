@@ -7,7 +7,8 @@ import os
 import json
 from typing import Literal
 import re
-
+import httpx
+from bs4 import BeautifulSoup
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 load_dotenv()
 
@@ -19,19 +20,45 @@ CONFIGURATIONS={
 
 class Splitter(BaseModel):
     """ A Pydantic model to structure the output of the language model. """
-    n_iter: int = Field(description="Number of iterations for the hyperparameter search",default=None)
+    n_iter: int = Field(description="Number of iterations for the hyperparameter search this is A MUST FOR ATHENA MODE ",default=None)
     params_distribution: str = Field(description="The grid that will be searched for the best hyperparameters (in JSON string format. None should be null. There is no such parameter as 'none')")
 
+async def fetch_url_content(url: str) -> str:
+    """Fetches and returns text content from a URL asynchronously."""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, timeout=10)
+            response.raise_for_status()  # Raise an error for bad responses
+            soup = BeautifulSoup(response.text, 'html.parser')
+            content= soup.get_text(separator='')
+            left_index = f"class sklearn."
+            right_index = "Notes"
+            
+            # Split content by the left and right indexes
+            if left_index in content and right_index in content:
+                start = content.find(left_index)
+                end = content.find(right_index, start)
+                if end > start:
+                    extracted_content = content[start:end]
+                    return extracted_content
+                else:
+                    print(f"Could not extract content between {left_index} and {right_index}")
+            else:
+                print(f"Indexes not found in content")
+    except Exception as e:
+        print(f"Failed to fetch content from {url}: {e}")
+        return ""
+        
 async def tuner_node(state):
     data_report=state['data_report']
-    print("Tuner Node")
+    print("Tuner Node",flush=True)
     if 'models_completed' not in state:
         models_completed=0
     else:
         models_completed=state['models_completed']
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
     
-    message_content=f"Train Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']} \n Problem Type: {state['problem_type']} \n"
+    message_content=f"MODE: {state['mode']}\nTrain Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']} \n Problem Type: {state['problem_type']} \n"
     
     if state['problem_type']=="classification":
         message_content+=f"\n Stratified {state['stratify']}"
@@ -43,8 +70,15 @@ async def tuner_node(state):
     
 
     message_content+= f"THIS IS THE MODEL (IMPORTANT): {state['models'][models_completed]['model']}"
-
-
+    # Fetch additional knowledge from a provided URL
+    url = state['models'][models_completed].get('reference_url', None)
+    if url:
+        web_content = await fetch_url_content(url)
+        if web_content:
+            print(f"Additional Reference Data from {url}:\n{web_content}",flush=True)
+            message_content += f"\n\nAdditional Reference Data from {url}:\n{web_content}"
+    
+    
     messages=[
         {"role": "system", "content":system_prompt+f"\n\n Data Report:\n {data_report}" },
         {"role": "user", "content":message_content},
