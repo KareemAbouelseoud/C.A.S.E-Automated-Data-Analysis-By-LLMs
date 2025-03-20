@@ -14,7 +14,6 @@ async def get_cached_pipeline(project_id, mode, state=None):
     If not available, fetches from the backend or creates a new one.
     """
     # For debugging, cast the manager dict to a normal dict for a snapshot view.
-    print("Fetching Pipeline from Cache", dict(pipeline_cache), flush=True)
     key = f"{project_id}_{mode}"
     
     # Check if the pipeline is already in the shared cache
@@ -32,7 +31,6 @@ async def get_cached_pipeline(project_id, mode, state=None):
             # Create a new pipeline for mode Y
             droper = ('Drop', Pipeline(steps=[]), state['y_column'])
             pipeline = ColumnTransformer([droper], remainder='passthrough', sparse_threshold=0)
-        print("New pipeline created", flush=True)
     else:
         # If no pipeline was fetched and state is not provided, return None.
         return None
@@ -47,7 +45,6 @@ async def update_cached_pipeline(project_id, mode, pipeline):
     """
     key = f"{project_id}_{mode}"
     pipeline_cache[key] = pipeline
-    print("Pipeline updated in cache", dict(pipeline_cache), flush=True)
 
 async def remove_project_pipelines(project_id):
     """
@@ -94,7 +91,6 @@ async def save_model(project_id, model, model_type="default"):
     """
     key = f"{project_id}_model_{model_type}"
     model_cache[key] = model
-    print(f"Model {model_type} saved in cache for project {project_id}", flush=True)
     return True
 
 async def fetch_model(project_id, model_type="default"):
