@@ -263,7 +263,7 @@ class Dataset:
             with st.expander('Categorical Statistics'):
                 st.write(f"**Imbalance: {feature_details['imbalance']*100:.1f}%**")
                 with st.expander("Distribution"):
-                    for key,value in feature_details['word_counts'].items():
+                    for key,value in feature_details['value_counts_without_nan'].items():
                         st.write(f'**"{key}" \: {value}**')
                 with st.expander("**Chi Squared**"):
                         st.write(f"**Statistic:** {feature_details['chi_squared']['statistic']}")
