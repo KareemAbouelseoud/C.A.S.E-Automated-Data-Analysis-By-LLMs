@@ -5,16 +5,21 @@ load_dotenv()
 
 import pandas as pd
 from io import StringIO
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict,Field
 import os
 
 class InsightCard(BaseModel):
     """Structured output schema for insight cards."""
+    model_config = ConfigDict(arbitrary_types_allowed=True,populate_by_name=True) #Add this line
     insight_type: str = Field(description="Type of insight (e.g., distribution, trend, difference)",alias="insight_type")
     reason: str = Field(description="Analysis rationale",alias="reason")
     question: str = Field(description="Natural language question",alias="question")
     breakdown: str = Field(description="Grouping column name",alias="breakdown")
-    measure: str = Field(description="Aggregation function and target column",alias="measure")
+    measure: str = Field(description="target column",alias="measure")
+    aggregation: str = Field(description="Aggregation function (e.g., MIN, MAX, MEAN, COUNT, SUM, STD)",alias="aggregation")
+    resulted_df: pd.DataFrame = Field(default=pd.DataFrame(), description="Generated DataFrame", alias="resulted_df")
+    Score: float = Field(default=0.0, description="Score of the insight card", alias="score")
+    Considered: bool = Field(default=False, description="Whether the card was considered important", alias="considered")
 
 class InsightCards(BaseModel):
     """Container for multiple insight cards."""
@@ -56,7 +61,7 @@ def generate_qugen_prompt(state: Dict) -> str:
     Dataset Description:
     {state['description']}
     
-    Schema: {schema_list}
+    Schema: {state['schema']}
     
     Statistics:
     Numerical: { basic_stats['numerical'].to_markdown()}
@@ -67,7 +72,8 @@ def generate_qugen_prompt(state: Dict) -> str:
     REASON: [Analysis rationale]
     QUESTION: [Natural language question]
     BREAKDOWN: [Grouping column]
-    MEASURE: [Aggregation function]([Target column])
+    MEASURE: ([Target column])
+    AGGREGATION: [Aggregation function]
     
     **Generation Rules**
     1. Use different aggregations (MIN/MAX/MEAN/COUNT/SUM/STD)

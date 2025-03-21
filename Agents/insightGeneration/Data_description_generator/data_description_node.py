@@ -1,10 +1,4 @@
-from typing import Dict
-
 from pydantic import BaseModel, Field
-import pandas as pd
-from io import StringIO
-from langchain import hub
-from langsmith import Client
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 class DataDescription(BaseModel):
@@ -55,7 +49,7 @@ def data_description_generator_node(state):
 
     print(f"Current description:\n{response}\n")
     
+    schema = [col.lower() for col in df.columns.tolist()]
 
-
-    return {"description": response, "human_feedback": feedback}
+    return {"description": response, "human_feedback": feedback, "schema":schema }
 

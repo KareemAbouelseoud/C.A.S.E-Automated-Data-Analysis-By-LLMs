@@ -41,10 +41,13 @@ async def qugen_node(state: Dict) -> Dict:
 
         response = llm.invoke(messages)
         # Parse the response to extract the JSON data
-        insight_cards_containter = parse_qugen_response(response)
+        parsed_insight_cards = parse_qugen_response(response)
 
-            
-        return {"insight_cards": insight_cards_containter.insight_cards, "num_cards": int(os.getenv("Insight_cards_number"))}
+        if state.get("insight_cards") is None:
+            state["insight_cards"] = []
+        # Append the new insight cards to the existing list
+        state["insight_cards"].extend(parsed_insight_cards.insight_cards)
+        return {"insight_cards": state["insight_cards"], "num_cards": int(os.getenv("Insight_cards_number"))}
 
     except Exception as e:
         print(f"Error in qugen_node: {str(e)}")
@@ -79,4 +82,4 @@ async def should_continue(state) -> str:
             return "filteration_node"
     else:
         print("No recommendations found, returning to selector node")
-        return "selector_node"
+        return "qugen_node"

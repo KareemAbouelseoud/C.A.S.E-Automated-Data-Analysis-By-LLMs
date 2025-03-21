@@ -30,11 +30,6 @@ graph_builder.add_edge("filteration_node", END)
 checkpointer=MemorySaver()
 graph = graph_builder.compile(checkpointer=checkpointer)
 
-#TEST
-
-#mock dataset
-# file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
-# dataset = pd.read_csv(file_path)
 
 async def Start_Auto_InsightGen(project_id:str=None):
     df = await get_dataset(project_id)
