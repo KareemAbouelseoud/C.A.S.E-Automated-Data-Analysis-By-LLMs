@@ -14,6 +14,8 @@ from AutoML.Explanation.explainer import explainer_node
 import json
 from AutoML.Preprocessing.preprocessingTools import remove_project_pipelines,remove_project_models
 from API.Requests import projectRequests
+import operator
+from typing import Annotated
 
 CONFIGURATIONS= {
     'recursion_limit': 100,
@@ -45,7 +47,11 @@ class State(TypedDict):
     val_count: NotRequired[int] # Validation Count
 
     train_count: NotRequired[int] # Train Count
-    
+
+    #Feature Engineering
+    feature_engineering_logic: NotRequired[str] # Feature Engineering Steps Documented for the User and rest of Agents
+    successful_features: Annotated[list[str], operator.add]
+
     #Tuning
     n_iter: NotRequired[int] # Number of Iterations
     params_distribution: NotRequired[dict] # Parameters Distribution
