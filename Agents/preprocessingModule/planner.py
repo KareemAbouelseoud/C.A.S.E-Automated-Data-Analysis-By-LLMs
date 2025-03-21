@@ -11,8 +11,24 @@ from langchain import hub
 from dotenv import load_dotenv
 
 load_dotenv()
+#TODO: add prompt to langsmith hub
+system_prompt = """
+You are a preprocessing workflow planner. Analyze the requested preprocessing step and available tools to determine the processing path.
 
-system_prompt = hub.pull("preprocessing-planner").messages[0].prompt.template
+Instructions:
+1. Check if the requested operation matches any tool's purpose and parameters
+2. Verify the input data type matches tool requirements
+3. Consider error handling capabilities of each tool
+4. Select "caller" for tool-based execution or "coder" for custom code
+
+Response Format:
+<reasoning>
+- Step analysis
+- Tool match evaluation
+- Data compatibility check
+</reasoning>
+<decision>caller|coder</decision>"""
+#system_prompt = hub.pull("preprocessing-planner").messages[0].prompt.template
 
 class Planner(BaseModel):
     next: Literal["coder", "caller"]
