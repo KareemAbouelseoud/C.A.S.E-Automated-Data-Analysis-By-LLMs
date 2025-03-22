@@ -54,3 +54,8 @@ class ClassificationModel(BaseModel):
     recall: Optional[float] = None
     f1_score: Optional[float] = None
     roc_auc: Optional[float] = None
+
+class Predict(BaseModel):
+    model_name: str
+    data: List[dict]
+    feature_columns: Optional[List[str]] = None

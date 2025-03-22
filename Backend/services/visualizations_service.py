@@ -1,5 +1,5 @@
 from config import *
-import requests
+import httpx
 import plotly.express as px
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
@@ -85,16 +85,17 @@ class visualizationsService:
     
     async def update_Auto_Gen_Viz(self, project_id: str) -> Tuple[bool, List[str]]:
         try:
-            data_report=await self.project_service.fetch_data_report(project_id)
+            data_report = await self.project_service.fetch_data_report(project_id)
 
-            response=requests.post(f"{self.url}/visualizations/createDashboard",json={'data_report':data_report,'project_id':project_id})
-            serializable_visualizations=json.loads(response.json())['visualizations']
+            async with httpx.AsyncClient() as client:
+                response = await client.post(f"{self.url}/visualizations/createDashboard", json={'data_report': data_report, 'project_id': project_id})
+                serializable_visualizations = response.json()['visualizations']
             
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error from Agents Module: {e}")
         
-        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",len(serializable_visualizations))
-        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",type(serializable_visualizations))
+        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE", len(serializable_visualizations))
+        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE", type(serializable_visualizations))
         try:
             project = await self.project_repository.get_by_id(project_id) 
         except Exception as e:
