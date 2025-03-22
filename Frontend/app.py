@@ -52,11 +52,11 @@ class MultiPageApp():
         st.markdown("""
                     <style>
                     [data-testid="stLogo"] {
-                        width: 800;  /* Adjust width as needed */
+                        width: 500;  /* Adjust width as needed */
                         height: auto;  /* Maintain aspect ratio *
 
                 """, unsafe_allow_html=True) 
-        logo_path = os.path.join(os.path.dirname(__file__), "static", "CASE LOGO.png")
+        logo_path = os.path.join(os.path.dirname(__file__), "static", "CASE LOGO white.png")
         st.logo(
             logo_path,
         )

@@ -13,3 +13,4 @@ font = "sans serif"            # Choose from: 'serif', 'sans serif', or 'monospa
 runOnSave = true
 # you will need this if running docker on windows host:
 fileWatcherType = "poll"
+enableStaticServing = true

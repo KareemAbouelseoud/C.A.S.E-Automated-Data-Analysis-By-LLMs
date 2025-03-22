@@ -24,3 +24,8 @@ class Train(BaseModel):
     user_input:Optional[str]=None
     project_id:Optional[str]=None
     data_report:Optional[str]=None
+
+class PredictRequest(BaseModel):
+    model_id: str
+    data: List[dict]  # List of dict with column name and value
+    feature_columns: Optional[List[str]]=None

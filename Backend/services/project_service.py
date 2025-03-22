@@ -2,6 +2,7 @@
 import azure.core
 from config import *
 import uuid
+import asyncio
 
 def get_repo():
     repo = ProjectRepository()
@@ -25,8 +26,8 @@ class ProjectService:
         return projects
 
     async def create_project(self,file:UploadFile = File(...), user_id: str = Form(...), name: str = Form(...)) -> Project:
-        # 0. Check if user exist already
-        user = await self.userRepository.get_by_id(user_id) 
+        user,contents = await asyncio.gather(self.userRepository.get_by_id(user_id),file.read())
+
         if user==None:
             raise HTTPException(status_code=400, detail="Invalid user_Id Please provide an existing user id.")
         # 1. Validate file type (ensure it's a CSV)
@@ -36,8 +37,7 @@ class ProjectService:
         try:
             container_client = self.blob_service_client.get_container_client("datasets")
             
-            # Read the uploaded file content
-            contents = await file.read()
+            
             
             # Generate unique blob name
             blob_name = f"{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
@@ -66,11 +66,11 @@ class ProjectService:
             project = await self.project_repository.create(new_project)         
             if project:
                 user.Projects.append(str(project.id))
-                await self.userRepository.update(user_id,user)
+                asyncio.create_task(self.userRepository.update(user_id, user))
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error creating project and data to MongoDB: {e}")
         try:
-            await self.vizRepository.create(str(project.id),user_id=user_id)
+            asyncio.create_task(self.vizRepository.create(str(project.id), user_id=user_id))
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error creating project visualization and data to MongoDB: {e}")
 
@@ -88,25 +88,14 @@ class ProjectService:
 
     async def clearChatHistory(self, project_id: str,user_id:str) -> str:
         try:
-            user = await self.userRepository.get_by_id(user_id)  
+            user, project_data, project_viz = await asyncio.gather(
+            self.userRepository.get_by_id(user_id),
+            self.get_project(project_id),
+            self.vizRepository.get_by_project_id(project_id)
+            )
+            project = Project.from_dict(project_data)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Retrving user from MongoDB: {e} Maybe the user is deleted or not created yet")
-        try:
-            project = await self.get_project(project_id) 
-            project = Project.from_dict(project)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e} Maybe the project is deleted or not created yet")
-        try:
-            project_viz = await self.vizRepository.get_by_project_id(project_id) 
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Retrving project visualizations from MongoDB: {e}")
-            
-        if user==None:
-            raise HTTPException(status_code=400, detail="Invalid user_Id Please provide an existing user id.")
-        if project==None:
-            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
-        if project_viz==None:
-            raise HTTPException(status_code=400, detail="Project Visualization is not created in MongoDB")
+            raise HTTPException(status_code=500, detail=f"Error retrieving data from MongoDB: {e}")
         
         
         project.model_Chat=projectChat(last_update=datetime.now())
@@ -115,27 +104,22 @@ class ProjectService:
         project.thread_id=str(uuid.uuid4())
 
         try:
-            await self.project_repository.update(project_id, project)
-            
+            asyncio.gather(
+                 self.project_repository.update(project_id, project),
+                 self.vizRepository.update(project_id, project_viz)
+            )
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Updating project and data to MongoDB: {e}")
-        try:
-            await self.vizRepository.update(project_id, project_viz)
-            return project.thread_id
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Updating project and data to MongoDB: {e}")
-        
+            raise HTTPException(status_code=500, detail=f"Error updating project and visualization data in MongoDB: {e}")
     
     async def updateChatHistory(self, project_id: str, user_id:str,last_conv:list) -> bool:
         try:
-            user = await self.userRepository.get_by_id(user_id)  
+            user, project_data = await asyncio.gather(
+            self.userRepository.get_by_id(user_id),
+            self.get_project(project_id)
+            )
+            project = Project.from_dict(project_data)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Retrving user from MongoDB: {e}")
-        try:
-            project = await self.get_project(project_id)
-            project= Project.from_dict(project)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            raise HTTPException(status_code=500, detail=f"Error retrieving data from MongoDB: {e}")
             
         if user==None:
             raise HTTPException(status_code=400, detail="Invalid user_Id Please provide an existing user id.")
@@ -158,7 +142,7 @@ class ProjectService:
         project.streamlit_Chat.last_update=datetime.now()
         
         try:
-            await self.project_repository.update(project.id, project)
+            asyncio.create_task(self.project_repository.update(project.id, project))
             return True
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project's chat to MongoDB: {e}")
@@ -365,14 +349,16 @@ class ProjectService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Retrieving project from MongoDB: {e}")
             
-        if project == None:
-            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        if project is None:
+            raise HTTPException(status_code=400, detail="Invalid project_id. Please provide an existing Project id.")
         
+        delete_tasks = []
+
         # Delete model report
         try:
             report_blob_name = f"{project_id}_model_report.json"
             report_blob_client = self.blob_service_client.get_blob_client(container="model-reports", blob=report_blob_name)
-            report_blob_client.delete_blob(delete_snapshots="include")
+            delete_tasks.append(asyncio.to_thread(report_blob_client.delete_blob, delete_snapshots="include"))
         except azure.core.exceptions.ResourceNotFoundError:
             # If the blob doesn't exist, continue without error
             pass
@@ -384,7 +370,7 @@ class ProjectService:
             try:
                 pipeline_blob_name = f"{project_id}_{pipeline_type}preprocessing_pipeline.pkl"
                 pipeline_blob_client = self.blob_service_client.get_blob_client(container="pipelines", blob=pipeline_blob_name)
-                pipeline_blob_client.delete_blob(delete_snapshots="include")
+                delete_tasks.append(asyncio.to_thread(pipeline_blob_client.delete_blob, delete_snapshots="include"))
             except azure.core.exceptions.ResourceNotFoundError:
                 # If the blob doesn't exist, continue without error
                 pass
@@ -402,9 +388,12 @@ class ProjectService:
             # Delete each model blob
             for blob in model_blobs:
                 blob_client = self.blob_service_client.get_blob_client(container="models", blob=blob.name)
-                blob_client.delete_blob(delete_snapshots="include")
+                delete_tasks.append(asyncio.to_thread(blob_client.delete_blob, delete_snapshots="include"))
         except Exception as e:
             print(f"Warning: Failed to delete models: {e}")
+
+        # Run all delete tasks in parallel
+        await asyncio.gather(*delete_tasks)
         
         return True
     #endregion

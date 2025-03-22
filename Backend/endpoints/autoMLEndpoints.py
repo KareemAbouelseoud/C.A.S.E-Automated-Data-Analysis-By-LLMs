@@ -1,23 +1,49 @@
-from fastapi import APIRouter , UploadFile, File, Form,HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
-from dataItems import Train
-import requests
+from dataItems import Train, Predict
+import httpx
 from services.project_service import ProjectService
 import io
 project_service = ProjectService()
 
-autoML_router=APIRouter()
-url="http://Agents:8006"
+autoML_router = APIRouter()
+url = "http://Agents:8006"
 
-@autoML_router.post('/project/{project_id}/AutoML/train/',tags=["Project"])
-async def train(project_id:str,item: Train):
+@autoML_router.post('/project/{project_id}/AutoML/train/', tags=["Project"])
+async def train(project_id: str, item: Train):
     data = item.model_dump()
     data['project_id'] = project_id
-    data_report=await project_service.fetch_data_report(project_id)
+    data_report = await project_service.fetch_data_report(project_id)
     data['data_report'] = data_report
-    response = requests.post(url + "/autoML/train", json=data, stream=True)
-    return StreamingResponse(response.iter_content(chunk_size=4096), media_type="text/event-stream")
 
+    async def event_stream():
+        async with httpx.AsyncClient(timeout=None) as client:
+            async with client.stream("POST", url + "/autoML/train", json=data) as response:
+                async for chunk in response.aiter_bytes():
+                    yield chunk
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+@autoML_router.post('/project/{project_id}/AutoML/predict/', tags=["Project"])
+async def predict(project_id: str, item: Predict):
+    try:
+        async with httpx.AsyncClient() as client:
+            # Prepare the request data
+            request_data = {
+                "model_id": f"{project_id}_{item.model_name}", 
+                "data": item.data
+            }
+            # Only include feature_columns if it's not None
+            if item.feature_columns is not None:
+                request_data["feature_columns"] = item.feature_columns
+                
+            response = await client.post(url + "/autoML/predict", json=request_data)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @autoML_router.post('/project/{project_id}/AutoML/save-model', tags=["Project"])
 async def save_model(
     project_id: str, 

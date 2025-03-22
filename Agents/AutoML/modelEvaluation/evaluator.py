@@ -10,6 +10,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','modelTraining')))
 from trainer import preprocess_without_cross_validation,merge_data,get_cached_pipeline,fetch_model
 import numpy as np
+import asyncio
 def make_serializable(obj):
     """
     Convert an object to a serializable format.
@@ -50,15 +51,18 @@ async def evaluator_node(state):
     for model in state["models"]:
         if 'completed' in model:
             completed_models.append(model)
-    
-    df= await projectRequests.get_dataset(project_id)
+
+    # Run async operations concurrently
+    Xpreprocessing_pipeline, Ypreprocessing_pipeline, df = await asyncio.gather(
+        get_cached_pipeline(project_id, 'X'),
+        get_cached_pipeline(project_id, 'Y'),
+        projectRequests.get_dataset(project_id)
+    )
     X=df[state['X_columns']]
     y=df[state['y_column']]
     stratify = state['stratify'] if 'stratify' in state else False
     _,X_test, _, y_test=model_selection.train_test_split(X,y,test_size=state['test_size'],shuffle=state['shuffle'],stratify=y if stratify else None,random_state=42)
     
-    Xpreprocessing_pipeline=await get_cached_pipeline(project_id,'X')
-    Ypreprocessing_pipeline=await get_cached_pipeline(project_id,'Y')
 
     X_test['row_id'] = range(len(X_test))
     y_test = pd.DataFrame({state['y_column']: y_test, 'row_id': range(len(y_test))})
@@ -103,7 +107,8 @@ async def evaluator_node(state):
         reports.append(report)
     reports=make_serializable(reports)
     
-    await projectRequests.save_model_report(project_id,reports)
+    # Create an async task to save the model report without waiting for it to complete
+    asyncio.create_task(projectRequests.save_model_report(project_id, reports))
     return {"evaluation_reports":json.dumps(reports)}
     
     #endregion

@@ -263,8 +263,13 @@ class AutoML:
                 elif model_evaluation['problem_type']=='regression':
                     self.visualize_regression(model_evaluation)
                 with st.expander('Test Model'):
-                    display_feature_form(model_info['deployment'])
-
+                    display_feature_form(model_info['deployment'],model_info['model'],self.autoML_session['project_id'],feature_columns=model_info['X_columns'] if 'X_columns' in model_info else None,encoder_mapping=model_info['encoder_mapping'] if 'encoder_mapping' in model_info else None)
+                    if f"{model_info['model']}_predictions" in st.session_state:
+                        text=f"Prediction(s):"
+                        text+=str(st.session_state[f'{model_info["model"]}_predictions'])
+                        st.success(text)
+                        # del st.session_state[f"{model_info['model']}_predictions"]
+                        
                 st.write('\n---')
 
 
