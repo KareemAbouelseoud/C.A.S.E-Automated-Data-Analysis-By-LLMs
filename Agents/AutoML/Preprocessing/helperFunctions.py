@@ -5,7 +5,7 @@ from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator, TransformerMixin
 
 class CustomLabelEncoder(BaseEstimator, TransformerMixin):
-    def __init__(self,feature_name):
+    def __init__(self, feature_name):
         self.le = LabelEncoder()
         self.feature_name = feature_name
 
@@ -27,6 +27,10 @@ class CustomLabelEncoder(BaseEstimator, TransformerMixin):
     def get_feature_names_out(self, input_features=None):
         """Return the encoded feature name."""
         return np.array([self.feature_name]) if self.feature_name else np.array([])
+    
+    def get_mapping_dict(self):
+        """Returns a dictionary mapping numerical values to original labels."""
+        return {i: label for i, label in enumerate(self.le.classes_)}
         
         
 def datetime_transform(input_data, additional_features=None):
