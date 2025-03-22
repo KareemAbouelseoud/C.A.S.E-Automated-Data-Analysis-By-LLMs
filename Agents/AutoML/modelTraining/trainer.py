@@ -15,6 +15,7 @@ from AutoML.Deployment.deployer import deployer_node
 from AutoML.featureSelection.selector import LLMFeatureSelector,PreselectedFeatureSelector
 from AutoML.Preprocessing.preprocessingTools import get_cached_pipeline,update_cached_pipeline,save_model,fetch_model
 import numpy as np
+import asyncio
 classification_models = {
     "Logistic Regression": ("sklearn.linear_model", "LogisticRegression"),
     "Stochastic Gradient Descent (SGD) Classifier": ("sklearn.linear_model", "SGDClassifier"),
@@ -108,14 +109,14 @@ async def trainer_node(state):
     model_name = state["models"][models_completed]['model']
     model = get_model(model_name, problem_type)
 
-    Xpreprocessing_pipeline=await get_cached_pipeline(project_id,'X')
-    Ypreprocessing_pipeline=await get_cached_pipeline(project_id,'Y')
-    print("Xpreprocessing_pipeline",Xpreprocessing_pipeline,flush=True)
-    print("Ypreprocessing_pipeline",Ypreprocessing_pipeline,flush=True)
+    Xpreprocessing_pipeline, Ypreprocessing_pipeline, df = await asyncio.gather(
+        get_cached_pipeline(project_id, 'X'),
+        get_cached_pipeline(project_id, 'Y'),
+        projectRequests.get_dataset(project_id)
+    )
     stratify=state['stratify'] if 'stratify' in state else False
 
     print(f"---Splitting---")
-    df= await projectRequests.get_dataset(project_id)
     X=df[state['X_columns']]
     y=df[state['y_column']]
 
@@ -150,18 +151,21 @@ async def trainer_node(state):
             if X_Dropper:
                 Xpreprocessing_pipeline.transformers.insert(0,X_Dropper)
             Xpreprocessing_pipeline.transformers.append(('Final Imputer',final_imputer, X_train.columns))
-            await projectRequests.send_preprocessing_pipeline(project_id,'X',Xpreprocessing_pipeline)
-            await update_cached_pipeline(project_id,'X',Xpreprocessing_pipeline)
+            # Create async task to send preprocessing pipeline in the background
+            asyncio.create_task(projectRequests.send_preprocessing_pipeline(project_id, 'X', Xpreprocessing_pipeline))
+            asyncio.create_task(update_cached_pipeline(project_id,'X',Xpreprocessing_pipeline))
         
         if Ypreprocessing_pipeline:
             if Y_Dropper:
                 Ypreprocessing_pipeline.transformers.insert(0,Y_Dropper)
             
-            await projectRequests.send_preprocessing_pipeline(project_id,'Y',Ypreprocessing_pipeline)
-            await update_cached_pipeline(project_id,'Y',Ypreprocessing_pipeline)
+            # Create async task to send preprocessing pipeline in the background
+            asyncio.create_task(projectRequests.send_preprocessing_pipeline(project_id, 'Y', Ypreprocessing_pipeline))
+            asyncio.create_task(update_cached_pipeline(project_id, 'Y', Ypreprocessing_pipeline))
         
-        await projectRequests.save_model(project_id, model_name, best_model)
-        await save_model(project_id,best_model,model_name)
+        # Create async tasks to save the model both locally and on the server
+        asyncio.create_task(projectRequests.save_model(project_id, model_name, best_model))
+        asyncio.create_task(save_model(project_id, best_model, model_name))
         print("---MODEL SAVED SUCCESSFULLY---")
         
         models=state['models']
@@ -177,6 +181,11 @@ async def trainer_node(state):
         models[models_completed]['deployment'] = deployment_features
         if X_columns:
             models[models_completed]['X_columns'] = X_columns
+        
+        if Ypreprocessing_pipeline:
+            encoder_mapping = extract_encoder_from_ypreprocessing_pipeline(Ypreprocessing_pipeline)
+            if encoder_mapping:
+                models[models_completed]['encoder_mapping'] = encoder_mapping
 
         new_state ={
             'models_completed':models_completed+1,
@@ -355,9 +364,9 @@ def train_with_cross_validation(X_train,y_train,model,Xpreprocessing_pipeline,Yp
             Y_Dropper=None
 
         y_train=Ypreprocessing_pipeline.fit_transform(y_train)
-    
     else:
         Y_Dropper=None
+        
     X_train= pd.DataFrame(X_train,columns=X_columns)
     y_train= pd.DataFrame(y_train,columns=y_columns)
     X_train,y_train=merge_data(X_train,y_train,state['y_column'])
@@ -397,6 +406,7 @@ def train_with_cross_validation(X_train,y_train,model,Xpreprocessing_pipeline,Yp
             for param_name, param_value in state['params_distribution'].items():
                 prefixed_params[f"Model__{param_name}"] = param_value
             state['params_distribution'] = prefixed_params
+    
 
     if stratify:
         kf=model_selection.StratifiedKFold(n_splits=state['n_splits'], shuffle=state['shuffle'], random_state=42)
@@ -521,3 +531,24 @@ def decide_to_finish(state)->Literal["model_tuner_node", "model_evaluator_node"]
             return "model_evaluator_node"
     else:
         return "model_tuner_node"
+    
+
+def extract_encoder_from_ypreprocessing_pipeline(ypreprocessing_pipeline):
+    """
+    Iterates through the transformers in ypreprocessing_pipeline until it finds
+    a transformer named 'Encoder' at index 0.
+    
+    Args:
+        ypreprocessing_pipeline: The preprocessing pipeline for y
+        
+    Returns:
+        The encoder transformer if found, otherwise None
+    """
+    if ypreprocessing_pipeline is None:
+        return None
+        
+    for transformer in ypreprocessing_pipeline.transformers:
+        if transformer[0] == 'Encoder':
+            return transformer[1].get_mapping_dict()
+            
+    return None
