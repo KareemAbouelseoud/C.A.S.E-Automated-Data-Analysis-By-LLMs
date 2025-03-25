@@ -4,6 +4,7 @@ from streamlit_elements import elements,event,sync,lazy
 from types import SimpleNamespace
 from Requests import visualizationRequests
 import hydralit_components as hc
+from Style import buttons
 class Visualizations:
     def __init__(self):
         self.dimensions={
@@ -35,56 +36,33 @@ class Visualizations:
             for i in fig_dict:
                 return self.create(i)
     
-    def visualizationShown(self,placeholder):
-        placeholder.empty()
-        self.viz_session['viz']['Visualization']=True
+    def visualizationShown(self):
+        self.viz_session['viz']['Button_clicked']=True
         
     def run(self):
         if 'Visualization' not in self.viz_session['viz'] or not self.viz_session['viz']['Visualization']:
             cols=st.columns(3)
             with cols[1]:
                 st.markdown(
-                    """
-                    <style>
-                    .element-container:has(#button-after) + div button {
-                        justify-content: center;
-                        align-items: center;
-                        width: 100%; /* Ensure the container takes up full width */
-                        height: 100%; /* Optional: to ensure vertical centering */
-                        border-radius: 16px;
-                        background: rgba(0, 0, 0, 0.4);
-                        z-index: 2;
-                        box-shadow: 
-                            0 0 6px rgba(255, 255, 255, 0.3), 
-                            0 0 12px rgba(255, 255, 255, 0.2), 
-                            0 0 18px rgba(255, 255, 255, 0.2);
-                        color: white;
-                        padding: 30px;
-                        font-size: 50px;
-                        text-align: center;
-                        cursor: pointer;
-                        justify-content: center;
-                        align-items: center;
-                        margin-bottom: 20px; /* Adds vertical space if wrapping occurs */
-                        transition: box-shadow 0.3s ease; /* Smooth transition */
-                        border: none; /* Explicitly remove any border */
-
-                        }
-                        .element-container:has(#button-after) + div button:hover {
-                        box-shadow: 
-                            0 0 10px rgba(255, 255, 255, 0.6), 
-                            0 0 20px rgba(255, 255, 255, 0.5), 
-                            0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
-                    }
-                    </style>
-                    """,
+                    buttons.primary_button,
                     unsafe_allow_html=True,
                 )
                 st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
                 placeholder = st.empty()
-                placeholder.button("Begin Generation",on_click=self.visualizationShown,args=[placeholder])
+                placeholder.button("Begin Generation",on_click=self.visualizationShown)
+                if 'Button_clicked' in self.viz_session['viz'] and self.viz_session['viz']['Button_clicked']:
+                    placeholder2=st.empty()
+                    with placeholder2.container(border=True):
+                        df=self.viz_session['dataset_session']['raw_dataset']
+                        features = st.multiselect('Select the features to focus on. (Optional)',df.columns.to_list())
+                        if st.button("Generate"):
+                            if features:
+                                self.viz_session['viz']['features']=features
+                            self.viz_session['viz']['Visualization']=True
         
         if self.viz_session['viz']['Visualization']:
+            placeholder.empty()
+            placeholder2.empty()
             if "w" not in self.viz_session['viz']:
                 self.viz_session['viz']['board'] = Dashboard.Dashboard()
                 w = SimpleNamespace(
