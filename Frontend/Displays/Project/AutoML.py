@@ -9,13 +9,14 @@ import hydralit_components as hc
 import json
 from .Deployment import display_feature_form
 import uuid
-from Style import buttons
+from Style import buttons,general
 
 
 
 class AutoML:
 
     def __init__(self):
+        st.markdown(general.select_box,unsafe_allow_html=True)
         self.autoML_session = st.session_state['user_data']['projects']['current_project']
         if 'autoML' not in self.autoML_session:
             self.autoML_session['autoML']={}            

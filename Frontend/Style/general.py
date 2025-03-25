@@ -84,7 +84,7 @@ background='''
                     opacity: 1;
                     box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.5);
                 }
-                .st-emotion-cache-lr2bj0.eiemyj5 {
+                .st-emotion-cache-lr2bj0.eiemyj5,.st-emotion-cache-qcpnpn.eiemyj5 {
                     border-radius: 16px;
                     background: rgba(0,0,0,0.5);
                     z-index: 2;
@@ -98,3 +98,16 @@ background='''
                     }
                 </style>
                 '''
+select_box = """
+    <style>
+        .st-bt, .st-b7, .st-ea {
+            background-color: rgb(153 103 190 / 50%);
+        }
+    .st-hp, .st-gt {
+        background-color: rgb(71 51 103 / 85%);
+    }
+    .st-eu{
+        background-color: rgb(200 103 190 / 50%);
+        }
+    </style>
+"""
