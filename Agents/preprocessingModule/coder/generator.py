@@ -10,7 +10,7 @@ class PreprocessingCode(BaseModel):
     """Schema for preprocessing code solution"""
     description: str = Field(description="Brief description of the preprocessing approach")
     imports: str = Field(description="Required import statements")
-    code: str = Field(description="Python code implementing the preprocessing step")
+    preprocessing_logic: str = Field(description="Python code implementing the preprocessing step")
 
 CONFIG = {
     'model': "gemini-2.0-pro",
@@ -18,17 +18,24 @@ CONFIG = {
     'max_retries': 3
 }
 
+#TODO: further improvmements to the system prompt and add to langsmith hub
 llm = ChatGoogleGenerativeAI(model=CONFIG['model'], temperature=CONFIG['temperature'])
-system_prompt = """You are a data preprocessing expert. Generate Python code to perform the requested preprocessing step.
+system_prompt = """You are a data preprocessing code generation expert. Create an executable python code that:
 
-Guidelines:
-1. Use pandas and scikit-learn when possible
-2. Never modify the DataFrame index
-3. Handle missing values appropriately
-4. Preserve original data dimensions unless explicitly requested
-5. Add comments explaining key steps
+1. Processes: preprocessing_step given by the user
+2. Input: DataFrame 'df'
+3. Requirements:
+   - Maintain DataFrame structure
+   - Handle null values appropriately
+   - Preserve original indexes
+   - Add comments explaining key operations
+   - Include safety checks
 
-Return only the necessary imports and code. The code should modify the 'df' DataFrame in-place."""
+Constraints:
+- Use pandas/scikit-learn unless impossible
+- No external system calls
+- Validate column existence
+- Include error handling"""
 
 async def generator_node(state):
     """Generate preprocessing code using LLM"""
