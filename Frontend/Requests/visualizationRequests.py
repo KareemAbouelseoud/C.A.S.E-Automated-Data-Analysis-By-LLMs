@@ -34,10 +34,15 @@ def make_serializable(obj):
         return None
     else:
         return obj
-@st.cache_data
-def fetch_visualizations(project_id: str, features: list=None):
-    response = requests.get(url+f'/project/{project_id}/visualization/get_Auto_Gen',
-                                json={'features': features} if features else None)
+
+def fetch_visualizations(project_id: str):
+    response = requests.get(url+f'/project/{project_id}/visualization/get_Auto_Gen')
+    if response.status_code != 200:
+        return []
+    return json.loads(response.json())['visualizations']
+
+def create_visualizations(project_id: str, features: list=None):
+    response = requests.post(url+f'/project/{project_id}/visualization/update_Auto_Gen',json={'features':features} if features else {})
     if response.status_code != 200:
         return []
     return json.loads(response.json())['visualizations']
