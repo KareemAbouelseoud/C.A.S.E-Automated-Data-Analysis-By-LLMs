@@ -29,11 +29,6 @@ class Login:
         if 'user_id' not in st.session_state['user_data']:
             st.session_state['user_data']['user_id']=''
 
-    
-        
-
-    
-
     def __login(self):
         """
         Private method to authenticate the user based on username and password.

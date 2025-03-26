@@ -57,7 +57,7 @@ class SignUp:
         password, email, and a sign-up button.
         """
         st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>Welcome to C.A.S.E</h1>", unsafe_allow_html=True)
-        cols=st.columns(3)
+        cols=st.columns([1,2,1])
         with cols[1]:
             st.info("NOTE: When signing up, please write your responses in your own words. Using suggested text can sometimes lead to unexpected errors in Streamlit.")
 

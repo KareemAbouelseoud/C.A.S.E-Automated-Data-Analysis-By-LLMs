@@ -45,17 +45,17 @@ CONFIGURATIONS={
 
 system_prompt = hub.pull("viz-generation-designer").messages[0].prompt.template
 
-async def designer_node(data_report):
+async def designer_node(data_report,features=None):
     print("Designing visualizations")
     llm=ChatNVIDIA(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'],max_tokens=4096)
-
+    feature_request = f"The user has requested to focus on the following features: {features}, you can still add more features to the visualizations. but make it focused around the features mentioned." if features else ""
     prompt = ChatPromptTemplate.from_messages([
     ("system", system_prompt),
-    ("user", "Here is the data report, based on it write the visualizations needed by following the system instruction:\n\n {data_report}"),
+    ("user", "Here is the data report, based on it write the visualizations needed by following the system instruction:\n\n {data_report}\n\n\n"+feature_request),
     ])
 
     designer_chain = prompt | llm
-    response=await designer_chain.ainvoke({'data_report':data_report})
+    response=await designer_chain.ainvoke({'data_report':data_report,'features':features})
     try:
         start = response.content.find('[')
         end = response.content.rfind(']') + 1

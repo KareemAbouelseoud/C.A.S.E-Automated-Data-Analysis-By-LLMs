@@ -3,7 +3,7 @@ from Requests import databaseRequests,visualizationRequests
 import plotly.io as pio
 import streamlit_nested_layout # Leave it here, dont remove it.
 import hydralit_components as hc
-import pandas as pd
+from Style import general
 class Dataset:
     def __init__(self):
         self.dataset_session=st.session_state['user_data']['projects']['current_project']
@@ -71,50 +71,7 @@ class Dataset:
                 dataset=self.dataset_session['dataset_session']['processed_dataset']
             with st.container(border=True):
                     st.dataframe(dataset,use_container_width=True,)
-            st.markdown("""
-            <style>
-        .stExpander {
-            justify-content: center;
-                        align-items: center;
-                        width: 100%; /* Ensure the container takes up full width */
-                        height: 100%; /* Optional: to ensure vertical centering */
-                        border-radius: 16px;
-                        background: rgba(0, 0, 0, 0.4);
-                        z-index: 2;
-                        box-shadow: 
-                            0 0 6px rgba(255, 255, 255, 0.3), 
-                            0 0 12px rgba(255, 255, 255, 0.2), 
-                            0 0 18px rgba(255, 255, 255, 0.2);
-                        color: white;
-                        font-size: 50px;
-                        cursor: pointer;
-                        padding: 0px;
-                        justify-content: center;
-                        align-items: center;
-                        margin-bottom: 5px; /* Adds vertical space if wrapping occurs */
-                        transition: box-shadow 0.3s ease; /* Smooth transition */
-                        border: none; /* Explicitly remove any border */
-
-        }
-        .stExpander:hover {
-            box-shadow: 
-                0 0 10px rgba(255, 255, 255, 0.6), 
-                0 0 20px rgba(255, 255, 255, 0.5), 
-                0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
-        }
-        .st-emotion-cache-8s6zi3.enj44ev3:hover {
-            color: white;
-            text-shadow: 
-                0 0 10px rgba(255, 255, 255, 0.6), 
-                0 0 20px rgba(255, 255, 255, 0.5), 
-                0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
-        }
-        .e14lo1l1.st-emotion-cache-1b2ybts.ex0cdmw0:hover svg {
-            fill: white;
-            transition: fill 0.3s ease; /* Smooth transition */
-        }
-    </style>
-    """,unsafe_allow_html=True)
+            st.markdown(general.expander,unsafe_allow_html=True)
             cols=st.columns(2)
             with cols[0]:
                 with st.expander("Dataset Description"):

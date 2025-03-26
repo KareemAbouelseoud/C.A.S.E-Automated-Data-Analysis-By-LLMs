@@ -9,7 +9,7 @@ project_service = ProjectService()
 autoML_router = APIRouter()
 url = "http://Agents:8006"
 
-@autoML_router.post('/project/{project_id}/AutoML/train/', tags=["Project"])
+@autoML_router.post('/project/{project_id}/AutoML/train/', tags=["AutoML"])
 async def train(project_id: str, item: Train):
     data = item.model_dump()
     data['project_id'] = project_id
@@ -24,7 +24,7 @@ async def train(project_id: str, item: Train):
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
-@autoML_router.post('/project/{project_id}/AutoML/predict/', tags=["Project"])
+@autoML_router.post('/project/{project_id}/AutoML/predict/', tags=["AutoML"])
 async def predict(project_id: str, item: Predict):
     try:
         async with httpx.AsyncClient() as client:
@@ -44,7 +44,7 @@ async def predict(project_id: str, item: Predict):
                 raise HTTPException(status_code=response.status_code, detail=response.text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-@autoML_router.post('/project/{project_id}/AutoML/save-model', tags=["Project"])
+@autoML_router.post('/project/{project_id}/AutoML/save-model', tags=["AutoML"])
 async def save_model(
     project_id: str, 
     model_name: str,
@@ -73,7 +73,7 @@ async def save_model(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save model: {str(e)}")
 
-@autoML_router.post('/project/{project_id}/AutoML/save-model-report', tags=["Project"])
+@autoML_router.post('/project/{project_id}/AutoML/save-model-report', tags=["AutoML"])
 async def save_model_report(
             project_id: str,
             report:str,
@@ -94,7 +94,7 @@ async def save_model_report(
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Failed to save model report: {str(e)}")
 
-@autoML_router.post('/project/{project_id}/AutoML/save-preprocessing-pipeline/{pipeline_type}', tags=["Project"])
+@autoML_router.post('/project/{project_id}/AutoML/save-preprocessing-pipeline/{pipeline_type}', tags=["AutoML"])
 async def save_preprocessing_pipeline(
     project_id: str,
     pipeline_type: str,
@@ -132,7 +132,7 @@ async def save_preprocessing_pipeline(
         raise HTTPException(status_code=500, detail=f"Failed to save preprocessing pipeline: {str(e)}")
     
 
-@autoML_router.get('/project/{project_id}/AutoML/model', tags=["Project"])
+@autoML_router.get('/project/{project_id}/AutoML/model', tags=["AutoML"])
 async def get_model(project_id: str, model_name: str):
     try:
         # Fetch model data as raw bytes
@@ -147,7 +147,7 @@ async def get_model(project_id: str, model_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve model: {str(e)}")
     
-@autoML_router.get('/project/{project_id}/AutoML/model-report', tags=["Project"])
+@autoML_router.get('/project/{project_id}/AutoML/model-report', tags=["AutoML"])
 async def get_model_report(project_id: str):
     try:
         # Fetch model report data as raw bytes
@@ -161,7 +161,7 @@ async def get_model_report(project_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve model report: {str(e)}")
 
-@autoML_router.get('/project/{project_id}/AutoML/preprocessing-pipeline/{pipeline_type}', tags=["Project"])
+@autoML_router.get('/project/{project_id}/AutoML/preprocessing-pipeline/{pipeline_type}', tags=["AutoML"])
 async def get_preprocessing_pipeline(project_id: str, pipeline_type: str):
     try:
         # Fetch preprocessing pipeline data as raw bytes
@@ -178,7 +178,7 @@ async def get_preprocessing_pipeline(project_id: str, pipeline_type: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve preprocessing pipeline: {str(e)}")
     
-@autoML_router.delete('/project/{project_id}/AutoML/delete-all', tags=["Project"])
+@autoML_router.delete('/project/{project_id}/AutoML/delete-all', tags=["AutoML"])
 async def delete_all_automl_data(project_id: str):
     """
     Delete all AutoML data for a specific project

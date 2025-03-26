@@ -1,8 +1,6 @@
 import time
-import datetime
 import streamlit as st
 import sys
-from pathlib import Path
 import uuid
 import os
 import json
@@ -10,59 +8,21 @@ import plotly.graph_objects as go
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-# from req import clear_history,get_st_history,create_new_chat,update_user_st_history,get_model_history,chat,recommender
 from Requests import chatbotRequests,visualizationRequests
-from dataModels.visualization import visualizations,ChatViz
+from dataModels.visualization import ChatViz
 from streamlit_cookies_controller import CookieController
+from Style import buttons,chatbot
 controller=CookieController()
 
 class Chatbot:
     def __init__(self):  
         self.chatbot_session=st.session_state['user_data']['projects']['current_project']
-        try:
-            print("at the beginning of chatbot",self.chatbot_session['chatbot']['messages'])
-        except:
-            pass
 
         if 'chatbot' not in self.chatbot_session:
             self.chatbot_session['chatbot']={}
         self.logo_path = "/app/static/ZEUS.png"
-        st.markdown(
-    """
-    <style>
-    div[data-testid="stChatInput"] textarea {
-        box-sizing: border-box;
-        bottom: 5px ;
-        position: fixed;
-        z-index: 1000; 
-    }
-    div[data-baseweb="textarea"] {
-        box-sizing: border-box;
-        bottom: 5px ;
-        position: fixed;
-        z-index: 1000;
-        background-color: #222222; 
-    }
-    button[data-testid="stChatInputSubmitButton"] {
-        bottom: 5px ;
-        position: fixed;
-        z-index: 1000;
-    }
-    .st-emotion-cache-1pqiyj1.ekr3hml7 {
-        background: url("app/static/imagemeshgradient.png") no-repeat center center fixed;
-        background-position: center 200px;
-            }
-    
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-        st.markdown( f"""
-        <style>
-        div.stButton > button:first-child {{ border-radius:15px 15px 15px 15px;}}
-
-        <style>
-        """, unsafe_allow_html=True)
+        st.markdown(chatbot.text_box,unsafe_allow_html=True)
+        st.markdown(buttons.rounded_button, unsafe_allow_html=True)
         
         self.intialize_chat_history()
         self.setup_app_interface()
@@ -81,79 +41,15 @@ class Chatbot:
 
         st.markdown("<h1 style='text-align: center; font-size: 100px;'>ZEUS</h1>", unsafe_allow_html=True)
         with st.columns(19)[-1]:
-            st.markdown("""
-                <style>
-                .element-container:has(#button-back) + div button {
-                    justify-content: center;
-                    align-items: center;
-                    width: 100%; /* Ensure the container takes up full width */
-                    height: 100%; /* Optional: to ensure vertical centering */
-                    border-radius: 16px;
-                    background: rgba(0, 0, 0, 0.4);
-                    z-index: 2;
-                    box-shadow: 
-                        0 0 6px rgba(255, 255, 255, 0.3), 
-                        0 0 12px rgba(255, 255, 255, 0.2), 
-                        0 0 18px rgba(255, 255, 255, 0.2);
-                    color: white;
-                    font-size: 50px;
-                    text-align: center;
-                    cursor: pointer;
-                    padding: 0px;
-                    justify-content: center;
-                    align-items: center;
-                    margin-bottom: 5px; /* Adds vertical space if wrapping occurs */
-                    transition: box-shadow 0.3s ease; /* Smooth transition */
-                    border: none; /* Explicitly remove any border */
-
-                    }
-                    .element-container:has(#button-back) + div button:hover {
-                    box-shadow: 
-                        0 0 10px rgba(255, 255, 255, 0.6), 
-                        0 0 20px rgba(255, 255, 255, 0.5), 
-                        0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
-                }
-                </style>
-            """,unsafe_allow_html=True)
+            st.markdown(buttons.back_button,unsafe_allow_html=True)
             st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
-            st.button('← Back',on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
-        # Apply CSS to all elements with the class `.st-emotion-cache-4oy321`
-        st.markdown("""
-            <style>
-            .st-emotion-cache-4oy321 {
-                border : 1px solid transparent;
-                border-radius : 10px
-                color: #ffffff;
-                padding: 10px 10px;
-                margin: 0px 7px;
-                min-width: 10%
-                width:auto;
-                max-width: 90%;
-                text-align: left;
-                background: rgba(50, 50, 50, 0.4);
-            }
-            </style>
-        """, unsafe_allow_html=True)
+            st.button('',icon=":material/arrow_back:",on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
 
-        st.markdown("""
-            <style>
-            .st-emotion-cache-janbn0 { 
-                        display: flex;
-                        margin: 5px;
-                        min-width: 10%;
-                        max-width: 70%;
-                        flex-direction: row-reverse;
-                        font-family: "Source Sans Pro", sans-serif, "Segoe UI", "Roboto", sans-serif;
-                        border: 1px solid transparent;
-                        padding: 5px 10px;
-                        color: white;
-                        border-radius: 20px;
-                        text-align: right;
-                        margin-left: auto; /* Align to the right */
-                    }
-            </style>
-        """, unsafe_allow_html=True)
+        st.markdown(chatbot.assistant_messages, unsafe_allow_html=True)
+        st.markdown(chatbot.user_messages, unsafe_allow_html=True)
 
+        st.sidebar.markdown(buttons.sidebar_button,unsafe_allow_html=True,)
+        st.sidebar.markdown('<span id="button-sidebar"></span>', unsafe_allow_html=True)
         if st.sidebar.button('Clear History'):
             self.chatbot_session['thread_id']=chatbotRequests.clear_history(self.chatbot_session['project_id'],controller.get("user_id"))
             self.chatbot_session['chatbot']['messages']=[]
@@ -161,7 +57,6 @@ class Chatbot:
             if 'recommendation' in self.chatbot_session['chatbot']:
                 self.chatbot_session['chatbot']['recommendation']=None
             self.intialize_chat_history()
-            print("History Cleared")
             st.rerun()
         self.display_chat_history()
         self.accept_user_input()
@@ -172,7 +67,6 @@ class Chatbot:
         """
         Displays the conversation history, showing each message sent by the user and the assistant.
         """
-        print("Before Displaying Chat History",self.chatbot_session['chatbot']['messages'])
         for message in self.chatbot_session['chatbot']['messages']:
             if message['role'] == 'user':
                 with st.chat_message(message["role"]):
@@ -184,7 +78,7 @@ class Chatbot:
                 with st.chat_message(message["role"],avatar='📈'):
                     for visual in message['content']:
                         self.get_visuals(visual)
-        print("After Displaying Chat History",self.chatbot_session['chatbot']['messages'])
+
     def save_plot(self,fig):        
         pass  
     
@@ -204,7 +98,7 @@ class Chatbot:
                 new_chat_viz = ChatViz(viz=[serializable_visuals])
                 visualizationRequests.save_chat_visualizations(self.chatbot_session['project_id'], new_chat_viz)
                 self.chatbot_session['chatbot']['messages'].append({'role':'visualizer','content':[visuals]})
-                print("VISUALS SAVED")
+
         except Exception as e:
             print(f"Error in get_visuals: {str(e)}")
             if isinstance(visuals, dict):
@@ -226,7 +120,6 @@ class Chatbot:
         """
         Accepts user input and processes the query. It generates responses and handles recommendations.
         """
-        print('Before Accepting User Input',self.chatbot_session['chatbot']['messages'])
         if prompt := st.chat_input("Enter your query:"):
             self.chatbot_session['chatbot']['new']=False
             sanitized_input = self.sanitize_user_input(prompt)
@@ -255,8 +148,6 @@ class Chatbot:
 
         if len(self.chatbot_session['chatbot']['messages'])==1:
             self.recommend()
-            pass
-        print('After Accepting User Input',self.chatbot_session['chatbot']['messages'])
  
 
     def generate_response(self, user_input):
@@ -274,7 +165,6 @@ class Chatbot:
                 error_message = f"An error occurred: {str(e)}"
                 st.warning(error_message)
                 self.display_assistant_response("Sorry,I don't have this functionality, Can't provide an answer.\n Ask another question please.",stream=False)
-        print("After Generating Response",self.chatbot_session['chatbot']['messages'])
 
     def sanitize_user_input(self, user_input):
         # Remove any potentially harmful characters or sequences        
@@ -290,7 +180,6 @@ class Chatbot:
         """
         Display the output of claude
         """
-        print("Before Displaying Assistant Response",self.chatbot_session['chatbot']['messages'])
 
         with st.chat_message("assistant", avatar=self.logo_path):
             visuals=[]
@@ -305,7 +194,6 @@ class Chatbot:
             with st.chat_message('visualizer',avatar='📈'):
                 for visual in visuals:
                     self.get_visuals(visual,save=True)
-        print("After Displaying Assistant Response",self.chatbot_session['chatbot']['messages'])
     
 
 
@@ -320,10 +208,8 @@ class Chatbot:
             self.chatbot_session['chatbot']['Bot_Clicked']=False
             first_message = "Good Morning. I am Zeus, a Smart Assistant for C.A.S.E. How can I assist you today?"
             self.chatbot_session['chatbot']['messages']=[{"role": "assistant", "content": first_message}]
-            print("FETCHED HISTORY")
             self.chatbot_session['chatbot']['messages'].extend(chatbotRequests.get_streamlit_chat_history(self.chatbot_session['project_id']))
-        else:
-            print("HISTORY ALREADY EXISTS")
+
     def stream_ans(self,response,visuals):
         """
     Response of claude is streamed so this function handles it
@@ -382,12 +268,5 @@ class Chatbot:
                 st.button(recommendations[i],on_click=self.recommend_response,args=[recommendations[i]])
     
 
-    # def checkQueryRequest(self,prompt):
-    #     classifier = pipeline("zero-shot-classification",model="facebook/bart-large-mnli")
-    #     sequence_to_classify = prompt
-    #     candidate_labels = ['Question','Table','Plot']
-    #     result = classifier(sequence_to_classify, candidate_labels)
-    #     print(result)
-    # print("HISTORY: ",messages)
 if 'project_id' in st.session_state['user_data']['projects']['current_project'] and st.session_state['user_data']['projects']['current_project']['project_id']!=None:
     Chatbot()

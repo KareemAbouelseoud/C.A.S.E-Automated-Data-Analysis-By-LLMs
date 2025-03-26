@@ -20,7 +20,6 @@ class Explainer(BaseModel):
 
 
 async def explainer_node(input_data):
-    print("Designing visualizations")
     llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'],max_tokens=4096)
 
     messages=[{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': input_data}]

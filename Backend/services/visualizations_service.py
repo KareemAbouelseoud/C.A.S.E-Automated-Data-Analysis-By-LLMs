@@ -83,15 +83,30 @@ class visualizationsService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project Visualizations and data to MongoDB: {e}")
     
-    async def update_Auto_Gen_Viz(self, project_id: str) -> Tuple[bool, List[str]]:
+    async def update_Auto_Gen_Viz(self, project_id: str,features: List[str]=None) -> Tuple[bool, List[str]]:
         try:
             data_report = await self.project_service.fetch_data_report(project_id)
+            #TODO: ADD Polling logic to check if the visualization is ready or not
+            async with httpx.AsyncClient(timeout=1000) as client:
+                # Create payload with features if they are provided
+                payload = {'data_report': data_report, 'project_id': project_id}
+                if features is not None:
+                    payload['features'] = features
+                
+                response = await client.post(f"{self.url}/visualizations/createDashboard", json=payload)
+                print("Response Status Code:", response.status_code)
+                print("Response Content:", response.text)
+                if response.status_code == 200:
+                    if isinstance(response.json(),str):
+                        response=json.loads(response.json())
+                    else:
+                        response=response.json()
+                    serializable_visualizations = response['visualizations']
+                # Log response for debugging
 
-            async with httpx.AsyncClient() as client:
-                response = await client.post(f"{self.url}/visualizations/createDashboard", json={'data_report': data_report, 'project_id': project_id})
-                serializable_visualizations = response.json()['visualizations']
             
         except Exception as e:
+            raise e
             raise HTTPException(status_code=500, detail=f"Error from Agents Module: {e}")
         
         print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE", len(serializable_visualizations))
@@ -99,6 +114,7 @@ class visualizationsService:
         try:
             project = await self.project_repository.get_by_id(project_id) 
         except Exception as e:
+            raise e
             raise HTTPException(status_code=500, detail=f"Error Retriving project from MongoDB: {e}")
         
         if project==None:
@@ -106,11 +122,13 @@ class visualizationsService:
         try:
             project_Visualizations=await self.viz_repository.get_by_project_id(project_id)
         except Exception as e:
+            raise e
             raise HTTPException(status_code=500, detail=f"Error Retriving project Visualizations and data to MongoDB: {e}")
         project_Visualizations.Auto_generated_viz=serializable_visualizations
         try:
             return (await self.viz_repository.update(project_id, project_Visualizations),serializable_visualizations)
         except Exception as e:
+            raise e
             raise HTTPException(status_code=500, detail=f"Error Updating project Visualizations and data to MongoDB: {e}")
     #endregion
     
