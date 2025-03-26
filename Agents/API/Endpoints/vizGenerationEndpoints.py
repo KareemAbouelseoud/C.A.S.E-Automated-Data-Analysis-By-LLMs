@@ -21,5 +21,6 @@ async def update_Auto_Gen_Viz(item: createDashboard):
     """ 
     data_report=item.data_report
     project_id=item.project_id
-    serializable_visualizations=await services.createVisualizations(data_report,project_id)
+    features=item.features
+    serializable_visualizations=await services.createVisualizations(data_report,project_id,features)
     return json.dumps({'visualizations': serializable_visualizations}, allow_nan=True)

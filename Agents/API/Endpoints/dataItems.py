@@ -8,6 +8,7 @@ from pydantic import BaseModel
 class createDashboard(BaseModel):
     project_id: str
     data_report: str
+    features: Optional[List[str]]=None
 
 class Chat(BaseModel):
     project_id:Optional[str]=None
