@@ -75,8 +75,12 @@ builder.add_edge('coder',END)
 
 viz_graph = builder.compile()
     
-async def generate_visualizations(data_report,project_id):
-    response= await designer_node(data_report)
+async def generate_visualizations(data_report,project_id,features=None):
+    while True:
+        response= await designer_node(data_report,features)
+        if response:
+            break
+
     visualizations=[]
     for idx,design in  enumerate(response):
         try:
