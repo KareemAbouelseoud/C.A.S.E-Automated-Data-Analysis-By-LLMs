@@ -83,12 +83,13 @@ class Visualizations:
             self.viz_session['viz']['Visualization']=False
             self.viz_session['viz']['Button_clicked']=False
             st.rerun()
+            
     def generate_visuals(self,w):
             with hc.HyLoader("",hc.Loaders.pulse_bars,index=[0]):
                 features=[]
                 if 'features' in self.viz_session['viz']:
                     features=self.viz_session['viz']['features']
-                vizs=visualizationRequests.fetch_visualizations(self.viz_session['project_id'],features)
+                vizs=visualizationRequests.create_visualizations(self.viz_session['project_id'],features)
                 w.visualizations=[]
                 for i in vizs:
                     w.visualizations.append(self.create((i)))
