@@ -732,3 +732,5 @@ async def tool_node(state)->Literal["caller", "__end__"]:
             )
             return {'next':'caller','messages':output_messages}
 
+async def tool_brancher(state)-> Literal["caller", "__end__"]:
+    return state['next']

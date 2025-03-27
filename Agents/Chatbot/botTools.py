@@ -3,7 +3,7 @@ import os
 from langchain_core.tools import tool
 from langchain_core.messages import ToolMessage
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from vizGeneration.pipeline import viz_graph
+from vizGeneration.pipeline import coder_pipeline,caller_pipeline,planner_node
 from typing import Annotated
 
 @tool
@@ -20,8 +20,13 @@ async def visualizer(
         list: A list containing a message and the visualization data. If the visualization is generated, the message informs the user and includes the visualization data. Otherwise, the message informs the user that no visualization was generated and suggests trying again later.
 
     """
-    print(f"VISUALIZER IS BEING CALLED WITH request: {visualization_request}") 
-    graph_response=await viz_graph.ainvoke({'data_report':str(data_report),'messages':[{"role":"human","content":visualization_request}],'project_id':project_id})
+    print(f"VISUALIZER IS BEING CALLED WITH request: {visualization_request}")
+    response=await planner_node(visualization_request)
+    if 'coder' in response:
+        graph_response = await coder_pipeline.ainvoke({'project_id':project_id,'messages':[{"role":"human","content":f"Here is the design needed {visualization_request}"}], 'data_report':data_report})
+    else:
+        graph_response = await caller_pipeline.ainvoke({'project_id':project_id,'messages':[{"role":"human","content":f"Here is the design needed {visualization_request}, and here is the data report crucial for the naming convention: {data_report}"}]})
+
     if graph_response['visualization']:
         return ['YOU MUST Inform the user that the visualization has been generated',graph_response['visualization']]
     else:
@@ -29,8 +34,7 @@ async def visualizer(
     
 
 
-tools = [visualizer,
-         ]
+tools = [visualizer]
 
 
 async def tool_node(state):
