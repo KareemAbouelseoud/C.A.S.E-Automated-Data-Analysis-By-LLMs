@@ -78,4 +78,4 @@ async def planner_node(design):
                     return caller,coder
     else:
         response= await llm.with_structured_output(Planner).ainvoke(messages)
-        return response.next_list
+        return response.next
