@@ -30,3 +30,15 @@ def predict(project_id, model_name, data,feature_columns):
         print(f"Failed to predict: HTTP {response.status_code}")
         print(f"Response: {response.text}",flush=True)
         return None
+    
+def fetch_evaluation_report(project_id):
+    response=requests.get(url+f'/project/{project_id}/AutoML/model-report/')
+    if response.status_code==200:
+        if response.json()['model_report']:
+            return json.loads(response.json()['model_report'])['report']
+        else:
+            return None
+    else:
+        print(f"Failed to fetch evaluation report: HTTP {response.status_code}")
+        print(f"Response: {response.text}",flush=True)
+        return None

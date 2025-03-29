@@ -1,4 +1,3 @@
-
 import azure.core
 from config import *
 import uuid
@@ -110,6 +109,7 @@ class ProjectService:
             )
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error updating project and visualization data in MongoDB: {e}")
+        return project.thread_id
     
     async def updateChatHistory(self, project_id: str, user_id:str,last_conv:list) -> bool:
         try:
@@ -205,54 +205,50 @@ class ProjectService:
     #endregion
 
     #region AutoML
-    async def save_model_report(self, project_id: str, report: str) -> bool:
+    async def save_model_report(self, project_id: str, report: dict) -> bool:
         try:
             project = await self.project_repository.get_by_id(project_id)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            if project is None:
+                raise HTTPException(status_code=400, detail="Invalid project_id. Please provide an existing Project id.")
             
-        if project==None:
-            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
-        
+            container_client = self.blob_service_client.get_container_client("model-reports")
+            blob_name = f"{project_id}_model_report.json"
 
-        container_client = self.blob_service_client.get_container_client("model-reports")
-        
-        # Generate unique blob name
-        blob_name = f"{project_id}_model_report.json"
-        
-        # Parse and validate the report as JSON, then convert back to formatted string
-        try:
-            corrected_report = report.replace("'", "\"")
-            print(corrected_report,flush=True)
-            report_json = json.loads(corrected_report)
-            formatted_report = json.dumps(report_json)
-            report_bytes = formatted_report.encode('utf-8')
-        except json.JSONDecodeError as e:
-            raise HTTPException(status_code=400, detail=f"Invalid JSON report: {e}")
-        
-        try:
-            # Upload to blob storage
-            blob_client = container_client.upload_blob(name=blob_name, data=report_bytes, overwrite=True)
+            try:
+                # Ensure report is properly formatted JSON
+                report_json = json.loads(json.dumps(report))  # ✅ Validate JSON
+                formatted_report = json.dumps(report_json, indent=4)
+                report_bytes = formatted_report.encode('utf-8')
 
-        except:
-            raise HTTPException(status_code=500, detail="Error uploading model report to blob storage.")
-        
+                # Upload to blob storage
+                container_client.upload_blob(name=blob_name, data=report_bytes, overwrite=True)
+                return True
+
+            except json.JSONDecodeError as e:
+                raise HTTPException(status_code=400, detail=f"Invalid JSON report: {e}")
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error uploading model report to blob storage: {str(e)}")
+    
     async def fetch_model_report(self, project_id: str) -> Optional[str]:
         try:
             project = await self.project_repository.get_by_id(project_id)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error Retrving project from MongoDB: {e}")
+            raise HTTPException(status_code=500, detail=f"Error Retrieving project from MongoDB: {e}")
             
         if project==None:
-            raise HTTPException(status_code=400, detail="Invalid project`_id Please provide an existing Project id.")
-        
+            raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+
         model_report=f"{project_id}_model_report.json"
-        
+
         blob_client=self.blob_service_client.get_blob_client(container="model-reports", blob=model_report)
         try:
             model_report = blob_client.download_blob().readall().decode('utf-8')
-        except:
-            raise HTTPException(status_code=500, detail="Error downloading model report from blob storage.")
+        except azure.core.exceptions.ResourceNotFoundError:
+            # Return None if the blob doesn't exist
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error downloading model report from blob storage: {str(e)}")
         return model_report
     
     async def save_preprocessing_pipeline(self, project_id: str,pipeline_type:str ='X',contents=None )-> bool:
@@ -393,7 +389,6 @@ class ProjectService:
             print(f"Warning: Failed to delete models: {e}")
 
         # Run all delete tasks in parallel
-        await asyncio.gather(*delete_tasks)
-        
+        await asyncio.gather(*delete_tasks,return_exceptions=True)
         return True
     #endregion

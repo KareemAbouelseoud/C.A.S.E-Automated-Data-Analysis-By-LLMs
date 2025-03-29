@@ -100,14 +100,5 @@ background='''
                 '''
 select_box = """
     <style>
-        .st-bt, .st-b7, .st-ea {
-            background-color: rgb(153 103 190 / 50%);
-        }
-    .st-hp, .st-gt {
-        background-color: rgb(71 51 103 / 85%);
-    }
-    .st-eu{
-        background-color: rgb(200 103 190 / 50%);
-        }
     </style>
 """

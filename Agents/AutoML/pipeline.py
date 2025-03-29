@@ -127,4 +127,5 @@ async def automl(project_id,data_report,mode,label,features=None,user_preference
         'val_count':response['val_count'] if 'val_count' in response else None,
         'train_count':response['train_count'] if 'train_count' in response else None,
     }
+    asyncio.create_task(projectRequests.save_model_report(project_id, final_response))
     yield json.dumps(final_response)

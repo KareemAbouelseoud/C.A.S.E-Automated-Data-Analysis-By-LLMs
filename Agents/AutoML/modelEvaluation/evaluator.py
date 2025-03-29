@@ -107,9 +107,7 @@ async def evaluator_node(state):
         reports.append(report)
     reports=make_serializable(reports)
     
-    # Create an async task to save the model report without waiting for it to complete
-    asyncio.create_task(projectRequests.save_model_report(project_id, reports))
-    return {"evaluation_reports":json.dumps(reports)}
+    return {"evaluation_reports":reports}
     
     #endregion
 

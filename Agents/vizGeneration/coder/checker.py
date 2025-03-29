@@ -39,14 +39,14 @@ async def checker_node(state):
 
     # Check execution
     try:
+        fig_list=[]
         df=await get_dataset(state['project_id'])
-        globals_dict={'df':df}
+        globals_dict={'df':df,'fig_list':fig_list}
         
         print("CODE:", imports + "\n" + code)
         exec(imports + "\n" + code,globals_dict)
-        if 'fig_dict' in  globals_dict:
-            if not isinstance(globals_dict['fig_dict'],dict):
-                error_message = [("user", f"Your solution failed because there is no variable called fig_dict or because it is not a dictionary")]
+        if len(fig_list)==0:
+                error_message = [("user", f"Your solution failed because there is no visualization inside fig_list")]
                 messages += error_message
                 return {
                     "generation": code_solution,
@@ -73,7 +73,7 @@ async def checker_node(state):
         "messages": messages,
         "iterations": iterations,
         "error": "no",
-        'visualization':[make_serializable(globals_dict['fig_dict'])],
+        'visualization':make_serializable(fig_list),
     }
 
 def make_serializable(obj):

@@ -9,13 +9,19 @@ url='http://Backend:8005'
 
 def chat(prompt,project_id,thread_id):
     
-    response=requests.post(url + "/chat", json={"prompt": prompt,'project_id': project_id,'thread_id':thread_id},stream=True)    
-    return response
-
+    response=requests.post(url + "/chat", json={"prompt": prompt,'project_id': project_id,'thread_id':thread_id},stream=True) 
+    if response.status_code==200:
+        return response 
+    else:
+        print(response.status_code)
+        print(response.text)
 def recommender(prompt,project_id,thread_id):
     response=requests.post(url+"/recommend", json={"prompt": json.dumps(prompt),'project_id':project_id,'thread_id':thread_id})
     ## This is the response and it is a dict like that => {'data': '["Summarize data", "Show correlations", "Find outliers"]'}
-    return eval(response.json()['data'])
+    try:
+        return eval(response.json()['data'])
+    except:
+        return []
 
 
 
