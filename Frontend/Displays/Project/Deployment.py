@@ -4,7 +4,7 @@ import uuid
 import hydralit_components as hc
 from Requests import automlRequests
 
-def display_feature_form(features, model_name, project_id,feature_columns=None,encoder_mapping=None):
+def display_feature_form(features, model_name, project_id,feature_columns=None):
     # Wrap everything in a form
     with st.form(key=f"feature_form_{model_name}"):
         st.write("Fill out the form below:")
