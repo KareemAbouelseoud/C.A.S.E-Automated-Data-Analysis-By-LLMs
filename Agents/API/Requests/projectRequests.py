@@ -200,18 +200,13 @@ async def save_model_report(project_id, report):
         dict: Response from the server or None if an error occurred
     """
     try:
-        if isinstance(report, dict):
-            report_str = json.dumps(report)
-        else:
-            report_str = str(report)
-        
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
                     url + f"/project/{project_id}/AutoML/save-model-report",
-                    params={'report': report_str}
+                    json={'report': report}
                 )
-            except:
+            except Exception as e:
                 raise e
         
         if response.status_code == 200:
@@ -255,4 +250,33 @@ async def delete_all_automl_data(project_id):
                 
     except Exception as e:
         print(f"Error deleting AutoML data: {e}")
+        return None
+
+async def get_model_report(project_id):
+    """
+    Retrieves the model report from the backend API.
+    
+    Args:
+        project_id (str): The ID of the project
+        """
+    try:
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(
+                    url + f"/project/{project_id}/AutoML/model-report"
+                )
+            except:
+                response = await client.get(
+                    f"http://localhost:8005/project/{project_id}/AutoML/model-report"
+                )
+        
+        if response.status_code == 200:
+            return json.loads(response.json()['model_report'])['report']
+        else:
+            print(f"Failed to fetch model report: HTTP {response.status_code}",flush=True)
+            print(f"Response: {response.text}",flush=True)
+            return None
+                
+    except Exception as e:
+        print(f"Error retrieving model report: {e}")
         return None
