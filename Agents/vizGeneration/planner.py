@@ -61,7 +61,7 @@ async def planner_node(design):
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": str(design)}
     ]
-    if len(design)>1:
+    if len(design)>1 and isinstance(design,list):
         while True:
             response =await llm.with_structured_output(PlannerList).ainvoke(messages)
             if len (response.next_list)==len(design):
