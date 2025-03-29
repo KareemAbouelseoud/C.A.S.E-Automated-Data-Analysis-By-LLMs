@@ -12,23 +12,18 @@ chatbot_router = APIRouter()
 
 @chatbot_router.post('/chat', tags=["Chat"])
 async def chat(body: Chat):
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            url + "/chat",
-            json={'thread_id': body.thread_id, 'prompt': body.prompt},
-            stream=True
-        )
-        
-        async def iter_content():
-            async for chunk in response.aiter_bytes(4096):
-                yield chunk
-                
-        return StreamingResponse(iter_content(), media_type="text/event-stream")
+    async def event_stream():
+        async with httpx.AsyncClient(timeout=None) as client:
+            async with client.stream("POST", url + "/chat", json={'thread_id': body.thread_id, 'prompt': body.prompt}) as response:
+                async for chunk in response.aiter_bytes():
+                    yield chunk
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
     
     
 @chatbot_router.post("/recommend", tags=["Chat"])
 async def recommend(item: Recommender):
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=1000) as client:
         response = await client.post(
             url + "/recommend",
             json={"prompt": item.prompt, 'project_id': item.project_id}

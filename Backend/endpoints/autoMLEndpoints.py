@@ -76,14 +76,14 @@ async def save_model(
 @autoML_router.post('/project/{project_id}/AutoML/save-model-report', tags=["AutoML"])
 async def save_model_report(
             project_id: str,
-            report:str,
+            report: dict
         ):
             """
             Upload and save a model report for a specific project
             
             - **project_id**: ID of the project to save the report for
             - **report**: The model report to upload"""
-            try:                
+            try:
                 # Save the model report using project service
                 result = await project_service.save_model_report(project_id, report)
                 if result:
