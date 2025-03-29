@@ -16,14 +16,25 @@ from Style import buttons,general
 class AutoML:
 
     def __init__(self):
+        self.status_keys={
+            'splitter_node':"Finished Splitting",
+            "preprocessing_node":"Finished Preprocessing",
+            "model_evaluator_node":"Finished Evaluation",
+            "model_trainer_node":"Finished Training",
+            "model_selector_node":"Finished Model Selection",
+            "model_tuner_node":"Finished Tuning",
+        }
         st.markdown(general.select_box,unsafe_allow_html=True)
         self.autoML_session = st.session_state['user_data']['projects']['current_project']
         if 'autoML' not in self.autoML_session:
             self.autoML_session['autoML']={}            
             self.autoML_session['autoML']['training']=False
             self.autoML_session['autoML']['autoML_data']={}
+            self.autoML_session['autoML']['eval_report']=None
         self.placeholder=st.empty()
-        
+        if not self.autoML_session['autoML']['eval_report']:
+            self.autoML_session['autoML']['eval_report']=automlRequests.fetch_evaluation_report(self.autoML_session['project_id'])
+           
         self.run()
 
 
@@ -90,11 +101,12 @@ class AutoML:
         
         if self.autoML_session['autoML']['training']:
             self.trainPage(**self.autoML_session['autoML']['autoML_data'])
-        if 'eval_report' in self.autoML_session['autoML']:
+        if 'eval_report' in self.autoML_session['autoML'] and self.autoML_session['autoML']['eval_report']:
                 with self.placeholder.container(border=False):
                     self.visualize()
 
     def visualize(self):
+            print(self.autoML_session['autoML']['eval_report'])
             # st.write(self.autoML_session['autoML']['eval_report'])
             if self.autoML_session['autoML']['eval_report']['mode']=='HERMES':
                 mode='⚡ HERMES'
@@ -104,7 +116,7 @@ class AutoML:
                 mode='🔨 HEPHAESTUS'
                 
             st.markdown(f"<h1 style='text-align: center; font-size: 65px;'>{mode}</h1>", unsafe_allow_html=True)    
-            model_evaluation_reports=json.loads(self.autoML_session['autoML']['eval_report']['evaluation_reports'])
+            model_evaluation_reports=self.autoML_session['autoML']['eval_report']['evaluation_reports']
             
             if 'splitting_logic' in self.autoML_session['autoML']['eval_report']:
                 st.markdown(f"<h1 font-size: 30px;'>Splitting</h1>", unsafe_allow_html=True)
@@ -229,10 +241,13 @@ class AutoML:
                 elif model_evaluation['problem_type']=='regression':
                     self.visualize_regression(model_evaluation)
                 with st.expander('Test Model'):
-                    display_feature_form(model_info['deployment'],model_info['model'],self.autoML_session['project_id'],feature_columns=model_info['X_columns'] if 'X_columns' in model_info else None,encoder_mapping=model_info['encoder_mapping'] if 'encoder_mapping' in model_info else None)
+                    display_feature_form(model_info['deployment'],model_info['model'],self.autoML_session['project_id'],feature_columns=model_info['X_columns'] if 'X_columns' in model_info else None)
                     if f"{model_info['model']}_predictions" in st.session_state:
                         text=f"Prediction(s):"
-                        text+=str(st.session_state[f'{model_info["model"]}_predictions'])
+                        predictions=str(st.session_state[f'{model_info["model"]}_predictions'])
+                        if 'encoder_mapping' in model_info and model_info['encoder_mapping']:
+                            predictions=model_info['encoder_mapping'].get(predictions, predictions)
+                        text+=predictions
                         st.success(text)
                         # del st.session_state[f"{model_info['model']}_predictions"]
                         
@@ -250,7 +265,9 @@ class AutoML:
             for word in response:
                 decoded=word.decode("utf-8")
                 if "{" not in decoded and not finish:
-                    st.toast(decoded)
+                    status=self.status_keys.get(decoded, None)
+                    if status:
+                        st.toast(status,icon=":material/check_circle:")
                 else:
                     finish=True
                     eval_report+=decoded
