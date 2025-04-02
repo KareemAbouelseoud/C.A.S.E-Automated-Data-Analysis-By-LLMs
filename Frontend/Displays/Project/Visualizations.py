@@ -4,6 +4,8 @@ from streamlit_elements import elements,event,sync,lazy
 from types import SimpleNamespace
 from Requests import visualizationRequests
 import hydralit_components as hc
+from Style import buttons
+import uuid
 class Visualizations:
     def __init__(self):
         self.dimensions={
@@ -16,11 +18,27 @@ class Visualizations:
             "Pie":{'w':4.5,'h':7},
 
         }
+        self.placeholder=st.empty()
         self.viz_session=st.session_state['user_data']['projects']['current_project']
 
         if 'viz' not in self.viz_session:
             self.viz_session['viz']={}
             self.viz_session['viz']['Visualization']=False
+
+        if 'w' not in self.viz_session['viz']:
+            self.viz_session['viz']['board'] = Dashboard.Dashboard()
+            w = SimpleNamespace(
+                visualizations=[]
+            )
+            vizs=visualizationRequests.fetch_visualizations(self.viz_session['project_id'])
+            if vizs:
+                for i in vizs:
+                    w.visualizations.append(self.create((i)))
+            self.viz_session['viz']['w'] = w
+            self.visualize(self.viz_session['viz']['w'])
+        else:
+            if self.viz_session['viz']['w'].visualizations:
+                self.visualize(self.viz_session['viz']['w'])
         self.run()
 
     def create(self,fig_dict):
@@ -35,70 +53,51 @@ class Visualizations:
             for i in fig_dict:
                 return self.create(i)
     
-    def visualizationShown(self,placeholder):
-        placeholder.empty()
-        self.viz_session['viz']['Visualization']=True
+    def visualizationShown(self):
+        self.viz_session['viz']['Button_clicked']=True
         
     def run(self):
-        if 'Visualization' not in self.viz_session['viz'] or not self.viz_session['viz']['Visualization']:
-            cols=st.columns(3)
-            with cols[1]:
-                st.markdown(
-                    """
-                    <style>
-                    .element-container:has(#button-after) + div button {
-                        justify-content: center;
-                        align-items: center;
-                        width: 100%; /* Ensure the container takes up full width */
-                        height: 100%; /* Optional: to ensure vertical centering */
-                        border-radius: 16px;
-                        background: rgba(0, 0, 0, 0.4);
-                        z-index: 2;
-                        box-shadow: 
-                            0 0 6px rgba(255, 255, 255, 0.3), 
-                            0 0 12px rgba(255, 255, 255, 0.2), 
-                            0 0 18px rgba(255, 255, 255, 0.2);
-                        color: white;
-                        padding: 30px;
-                        font-size: 50px;
-                        text-align: center;
-                        cursor: pointer;
-                        justify-content: center;
-                        align-items: center;
-                        margin-bottom: 20px; /* Adds vertical space if wrapping occurs */
-                        transition: box-shadow 0.3s ease; /* Smooth transition */
-                        border: none; /* Explicitly remove any border */
-
-                        }
-                        .element-container:has(#button-after) + div button:hover {
-                        box-shadow: 
-                            0 0 10px rgba(255, 255, 255, 0.6), 
-                            0 0 20px rgba(255, 255, 255, 0.5), 
-                            0 0 30px rgba(255, 255, 255, 1); /* Stronger glow on hover */
-                    }
-                    </style>
-                    """,
-                    unsafe_allow_html=True,
-                )
-                st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-                placeholder = st.empty()
-                placeholder.button("Begin Generation",on_click=self.visualizationShown,args=[placeholder])
+        cols=st.columns(3)
+        with cols[1]:
+            st.markdown(
+                buttons.primary_button,
+                unsafe_allow_html=True,
+            )
+            st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+            placeholder = st.empty()
+            placeholder.button("Regenerate Visualizations" if self.viz_session['viz']['w'].visualizations else "Begin Generation",on_click=self.visualizationShown)
+            if 'Button_clicked' in self.viz_session['viz'] and self.viz_session['viz']['Button_clicked']:
+                placeholder2=st.empty()
+                with placeholder2.container(border=True):
+                    df=self.viz_session['dataset_session']['raw_dataset']
+                    with st.form(key='viz_form',border=False):
+                        features = st.multiselect('Select the features to focus on. (Optional)',df.columns.to_list())
+                        if st.form_submit_button("Generate"):
+                            if features:
+                                self.viz_session['viz']['features']=features
+                            self.viz_session['viz']['Visualization']=True
         
         if self.viz_session['viz']['Visualization']:
-            if "w" not in self.viz_session['viz']:
-                self.viz_session['viz']['board'] = Dashboard.Dashboard()
-                w = SimpleNamespace(
-                    visualizations=[]
-                )
-                self.viz_session['viz']['w'] = w
-                with hc.HyLoader("",hc.Loaders.pulse_bars,index=[0]):
-                    vizs=visualizationRequests.fetch_visualizations(self.viz_session['project_id'])
-                    for i in vizs:
-                        w.visualizations.append(self.create((i)))
-            else:
-                w = self.viz_session['viz']['w']
+            placeholder2.empty()
+            self.viz_session['viz']['w']=self.generate_visuals(self.viz_session['viz']['w'])
+            self.viz_session['viz']['Visualization']=False
+            self.viz_session['viz']['Button_clicked']=False
+            st.rerun()
+            
+    def generate_visuals(self,w):
+            with hc.HyLoader("",hc.Loaders.pulse_bars,index=[0]):
+                features=[]
+                if 'features' in self.viz_session['viz']:
+                    features=self.viz_session['viz']['features']
+                vizs=visualizationRequests.create_visualizations(self.viz_session['project_id'],features)
+                w.visualizations=[]
+                for i in vizs:
+                    w.visualizations.append(self.create((i)))
+            return w            
 
-            with elements("demo"):
+    def visualize(self,w):
+        with self.placeholder.container(border=True):
+            with elements(f"demo"):
                 event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
                 with self.viz_session['viz']['board'](compactType='horizontal',rowHeight=57):
                     for i in w.visualizations:

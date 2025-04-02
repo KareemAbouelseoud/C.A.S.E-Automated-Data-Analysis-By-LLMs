@@ -138,9 +138,13 @@ def create_project(user_id,name,uploaded_file):
         response = requests.post(url+'/project', files=files,data=data)
 
 def read_projects(user_id):
-     response=requests.get(url+f'/project/GetProjects/{str(user_id)}')
-     projects=json.loads(response.json())['data']
-     return projects
+    response=requests.get(url+f'/project/GetProjects/{str(user_id)}')
+    try:
+        projects=json.loads(response.json())['data']
+        return projects
+    except:
+        return []
+     
 
 def get_project_details(project_id):
      response=requests.get(url+f'/project/projectDetails/{str(project_id)}')

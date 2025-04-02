@@ -1,4 +1,5 @@
 from config import *
+import asyncio
 
 def get_repo():
     repo = UserRepository()
@@ -36,8 +37,10 @@ class UserService:
     async def create_user(self, x: SignUpRequest) -> Optional[User]:
         
         user_data = x.model_dump()
-        matchingEmails=await self.user_repository.Filter({"email":user_data["email"]})
-        matchingUsernames=await self.user_repository.Filter({"username":user_data["username"]})
+        matchingEmails, matchingUsernames = await asyncio.gather(
+            self.user_repository.Filter({"email": user_data["email"]}),
+            self.user_repository.Filter({"username": user_data["username"]})
+        )
         if len(matchingEmails)!=0:
             return "Email already exists."
         elif len(matchingUsernames)!=0:

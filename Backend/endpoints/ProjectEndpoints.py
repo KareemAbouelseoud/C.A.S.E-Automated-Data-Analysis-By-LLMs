@@ -1,4 +1,5 @@
 from config import *
+import asyncio
 #######################################
 
 
@@ -20,7 +21,8 @@ async def upload_file(file: UploadFile = File(...), user_id: str = Form(...), na
     if user_id=="" or name=="":
         raise HTTPException(status_code=400, detail="Invalid Inputs. Either the user_id or the name is null.")
     try:
-        return await project_service.create_project(file,user_id,name)
+        # Create the project asynchronously
+        asyncio.create_task(project_service.create_project(file, user_id, name))
     except HTTPException as http_ex:
         # Re-raise HTTPExceptions
         raise http_ex

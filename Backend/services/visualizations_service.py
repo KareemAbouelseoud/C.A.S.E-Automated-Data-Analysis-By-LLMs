@@ -1,5 +1,5 @@
 from config import *
-import requests
+import httpx
 import plotly.express as px
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
@@ -83,21 +83,38 @@ class visualizationsService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error Updating project Visualizations and data to MongoDB: {e}")
     
-    async def update_Auto_Gen_Viz(self, project_id: str) -> Tuple[bool, List[str]]:
+    async def update_Auto_Gen_Viz(self, project_id: str,features: List[str]=None) -> Tuple[bool, List[str]]:
         try:
-            data_report=await self.project_service.fetch_data_report(project_id)
+            data_report = await self.project_service.fetch_data_report(project_id)
+            #TODO: ADD Polling logic to check if the visualization is ready or not
+            async with httpx.AsyncClient(timeout=1000) as client:
+                # Create payload with features if they are provided
+                payload = {'data_report': data_report, 'project_id': project_id}
+                if features is not None:
+                    payload['features'] = features
+                
+                response = await client.post(f"{self.url}/visualizations/createDashboard", json=payload)
+                print("Response Status Code:", response.status_code)
+                print("Response Content:", response.text)
+                if response.status_code == 200:
+                    if isinstance(response.json(),str):
+                        response=json.loads(response.json())
+                    else:
+                        response=response.json()
+                    serializable_visualizations = response['visualizations']
+                # Log response for debugging
 
-            response=requests.post(f"{self.url}/visualizations/createDashboard",json={'data_report':data_report,'project_id':project_id})
-            serializable_visualizations=json.loads(response.json())['visualizations']
             
         except Exception as e:
+            raise e
             raise HTTPException(status_code=500, detail=f"Error from Agents Module: {e}")
         
-        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",len(serializable_visualizations))
-        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE",type(serializable_visualizations))
+        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE", len(serializable_visualizations))
+        print("THIS IS SERIALIZABLE VISUALIZATION IN VIZ SERVICE", type(serializable_visualizations))
         try:
             project = await self.project_repository.get_by_id(project_id) 
         except Exception as e:
+            raise e
             raise HTTPException(status_code=500, detail=f"Error Retriving project from MongoDB: {e}")
         
         if project==None:
@@ -105,11 +122,13 @@ class visualizationsService:
         try:
             project_Visualizations=await self.viz_repository.get_by_project_id(project_id)
         except Exception as e:
+            raise e
             raise HTTPException(status_code=500, detail=f"Error Retriving project Visualizations and data to MongoDB: {e}")
         project_Visualizations.Auto_generated_viz=serializable_visualizations
         try:
             return (await self.viz_repository.update(project_id, project_Visualizations),serializable_visualizations)
         except Exception as e:
+            raise e
             raise HTTPException(status_code=500, detail=f"Error Updating project Visualizations and data to MongoDB: {e}")
     #endregion
     
@@ -438,6 +457,70 @@ class visualizationsService:
         
         # For your service
         return fig.to_json()
+    
+    async def plot_data_split_distribution(self, project_id: str, train_size: int, test_size: int, val_size: int = 0, total_rows: int = None) -> str:
+        """
+        Creates a pie chart showing how data is distributed between train, test, and validation sets.
+        Also calculates and displays dropped rows if total_rows is provided.
+        
+        Args:
+            project_id (str): The ID of the project
+            train_size (int): Number of rows in the training set
+            test_size (int): Number of rows in the test set
+            val_size (int): Number of rows in the validation set (default 0)
+            total_rows (int, optional): Total rows in the original dataset for calculating dropped rows
+            
+        Returns:
+            str: Plotly figure as JSON string
+        """
+        try:
+            project = await self.project_repository.get_by_id(project_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error retrieving project from MongoDB: {e}")
+        
+        if project is None:
+            raise HTTPException(status_code=400, detail="Invalid project_id. Please provide an existing Project id.")
+        
+        # Prepare data for pie chart
+        labels = ['Train', 'Test']
+        values = [train_size, test_size]
+        
+        # Add validation set if it exists
+        if val_size > 0:
+            labels.append('Validation')
+            values.append(val_size)
+        
+        # Calculate and add dropped rows if total_rows is provided
+        if total_rows is not None:
+            used_rows = sum(values)
+            if total_rows > used_rows:
+                dropped_rows = total_rows - used_rows
+                labels.append('Dropped')
+                values.append(dropped_rows)
+        
+        # Create pie chart
+        fig = px.pie(
+            names=labels,
+            values=values,
+            title='Data Split Distribution',
+            color=labels,
+            color_discrete_sequence=px.colors.qualitative.Set3,
+            hole=0.3
+        )
+        
+        # Add percentage to hover information
+        fig.update_traces(
+            textinfo='percent+label',
+            hovertemplate='<b>%{label}</b><br>Rows: %{value}<br>Percentage: %{percent}'
+        )
+        
+        fig.update_layout(
+            plot_bgcolor='rgba(0,0,0,0.05)',
+            font=dict(size=12)
+        )
+        
+        # Return the figure as JSON
+        return make_serializable(fig.to_json())
     #endregion
 
     

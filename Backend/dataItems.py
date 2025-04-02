@@ -49,3 +49,21 @@ class Feedback(BaseModel):
     project_id:str
     thread_id:str
     user_id:str
+    
+class SplitDistribution(BaseModel):
+    train_size: int
+    test_size: int
+    val_size: int = 0
+    total_rows: int = None
+
+class ClassificationModel(BaseModel):
+    accuracy: float
+    precision: Optional[float] = None
+    recall: Optional[float] = None
+    f1_score: Optional[float] = None
+    roc_auc: Optional[float] = None
+
+class Predict(BaseModel):
+    model_name: str
+    data: List[dict]
+    feature_columns: Optional[List[str]] = None

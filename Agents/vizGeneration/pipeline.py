@@ -16,7 +16,6 @@ Dependencies:
 - coder
 - os
 - sys
-- Database
 
 Usage:
 1. Ensure that the required dependencies are installed.
@@ -36,21 +35,20 @@ Variables:
 import sys
 
 import os
-import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
 
 from typing_extensions import TypedDict,Annotated,NotRequired
 import operator
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import StateGraph,START
 from .caller import caller_node
-from .planner import planner_node,planner_brancher,tool_brancher
-from .mainTools import tool_node
+from .planner import planner_node
+from .mainTools import tool_node,tool_brancher
 from .designer import designer_node
-from .coder.coderPipeline import coder
-from langgraph.graph import StateGraph, START, END
+from .coder.coderPipeline import coder_pipeline
 from langchain_core.messages import AnyMessage
 import operator
-import pandas as pd
+import asyncio
+import time
 
 class State(TypedDict):
     """
@@ -61,34 +59,62 @@ class State(TypedDict):
     visualization: NotRequired[Annotated[list[dict], operator.add]]
     next: NotRequired[str]
     data_report: NotRequired[str]
+    iterations: NotRequired[int] = 0
 
 
 
 builder = StateGraph(State)
-builder.add_node("planner", planner_node)
 builder.add_node("caller", caller_node)
 builder.add_node("tools", tool_node)
-builder.add_node("coder", coder)
 
-builder.add_edge(START, "planner")
-builder.add_conditional_edges("planner", planner_brancher)
+builder.add_edge(START, 'caller')
 builder.add_edge('caller','tools')
 builder.add_conditional_edges('tools',tool_brancher)
-builder.add_edge('coder',END)
 
-viz_graph = builder.compile()
+caller_pipeline = builder.compile()
     
-async def generate_visualizations(data_report,project_id):
-    response= await designer_node(data_report)
-    visualizations=[]
-    for idx,design in  enumerate(response):
-        try:
-            graph_response= await viz_graph.ainvoke({'data_report':str(data_report),'messages':[{"role":"human","content":str(design)}],'project_id':project_id})
-            print("Graph response",graph_response)
-            if 'visualization' in graph_response and graph_response['visualization']:
-                visualizations.append(graph_response['visualization'])    
-        except Exception as e:
-            print(f"Error in graph response for design {idx}: {design}")
-            print(e)
-            continue
-    return visualizations     
+async def generate_visualizations(data_report, project_id, features=None):
+    start_time = time.time()  # Start measuring time
+    while True:
+        response = await designer_node(data_report, features)
+        if response:
+            break
+    caller_list, code_list = await planner_node(response)
+    
+    # Create tasks for caller visualizations
+    caller_tasks = [
+        caller_pipeline.ainvoke({
+            'project_id': project_id,
+            'messages': [{"role": "human", "content": f"Here is the design needed: {str(design)}, and here is the data report crucial for the naming convention: {data_report}"}]
+        }) 
+        for design in caller_list
+    ]
+    
+    # Create tasks for coder visualizations
+    coder_tasks = [
+        coder_pipeline.ainvoke({
+            'project_id': project_id,
+            'messages': [{"role": "human", "content": f"Here is the design needed: {str(design)}"}],
+            'data_report': data_report
+        })
+        for design in code_list
+    ]
+    
+    # Run all tasks concurrently
+    all_results = await asyncio.gather(*caller_tasks, *coder_tasks, return_exceptions=True)
+
+    # Process all results in one loop
+    visualizations = []
+    for result in all_results:
+        if isinstance(result, Exception):
+            # Log the exception and continue
+            print(f"Task failed with exception: {result}")
+        else:
+            # Collect successful results
+            if 'visualization' in result and result['visualization']:
+                visualizations.append(result['visualization'])
+
+    end_time = time.time()  # End measuring time
+    print(f"Time taken for generate_visualizations: {end_time - start_time:.2f} seconds")
+
+    return visualizations

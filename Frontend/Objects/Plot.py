@@ -42,7 +42,7 @@ class Plots(Dashboard.Item):
                 'Pair':"mui.icon.TroubleshootRounded()",
                 'Radar':"mui.icon.RadarRounded()",
                 'Treemap':"mui.icon.AccountTreeRounded()",
-                'Heatmap':"mui.icon.LocalFireDepartmentRounded()",
+                'Correlation Heatmap':"mui.icon.LocalFireDepartmentRounded()",
                 'Faceted Bar':"mui.icon.StackedBarChartRounded()",
                 'Histogram':"mui.icon.InsertChartRounded()",
                 'Area':"mui.icon.QueryStatsRounded()",

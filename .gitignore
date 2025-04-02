@@ -16,3 +16,9 @@ Thumbs.db
 
 *.cache/
 /.vs
+# Cache directories
+.cache/
+cache/
+
+# Log files
+*.log

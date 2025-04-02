@@ -77,25 +77,33 @@ async def chat(user_input,thread_id=None):
             graph_input = {'input':{"messages": messages,'data_report':data_report,'project_id':project_id},'config':config,'stream_mode':["messages",'updates','values']}
     
     
-    async for chunk in graph.astream(**graph_input):
-        if chunk[0] == 'messages':
-            if chunk[1][0].content and isinstance(chunk[1][0], AIMessageChunk):
-                if chunk[1][0].content:
-                    yield chunk[1][0].content
-        elif chunk[0] == 'values':
+    async for chunk in graph.astream(**graph_input,subgraphs=True):
+        if chunk[1] == 'messages' and "chatter_node" in chunk[0][0]:
+            if chunk[2][0].content and isinstance(chunk[2][0], AIMessageChunk):
+                if chunk[2][0].content:
+                    yield chunk[2][0].content
+        elif chunk[1] == 'values':
             ## TODO:Save AGent used tools
+            # print(chunk)
             pass
-            #print(chunk[1])
 
-        elif chunk[0] == 'updates':
-            if 'tools' in chunk[1]:
-                if 'visual' in chunk[1]['tools']:
-                    for visual in chunk[1]['tools']['visual']:
+        elif chunk[1] == 'updates':
+            
+            if 'tools' in chunk[2]:
+                if 'visual' in chunk[2]['tools']:
+                    for visual in chunk[2]['tools']['visual']:
                         try:
                             visual=visual['figure_data']
                         except:
                             pass
                         visuals.append(visual)
+            else:      
+                status=json.dumps({'status':list(chunk[2].keys())[0]})
+                print(status)
+                yield status
+            
+        elif isinstance(chunk,dict):
+            yield chunk
     
     for visual in visuals:
         yield json.dumps(visual)

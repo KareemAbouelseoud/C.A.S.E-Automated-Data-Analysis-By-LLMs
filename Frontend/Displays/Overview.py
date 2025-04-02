@@ -7,6 +7,7 @@ from streamlit_cookies_controller import CookieController
 controller=CookieController()
 import uuid
 from Project.Home import Project
+from Style import buttons 
 
 class Projects:
 
@@ -43,7 +44,6 @@ class Projects:
             placeholder.empty()
         st.session_state['user_data']['projects']['current_project']['project_id']=str(project_id)
         st.session_state['user_data']['projects']['current_project']['thread_id']= str(thread_id)
-        print("AFTER PROJECT CLICKED", st.session_state['user_data'])
 
     def projectOverview(self):
         st.markdown("<h1 style='text-align: center; font-size: 80px;'>My Projects</h1>", unsafe_allow_html=True)
@@ -55,40 +55,7 @@ class Projects:
                 columns = st.columns(self.max_columns)
            
             with columns[idx % self.max_columns]:  # Add project to the appropriate column
-                st.markdown(
-                            f"""
-                            <style>
-                            .element-container:has(#button-after-{idx}) + div button {{
-                                border-radius: 16px;
-                            background: rgba(0, 0, 0, 0.4);
-                            z-index: 2;
-                            box-shadow: 
-                                0 0 6px rgba(255, 255, 255, 0.3), 
-                                0 0 12px rgba(255, 255, 255, 0.2), 
-                                0 0 18px rgba(255, 240, 200, 0.4); /* Initial glow */
-                            color: white;
-                            width: 100%; /* Ensure the container takes up full width */
-                            height: 100%; /* Optional: to ensure vertical centering */
-                            padding: 50px;
-                            font-size: 20px;
-                            text-align: center;
-                            cursor: pointer;
-                            justify-content: center;
-                            align-items: center;
-                            text-align: center;
-                            margin-top: 20px;
-                            transition: box-shadow 0.3s ease; /* Smooth transition */
-                            border: none; /* Explicitly remove any border */
-                                }}
-                                .element-container:has(#button-after-{idx}) + div button:hover {{
-                                box-shadow: 
-                                0 0 10px rgba(255, 255, 255, 0.6), 
-                                0 0 20px rgba(255, 255, 255, 0.5), 
-                                0 0 30px rgba(255, 240, 130, 1); /* Initial glow */
-                            }}
-                            </style>
-                            """,
-                            unsafe_allow_html=True)
+                st.markdown(buttons.project_button.format(first=idx,second=idx) ,unsafe_allow_html=True)
                 st.markdown(f'<span id="button-after-{idx}"></span>', unsafe_allow_html=True)
                 placeholder = st.empty()
                 placeholder.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project["id"],project['thread_id']],key=f"project_{uuid.uuid4()}")
