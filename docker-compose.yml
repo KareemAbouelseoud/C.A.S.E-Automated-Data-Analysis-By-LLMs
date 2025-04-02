@@ -3,6 +3,8 @@ services:
     build: 
       context: ./Agents
       dockerfile: dockerfile
+    
+    image: agents:3.0
     networks:
       - case-pb
     ports:
@@ -21,7 +23,7 @@ services:
     build: 
       context: ./Backend
       dockerfile: dockerfile
-    image: backend:blobstorage
+    image: backend:2.0
     networks:
       - case-pb
     ports:
@@ -39,7 +41,7 @@ services:
     build: 
       context: ./Frontend
       dockerfile: dockerfile
-    image: frontend:testing
+    image: frontend:2.0
     networks:
       - case-pb
     ports:

@@ -13,9 +13,18 @@ async def post_description(body:Feedback):
 
 @insGen_router.get("/custom_events")
 async def custom_events():
+    #TODO: Actually implement this function to return real-time updates
+    # All we need is to create a container for the events and then use the event stream to send updates to the client
+    # For now, we will just simulate some updates
     async def event_stream():
-        for i in range(5):
-            await asyncio.sleep(2)
-            yield f"event: update\ndata: {json.dumps({'message': f'Update {i+1}'})}\n\n"
-        yield "event: done\ndata: {}\n\n"  # Custom event when completed
+        static_updates = [
+            {"message": "First update"},
+            {"message": "Second update"},
+            {"message": "Third update"},
+            {"message": "Final update"}
+        ]
+        for update in static_updates:
+            await asyncio.sleep(1)  # Small delay to simulate processing
+            yield f"event: update\ndata: {json.dumps(update)}\n\n"
+        yield "event: done\ndata: {}\n\n"
     return StreamingResponse(event_stream(), media_type="text/event-stream")
