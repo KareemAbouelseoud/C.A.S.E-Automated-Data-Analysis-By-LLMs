@@ -1,81 +1,159 @@
-from scoringFunctions import (
-    score_attribution, 
-    score_distribution_difference,
-    score_trend,
-    score_outstanding_value
-)
-from ..QUGEN.prompts import InsightCard
+from io import StringIO
+import numpy as np
+from scipy.stats import entropy
+import pandas as pd
+import pymannkendall as mk
+from models import InsightCard
 
-class ScoringNode:
-    def __init__(self):
-        self.scoring_functions = {
+def score_trend(view: pd.DataFrame):
+    """ Calculates the trend score using the Mann-Kendall Trend Test. """
+    values = view.iloc[:,1].values
+    if len(values) < 2:
+        return 0 
+    try:
+        p_value = mk.original_test(values).p
+        return 1 - p_value if p_value < 0.05 else 0
+    except Exception as e:
+        print(f"Error calculating trend score: {e}")
+        return 0
+
+def score_outstanding_value(Card :InsightCard):
+    """ Calculates the outstanding value score as vmax1 / vmax2. """
+    if type(Card.resulted_df) == str:
+        Outstanding_df = pd.read_json(StringIO(Card.resulted_df))
+    else:
+        Outstanding_df = Card.resulted_df
+    
+    try:
+        aggregated_Col = Outstanding_df.columns.to_list()[1]
+        Outstanding_df.sort_values(by=aggregated_Col, ascending= True if Card.aggregation=="MIN" else False)
+        Best_2_Values=Outstanding_df.iloc[0:2,1].values
+    except Exception as e:
+        print(f"Error in getting Best 2 values: {e}")
+        return 0
+    if len(Best_2_Values) < 2:
+        return 0
+    try:
+        Best_2_Values = np.abs(Best_2_Values.astype(np.float64))
+    except Exception as e:
+        print(f"Error converting to float: {e}")
+        return 0
+    return Best_2_Values[0] / Best_2_Values[1] if Best_2_Values[1] != 0 else 0.0
+
+def score_attribution(view: pd.DataFrame):
+    """ Calculates the attribution score as max() / total. """
+    #NOTE: ASK THE TEAM IF WE SHOULD CONSIDER ABSOLUTE VALUES OR NOT
+    try:
+        df = view.copy()
+        column_name = df.columns[1]
+        df[column_name] = df[column_name] / df[column_name].sum()
+    except Exception as e:
+        print(f"Error in calculating attribution score: {e}")
+        return 0
+    try:
+        return df.iloc[:,1].max() if float(df.iloc[:,1].max())!=1.0 else 0.0 #Cause if the .max equals 1, it means that the filters are so  much that it foucess on one value only, so it is not a good insight.
+    except Exception as e:
+        print(f"Error in calculating attribution score: {e}")
+        return 0
+
+# quantify how much a distribution has changed over time or between groups
+
+def score_distribution_difference(vI:pd.DataFrame, vF:pd.DataFrame):  # initial and final views
+    try:
+        vI = np.asarray(vI, dtype=np.float64)
+        vF = np.asarray(vF, dtype=np.float64)
+    except Exception as e:
+        print(f"Error converting to float: {e}")
+        return 0
+
+    epsilon = 1e-10
+    vI += epsilon
+    vF += epsilon
+
+    # asmt to normalize
+    try:
+        vI /= vI.sum()
+        vF /= vF.sum()
+    except Exception as e:
+        print(f"Error normalizing: {e}")
+        return 0
+
+    # avg
+
+    M = 0.5 * (vI + vF)
+
+    # Compute KL divergences (Kullback-Leibler )
+    #  P and Q are identical fa = 0
+    try:
+        kl_p = entropy(vI, M)
+        kl_q = entropy(vF, M)
+    except Exception as e:
+        print(f"Error calculating KL divergence: {e}")
+        return 0
+
+    return 0.5 * (kl_p + kl_q)
+
+scoring_functions = {
             'attribution': score_attribution,
             'distribution_difference': score_distribution_difference,
             'trend': score_trend,
             'outstanding_value': score_outstanding_value
         }
 
-    def process_state(self, state):
-        """
-        Process the graph state and score each card based on its insight type
-        
-        Args:
-            state (dict): Dictionary containing cards and their data
-            
-        Returns:
-            dict: Updated state with scored cards
-        """
-        if 'insight_cards' not in state:
-            return state
+def Score_card(card:InsightCard):
+    """
+    Calculates and assigns a score to an InsightCard object based on its insight type\n
+    This function evaluates the significance of an insight by applying different scoring
+    functions depending on the insight type (attribution, trend, or outstanding_value).
+    The score is then stored in the InsightCard object.
 
-        scored_cards = []
-        
-        for card in state['insight_cards']:
-            # Handle both dict and InsightCard objects
-            if isinstance(card, dict):
-                card = InsightCard(**card)
-            
-            score = 0.0
-            insight_type = card.insight_type
+    Parameters
+    ----------
+    card : InsightCard
+        An InsightCard object containing the insight data and metadata
+    Returns
+    -------
+    InsightCard
+        The input card object with updated score and considered status
+    Notes
+    -----
+    - For attribution insights, card is marked as 'Considered' if score >= 0.5
+    - For outstanding_value insights, card is marked as 'Considered' if score >= 1.4
+    - Scoring is only performed if the resulted_df in the card is not empty
+    - For trend and outstanding_value types, assumes resulted_df has at least one column
+    """
+    
+    score = 0.0
+    insight_type = card.insight_type
 
-            # Access resulted_df from the InsightCard object
-            if not card.resulted_df.empty:
-                if insight_type == 'attribution':
-                    score = self.scoring_functions['attribution'](card)
-                    if score >= 0.5:
-                        card.Considered = True
-                
-                elif insight_type == 'distribution_difference' and card.aggregation == 'COUNT':
-                    # Assuming the resulted_df has initial and final values columns
-                    if 'initial_values' in card.resulted_df.columns and 'final_values' in card.resulted_df.columns:
-                        score = self.scoring_functions['distribution_difference'](
-                            card.resulted_df['initial_values'].tolist(),
-                            card.resulted_df['final_values'].tolist()
-                        )
-                
-                elif insight_type == 'trend':
-                    # Assuming resulted_df has values in a single column or series
-                    if len(card.resulted_df.columns) > 0:
-                        values = card.resulted_df[card.resulted_df.columns[0]].tolist()
-                        score = self.scoring_functions['trend'](values)
+    # Access resulted_df from the InsightCard object
+    if type(card.resulted_df) == str:
+        card_resulted_df = pd.read_json(StringIO(card.resulted_df))
+    else:
+        card_resulted_df = card.resulted_df
+    if not card_resulted_df.empty:
+        if insight_type == 'Attribution':
+            score = scoring_functions['attribution'](card_resulted_df)
+            if score >= 0.5:
+                card.Considered = True
+    
+        elif insight_type == 'Trend':
+            # Assuming resulted_df has values in a single column or series
+            if len(card_resulted_df.columns) > 0:
+                score = scoring_functions['trend'](card_resulted_df)
+                if score >= 0.5:
+                    card.Considered = True
 
-                elif insight_type == 'outstanding_value':
-                    # Assuming resulted_df has values in a single column or series
-                    if len(card.resulted_df.columns) > 0:
-                        values = card.resulted_df[card.resulted_df.columns[0]].tolist()
-                        score = self.scoring_functions['outstanding_value'](values)
-                        if score >= 1.4:
-                            card.Considered = True
+        elif insight_type == 'Outstanding Value':
+            # Assuming resulted_df has values in a single column or series
+            if len(card_resulted_df.columns) > 1:
+                score = scoring_functions['outstanding_value'](card)
+                if score >= 1.4:
+                    card.Considered = True
 
-            # Create new dict with score added
-            
-            card.Score = float(score)
-            
+    # Create new dict with score added
+    if score == np.nan or score == None or score == np.inf or score == -np.inf:
+        score = 0.0
 
-        # Update state with scored cards
-        
-        return state
-
-    def process(self, state):
-        """Main entry point for processing the state"""
-        return self.process_state(state)
+    card.Score = float(score)
+    return card

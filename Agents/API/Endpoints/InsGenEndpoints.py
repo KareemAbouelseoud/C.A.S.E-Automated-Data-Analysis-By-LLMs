@@ -12,7 +12,7 @@ async def get_description(project_id:str=None):
     try:
         result = Start_Auto_InsightGen(project_id)  # This returns an async generator
         desc = await anext(result)  # Use anext() instead of __anext__()
-        print("RESULT", desc)
+        # print("RESULT", desc)
         return {"description": desc}
     except Exception as e:
         print(f"Error in get_description: {str(e)}")
@@ -25,7 +25,7 @@ async def post_description(body:Feedback):
     try:
         result = Continue_Auto_InsightGen(body.feedback, body.thread_id)
         feedback = await anext(result)  # Use anext() instead of __anext__()
-        print("RESULT", feedback)
+        # print("RESULT", feedback)
     except Exception as e:
         print(f"Error in post_description: {str(e)}")
         raise

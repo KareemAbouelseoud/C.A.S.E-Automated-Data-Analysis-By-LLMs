@@ -1,15 +1,27 @@
-from typing import TypedDict
+from typing import Tuple, TypedDict
+
+from dotenv import load_dotenv
 
 from .config import *
+from QUGEN.node import qugen_node,should_continue
+from SubSpaceSearch.node import SubspaceSearchNode
+from Explainer.node import ExplainerNode
+from Reports.node import ReportNode
+from models import InsightCard, InsightCards
 sys.path.append(os.getcwd())
-
+load_dotenv()
 
 #define states
 class AgentGraphState(TypedDict):
     df: str
     description: str
     human_feedback: Annotated[list[str], add_messages]
-    insight_cards: List[Dict[str, str]]
+    schema: list[str]
+    insight_cards: List[object]
+    advanced_insight_cards: Dict[str, List[Tuple[Dict[str,List],object]]]
+    insights_explanation: Dict[str, str]
+    num_cards: int
+    report: str
    
 
 #GRAPH PIPELINE
@@ -19,12 +31,21 @@ graph_builder.add_node("data_description", data_description_generator_node)
 graph_builder.add_node("human_node", human_input)
 graph_builder.add_node("qugen_node", qugen_node)
 graph_builder.add_node("filteration_node", filterationA_node)
+graph_builder.add_node("SubSbaceSearch_Node", SubspaceSearchNode)
+graph_builder.add_node("explainer_node", ExplainerNode)
+graph_builder.add_node("Report_Node", ReportNode)
+graph_builder.add_node("Finalize_output", finalize_output)
+
 #define edges
 graph_builder.add_edge(START, "data_description")
 graph_builder.add_edge("data_description", "human_node")
 graph_builder.add_edge("human_node", "qugen_node")
 graph_builder.add_conditional_edges("qugen_node", should_continue, {"qugen_node": "qugen_node", "filteration_node": "filteration_node"})
-graph_builder.add_edge("filteration_node", END)
+graph_builder.add_edge("filteration_node", "SubSbaceSearch_Node")
+graph_builder.add_edge("SubSbaceSearch_Node", "explainer_node")
+graph_builder.add_edge("explainer_node", "Report_Node")
+graph_builder.add_edge("Report_Node", "Finalize_output")
+graph_builder.add_edge("Finalize_output", END)
 #verify and display the graph
 #compile the graph
 checkpointer=MemorySaver()
@@ -70,7 +91,9 @@ async def Continue_Auto_InsightGen(feedback: str, thread_id: str):
     try:
         if feedback.lower() == 'done':
             # Use await instead of async for with ainvoke
+            print("Continuing Pipeline ...")
             result = await graph.ainvoke(Command(resume=feedback), config=config)
+            
             yield tuple((result, {"thread_id": str(config["configurable"]["thread_id"])}))
         else:
             async for chunk in graph.astream(updated_state, config=config):

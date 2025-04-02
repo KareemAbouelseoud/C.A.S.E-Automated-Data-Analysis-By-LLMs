@@ -3,14 +3,13 @@ services:
     build: 
       context: ./Agents
       dockerfile: dockerfile
-    image: agents:testing
     networks:
       - case-pb
     ports:
       - "8006:8006"
     volumes:
       - ./Agents:/app
-    
+      
     restart: always
     
     env_file:

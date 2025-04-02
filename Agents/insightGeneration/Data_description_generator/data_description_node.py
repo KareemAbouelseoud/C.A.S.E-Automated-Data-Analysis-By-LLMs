@@ -1,13 +1,8 @@
+from io import StringIO
 from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
-
-class DataDescription(BaseModel):
-    """ Structured output schema for data description node. """
-   
-    col_explanation: str = Field(description="explanation of each column")
-    overview:str=Field(description="overview description of the dataset")
-    key_patterns: str=Field(description="Key patterns in the data distribution")
-    qual_issues:str=Field(description="Notable data quality issues in dataset")
+import pandas as pd
+from models import DataDescription
     
 
 def data_description_prompt(df, feedback):
@@ -38,6 +33,7 @@ def data_description_generator_node(state):
         raise ValueError("No dataset provided in state.")
 
     df = state["df"]
+    temp_df=pd.read_json(StringIO(df))
     feedback = state.get("human_feedback", ["No feedback yet"])
     prompt=data_description_prompt(df, feedback)
     
@@ -48,8 +44,7 @@ def data_description_generator_node(state):
     description = response
 
     print(f"Current description:\n{response}\n")
-    
-    schema = [col.lower() for col in df.columns.tolist()]
+    schema = [col.lower() for col in temp_df.columns.tolist()]
 
     return {"description": response, "human_feedback": feedback, "schema":schema }
 

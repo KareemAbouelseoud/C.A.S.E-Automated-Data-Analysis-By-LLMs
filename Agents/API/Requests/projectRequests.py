@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 from io import StringIO
 from joblib import Memory
-url="http://Backend:8005"
+url="http://localhost:8005"
 
 # Create a memory cache in a temporary directory
 memory = Memory(location='./.cache', verbose=0)

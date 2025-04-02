@@ -7,26 +7,9 @@ import pandas as pd
 from io import StringIO
 from pydantic import BaseModel, ConfigDict,Field
 import os
+import uuid
 
-class InsightCard(BaseModel):
-    """Structured output schema for insight cards."""
-    model_config = ConfigDict(arbitrary_types_allowed=True,populate_by_name=True) #Add this line
-    insight_type: str = Field(description="Type of insight (e.g., distribution, trend, difference)",alias="insight_type")
-    reason: str = Field(description="Analysis rationale",alias="reason")
-    question: str = Field(description="Natural language question",alias="question")
-    breakdown: str = Field(description="Grouping column name",alias="breakdown")
-    measure: str = Field(description="target column",alias="measure")
-    aggregation: str = Field(description="Aggregation function (e.g., MIN, MAX, MEAN, COUNT, SUM, STD)",alias="aggregation")
-    resulted_df: pd.DataFrame = Field(default=pd.DataFrame(), description="Generated DataFrame", alias="resulted_df")
-    Score: float = Field(default=0.0, description="Score of the insight card", alias="score")
-    Considered: bool = Field(default=False, description="Whether the card was considered important", alias="considered")
 
-class InsightCards(BaseModel):
-    """Container for multiple insight cards."""
-    insight_cards: List[InsightCard] = Field(
-        description="List of generated insight cards",
-        min_items=1
-    )
     
 def generate_qugen_prompt(state: Dict) -> str:
     """Construct QUGEN prompt with dynamic card count and validation rules"""
@@ -42,7 +25,7 @@ def generate_qugen_prompt(state: Dict) -> str:
     print(state.keys())
     
     df = pd.read_json(StringIO(state['df']))
-    schema = df.columns.tolist()
+    
     numerical_stats = df.describe(include=["number"]).reset_index()
     categorical_stats = df.describe(include=["object", "category"]).reset_index()
     basic_stats = {
@@ -50,7 +33,7 @@ def generate_qugen_prompt(state: Dict) -> str:
         "categorical": categorical_stats
     }
 
-    schema_list = ', '.join(schema)
+    schema_list = ', '.join(state['schema'])
     print(f"Schema List: {schema_list}")
     print(f"Numerical Stats: {numerical_stats.to_markdown()}")
     print(f"Categorical Stats: {categorical_stats.to_markdown()}")
@@ -61,7 +44,7 @@ def generate_qugen_prompt(state: Dict) -> str:
     Dataset Description:
     {state['description']}
     
-    Schema: {state['schema']}
+    Schema: {schema_list}
     
     Statistics:
     Numerical: { basic_stats['numerical'].to_markdown()}
