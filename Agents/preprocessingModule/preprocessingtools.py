@@ -40,12 +40,33 @@ import sys
 import os
 from functools import partial
 from helperFunctions import validate_column, make_serializable, datetime_transformer
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','Agents')))
-import loggerModule
-from API.Requests.projectRequests import get_dataset, update_dataset
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','Agents')))
+# from API.Requests.projectRequests import get_dataset, update_dataset
 
 tool_lock = Lock()
-logger = loggerModule.setup_logging()
+
+data = {
+    "Survived": [0, 1, 1, 1, 0, 0],
+    "Pclass": [3, 1, 3, 1, 3, 3],
+    "Name": [
+        "Braund, Mr. Owen Harris",
+        "Cumings, Mrs. John Bradley (Florence Briggs Thayer)",
+        "Heikkinen, Miss. Laina",
+        "Futrelle, Mrs. Jacques Heath (Lily May Peel)",
+        "Allen, Mr. William Henry",
+        "Moran, Mr. James"
+    ],
+    "Sex": ["male", "female", "female", "female", "male", "male"],
+    "Age": [22, 38, 26, 35, 35, None],
+    "SibSp": [1, 1, 0, 1, 0, 0],
+    "Parch": [0, 0, 0, 0, 0, 0],
+    "Ticket": ["A/5 21171", "PC 17599", "STON/O2. 3101282", "113803", "373450", "330877"],
+    "Fare": [7.25, 71.2833, 7.925, 53.1, 8.05, 8.4583],
+    "Cabin": [None, "C85", None, "C123", None, None],
+    "Embarked": ["S", "C", "S", "S", "S", "Q"]
+}
+df = pd.DataFrame(data)
+
 
 @tool
 async def impute_missing(
@@ -55,20 +76,19 @@ async def impute_missing(
 ) -> Dict:
     """Handle missing values in numeric columns using specified strategy."""
     try:
-        df = await get_dataset(project_id)
+        #df = await get_dataset(project_id)
         validate_column(df, column_name, "numeric")
         
         imputer = SimpleImputer(strategy=strategy)
         df[column_name] = imputer.fit_transform(df[[column_name]])
         
-        await update_dataset(project_id, df)
+        # await update_dataset(project_id, df)
         return {
             "status": "success",
             "message": f"Imputed missing values in {column_name} using {strategy}",
             "transformed_data": make_serializable(df[column_name].head())
         }
     except Exception as e:
-        logger.error(f"Imputation error: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 @tool
@@ -78,20 +98,19 @@ async def standard_scale(
 ) -> Dict:
     """Standardize numeric features by removing mean and scaling to unit variance."""
     try:
-        df = await get_dataset(project_id)
+        #df = await get_dataset(project_id)
         validate_column(df, column_name, "numeric")
         
         scaler = StandardScaler()
         df[column_name] = scaler.fit_transform(df[[column_name]])
         
-        await update_dataset(project_id, df)
+        #await update_dataset(project_id, df)
         return {
             "status": "success",
             "message": f"Standard scaled {column_name}",
             "transformed_data": make_serializable(df[column_name].head())
         }
     except Exception as e:
-        logger.error(f"Scaling error: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 @tool
@@ -102,7 +121,7 @@ async def onehot_encode(
 ) -> Dict:
     """One-hot encode categorical features into binary columns."""
     try:
-        df = await get_dataset(project_id)
+        #df = await get_dataset(project_id)
         validate_column(df, column_name, "categorical")
         
         encoder = OneHotEncoder(handle_unknown=handle_unknown, sparse_output=False)
@@ -112,14 +131,13 @@ async def onehot_encode(
         encoded_df = pd.DataFrame(encoded, columns=encoder.get_feature_names_out([column_name]))
         df = pd.concat([df, encoded_df], axis=1)
         
-        await update_dataset(project_id, df)
+        #await update_dataset(project_id, df)
         return {
             "status": "success",
             "message": f"One-hot encoded {column_name}",
             "new_columns": list(encoded_df.columns)
         }
     except Exception as e:
-        logger.error(f"Encoding error: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 @tool
@@ -136,7 +154,7 @@ async def extract_datetime_features(
 ) -> Dict:
     """Enhanced datetime parsing and feature extraction with transformer support."""
     try:
-        df = await get_dataset(project_id)
+        #df = await get_dataset(project_id)
         validate_column(df, column_name, "string")
         
         original_series = df[column_name].copy()
@@ -165,7 +183,7 @@ async def extract_datetime_features(
         )
         transformer.fit(df[[column_name]])
         
-        await update_dataset(project_id, df)
+        #await update_dataset(project_id, df)
         new_columns = [f"{column_name}_{feat}" for feat in features]
         
         return {
@@ -182,7 +200,6 @@ async def extract_datetime_features(
         }
         
     except Exception as e:
-        logger.error(f"Datetime processing failed: {str(e)}")
         return {
             "status": "error",
             "message": str(e),
@@ -199,7 +216,7 @@ async def text_cleanup(
 ) -> Dict:
     """Perform specified text cleaning operations on text column."""
     try:
-        df = await get_dataset(project_id)
+        #df = await get_dataset(project_id)
         text_series = df[column_name].astype(str)
         
         for step in steps:
@@ -211,14 +228,13 @@ async def text_cleanup(
                 text_series = text_series.str.replace(r"[^a-zA-Z0-9\s]", "", regex=True)
         
         df[column_name] = text_series
-        await update_dataset(project_id, df)
+        #await update_dataset(project_id, df)
         return {
             "status": "success",
             "message": f"Cleaned text using {steps}",
             "sample_text": make_serializable(text_series.head())
         }
     except Exception as e:
-        logger.error(f"Text cleaning error: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 @tool
@@ -229,7 +245,7 @@ async def minmax_scale(
 ) -> Dict:
     """Scale numeric features to specified range (default 0-1)."""
     try:
-        df = await get_dataset(project_id)
+        #df = await get_dataset(project_id)
         validate_column(df, column_name, "numeric")
         
         if df[column_name].nunique() == 1:
@@ -238,7 +254,7 @@ async def minmax_scale(
         scaler = MinMaxScaler(feature_range=feature_range)
         df[column_name] = scaler.fit_transform(df[[column_name]])
         
-        await update_dataset(project_id, df)
+        #await update_dataset(project_id, df)
         return {
             "status": "success",
             "message": f"MinMax scaled {column_name} to range {feature_range}",
@@ -250,7 +266,6 @@ async def minmax_scale(
             }
         }
     except Exception as e:
-        logger.error(f"MinMax scaling error: {str(e)}")
         return {
             "status": "error",
             "message": str(e),
@@ -266,7 +281,7 @@ async def ordinal_encode(
 ) -> Dict:
     """Encode categorical features as ordinal integers."""
     try:
-        df = await get_dataset(project_id)
+        #df = await get_dataset(project_id)
         validate_column(df, column_name, "categorical")
         
         encoder = OrdinalEncoder(
@@ -277,7 +292,7 @@ async def ordinal_encode(
         encoded = encoder.fit_transform(df[[column_name]])
         df[column_name] = encoded.ravel()
         
-        await update_dataset(project_id, df)
+        #await update_dataset(project_id, df)
         return {
             "status": "success",
             "message": f"Ordinal encoded {column_name}",
@@ -288,7 +303,6 @@ async def ordinal_encode(
             "transformed_data": make_serializable(df[column_name].head())
         }
     except Exception as e:
-        logger.error(f"Ordinal encoding error: {str(e)}")
         return {
             "status": "error",
             "message": str(e),
@@ -324,5 +338,4 @@ async def tool_node(state) -> Literal["caller", "__end__"]:
             return {"next": "caller", "error": result["message"]}
             
     except Exception as e:
-        logger.error(f"Tool execution failed: {str(e)}")
         return {"next": "caller", "error": str(e)}
