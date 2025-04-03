@@ -9,3 +9,5 @@ pymongo==4.11.1
 pydantic==2.10.4
 hydralit_components==1.0.10
 streamlit-nested-layout==0.1.4
+fireducks==1.2.5
+streamlit-extras==0.6.0

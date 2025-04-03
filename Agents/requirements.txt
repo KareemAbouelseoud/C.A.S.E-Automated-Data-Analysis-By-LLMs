@@ -19,3 +19,4 @@ catboost==1.2.7
 statsmodels==0.14.4
 beautifulsoup4==4.13.3
 httpx==0.28.1
+fireducks==1.2.5
