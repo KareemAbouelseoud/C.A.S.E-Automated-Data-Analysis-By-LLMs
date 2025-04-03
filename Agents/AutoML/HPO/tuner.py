@@ -1,4 +1,5 @@
 from pydantic import BaseModel,Field
+from typing import Annotated
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain import hub
 from dotenv import load_dotenv
@@ -9,6 +10,7 @@ from typing import Literal
 import re
 import httpx
 from bs4 import BeautifulSoup
+from langchain_core.tools import InjectedToolArg,tool
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 load_dotenv()
 
@@ -48,69 +50,72 @@ async def fetch_url_content(url: str) -> str:
     except Exception as e:
         print(f"Failed to fetch content from {url}: {e}")
         return ""
-        
-async def tuner_node(state):
+@tool
+async def tuner_node(state: Annotated[dict,InjectedToolArg] = None,
+                     model_names: Annotated[list[str],"This is the list of models that you want to tune. The naming must be identical to how model_selection has given."]=None,
+                     task: Annotated[str,"This is the task that the supervisor node should assign or give. It is completely optional, You can write what are your preferences or comments"]=None):
     data_report=state['data_report']
     print("Tuner Node",flush=True)
-    if 'models_completed' not in state:
-        models_completed=0
-    else:
-        models_completed=state['models_completed']
+    model_dict=state.get('models', {})
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
-    
-    message_content=f"MODE: {state['mode']}\nTrain Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']} \n Problem Type: {state['problem_type']} \n"
-    
-    if state['problem_type']=="classification":
-        message_content+=f"\n Stratified {state['stratify']}"
-    
-    if state['cross_validation']:
-        message_content+=f"\n Cross Validation: {state['n_splits']} splits"
-    else:
-        message_content+=f"\n Val Size: {state['val_size']}"
-    
+    messages=[{"role": "system", "content":system_prompt}]+state.get('tuning_messages', [])
+    output={}
+    for model in model_names:
+        last_message=""
+        if state.get("evaluation_metrics", None):
+            last_message+=f"Here are the evaluation metrics for your previous steps: {state['evaluation_metrics']}\n\n Attempt to Analyze and Improve, if possible, if not return the same values.\n\n"
 
-    message_content+= f"THIS IS THE MODEL (IMPORTANT): {state['models'][models_completed]['model']}"
-    # Fetch additional knowledge from a provided URL
-    url = state['models'][models_completed].get('reference_url', None)
-    if url:
-        web_content = await fetch_url_content(url)
-        if web_content:
-            print(f"Additional Reference Data from {url}:\n{web_content}",flush=True)
-            message_content += f"\n\nAdditional Reference Data from {url}:\n{web_content}"
-    
-    
-    messages=[
-        {"role": "system", "content":system_prompt+f"\n\n Data Report:\n {data_report}" },
-        {"role": "user", "content":message_content},
-    ]
+        if task:
+            last_message+=f"Here are the instructions for you given by the supervisor, if it doesn't apply to this model ignore it and move on: {task}\n\n"
 
-    response= await llm.with_structured_output(Splitter).ainvoke(messages)
-    try:
-        params_string=response.params_distribution.replace("None","null")
-        params_string=params_string.replace('True','true')
-        params_string=params_string.replace('False','false')
-        # Handle tuples specially - convert them to lists
-        # This regex matches patterns like (64,) or (128, 64)
-        # Convert tuple representations like (64,) to JSON array format
-        params_string = re.sub(r'\((\d+),\)', r'[\1]', params_string)
-        # Convert tuple representations like (128, 64) to JSON array format
-        params_string = re.sub(r'\((\d+(?:,\s*\d+)+)\)', r'[\1]', params_string)
+        last_message+=f"MODE: {state['mode']}\nData report: {data_report}\nTrain Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']} \n Problem Type: {state['problem_type']} \n"
+    
+        if state['problem_type']=="classification":
+            last_message+=f"\n Stratified {state['stratify']}"
         
-        print(params_string)
-        params=json.loads(params_string)
-    except Exception as e:
-        print("Error in parsing the params")
-        raise e
-        params=None
+        if state['cross_validation']:
+            last_message+=f"\n Cross Validation: {state['n_splits']} splits"
+        
 
-    return {
-        'n_iter': response.n_iter,
-        'params_distribution': params,
-        'models_completed': models_completed
+        last_message+= f"THIS IS THE MODEL (IMPORTANT): {model} \n\n"
+        # Fetch additional knowledge from a provided URL
+        url = state.get('models',{}).get(model,{}).get('reference_url', None)
+        reference=''
+        if url:
+            web_content = await fetch_url_content(url)
+            if web_content:
+                print(f"Additional Reference Data from {url}:\n{web_content}",flush=True)
+                reference += f"\n\nAdditional Reference Data from {url}:\n{web_content}"
+    
+
+
+        response= await llm.with_structured_output(Splitter).ainvoke(messages+[{"role": "user", "content": last_message+reference}])
+        try:
+            params_string=response.params_distribution.replace("None","null")
+            params_string=params_string.replace('True','true')
+            params_string=params_string.replace('False','false')
+            # Handle tuples specially - convert them to lists
+            # This regex matches patterns like (64,) or (128, 64)
+            # Convert tuple representations like (64,) to JSON array format
+            params_string = re.sub(r'\((\d+),\)', r'[\1]', params_string)
+            # Convert tuple representations like (128, 64) to JSON array format
+            params_string = re.sub(r'\((\d+(?:,\s*\d+)+)\)', r'[\1]', params_string)
+            
+            params=json.loads(params_string)
+            model_dict[model]['params_distribution']=params
+            output[model] = {
+                "params_distribution": params,
+            }
+            if response.n_iter:
+                model_dict[model]['n_iter']=response.n_iter
+                output[model]['n_iter']=response.n_iter
+            
+        except Exception as e:
+            print(f"Error in parsing the params: {e}")
+            output[model] = f"Error has occured: {e}"
+
+    new_state={
+        "models": model_dict,
+        "tuning_messages":[{"role": "user", "content": last_message},{"role": "assistant", "content": f"Here is the output: {output}"}]
     }
-
-def tuner_decide_to_finish(state)-> Literal['model_tuner_node','model_trainer_node']:
-    if state['params_distribution'] is None:
-        return 'model_tuner_node'
-    else:
-        return 'model_trainer_node'
+    return [f"Here is the output: {output} ",new_state]
