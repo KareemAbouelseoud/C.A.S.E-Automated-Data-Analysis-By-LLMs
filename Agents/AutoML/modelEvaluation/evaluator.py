@@ -1,7 +1,7 @@
 from API.Requests import projectRequests
 from typing import Literal
 from sklearn import model_selection
-import pandas as pd
+import fireducks.pandas as pd
 from sklearn.metrics import accuracy_score,precision_score, recall_score, f1_score, roc_auc_score,confusion_matrix,precision_recall_curve,roc_curve
 from sklearn.inspection import permutation_importance
 import json

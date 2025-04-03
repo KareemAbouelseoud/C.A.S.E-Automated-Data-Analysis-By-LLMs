@@ -10,7 +10,7 @@ from typing import List, Literal, Optional, Dict,Tuple
 from io import StringIO
 
 import numpy as np
-import pandas as pd
+import fireducks.pandas as pd
 from fastapi import APIRouter, Form, File, UploadFile, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from typing import List, Optional

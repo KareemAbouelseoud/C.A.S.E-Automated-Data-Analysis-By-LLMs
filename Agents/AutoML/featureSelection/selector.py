@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
-import pandas as pd
+import fireducks.pandas as pd
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LinearRegression  # or another estimator
 from sklearn.base import BaseEstimator, TransformerMixin

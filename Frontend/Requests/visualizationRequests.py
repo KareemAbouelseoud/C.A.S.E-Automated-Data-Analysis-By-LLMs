@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 import requests
 import json
 from dataModels.visualization import ChatViz
-import pandas as pd
+import fireducks.pandas as pd
 import streamlit as st
 import plotly.figure_factory as ff
 import plotly.express as px

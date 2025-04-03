@@ -1,5 +1,5 @@
 import asyncio
-import pandas as pd
+import fireducks.pandas as pd
 import json
 import os
 import sys

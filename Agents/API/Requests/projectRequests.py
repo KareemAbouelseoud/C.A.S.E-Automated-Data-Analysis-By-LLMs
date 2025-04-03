@@ -1,5 +1,5 @@
 import httpx
-import pandas as pd
+import fireducks.pandas as pd
 from io import StringIO
 from joblib import Memory
 import joblib

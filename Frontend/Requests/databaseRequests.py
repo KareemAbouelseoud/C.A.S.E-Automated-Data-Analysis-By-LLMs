@@ -1,8 +1,6 @@
 import requests
-import streamlit as st
 import json
-import pandas as pd
-from io import StringIO
+import fireducks.pandas as pd
 
 url = 'http://Backend:8005'
 #region User API CALLS
