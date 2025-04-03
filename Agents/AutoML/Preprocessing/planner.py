@@ -12,28 +12,36 @@ llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGUR
 
 async def planner_node(state):
     data_report=state['data_report']
-
-    if 'preprocessing_mode' not in state:
+    last_message = ""
+    
+    if state.get('evaluation_metrics', None):
+        last_message+=f"Here are the evaluation metrics for your previous steps: {state['evaluation_metrics']}\n\n Attempt to Analyze and Improve, if possible, if not return the same values.\n\n"
+    
+    if state.get('task', None):
+        last_message+=f"Here are the instructions for you given by the supervisor: {state['task']}\n\n"
+    
+    if state['preprocessing_mode'] == 'X':
         print("Planning Training Preprocessing")
         system_prompt = hub.pull("automl-preprocessor-planner").messages[0].prompt.template
-        mode = 'X'
-        messages=[
-            {"role": "system", "content":system_prompt },
-            {"role": "user", "content": f"Data Report:\n {data_report}\n\nTrain Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']}"},
-        ]
-
+        last_message+=f"Here is the lastest data available: Data Report:\n {data_report}\n\n Train Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']}"
     else:
         print("Planning Target Preprocessing")
         system_prompt = hub.pull("automl-preprocessor-y-planner").messages[0].prompt.template
-        mode = 'Y'
-        messages=[
-            {"role": "system", "content":system_prompt },
-            {"role": "user", "content": f"Data Report:\n {data_report}\n Target Feature: {state['y_column']}\n ONLY PREPROCESS THE TARGET FEATURE"},
-        ]
+        last_message+=f"Data Report:\n {data_report}\n Target Feature: {state['y_column']}\n ONLY PREPROCESS THE TARGET FEATURE"
     
+    if state.get('preprocessing_pipeline', None):
+        last_message+=f"Here is the latest preprocessing pipeline {state['preprocessing_pipeline']}\n\n"
+        
+    if state.get('model_names', None):
+        last_message+=f"Here are the models going to be trained potentially do not put major dependence on it: {state['model_names']}\n\n"
+
+    messages=[
+            {"role": "system", "content":system_prompt},
+        ] + state.get('planner_messages', [])
+    messages.append({"role": "user", "content": last_message})
+
     response= await llm.ainvoke(messages)
-    if 'preprocessing_mode' not in state:
-        return {"X_preprocessing_logic": response,"preprocessing_mode":mode}
-    else:
-        return {"Y_preprocessing_logic": response,"preprocessing_mode":mode}
-    
+
+    new_messages=[messages[-1],
+                  {"role": "assistant", "content": f"Here is the output: {response.model_dump_json()}"}]
+    return {"preprocessing_logic": response.logic,'planner_messages':new_messages}
