@@ -325,7 +325,7 @@ class Chatbot:
             
     
     def visualize_classification(self,model_evaluation):
-        with st.expander(model_evaluation['model']):
+        with st.expander(list(model_evaluation.keys())[0]):
             with st.expander('Metrics'):
                 # Create a 3-column layout
                 col1, col2, col3 = st.columns([1, 2, 1])  # Middle column is wider for Accuracy

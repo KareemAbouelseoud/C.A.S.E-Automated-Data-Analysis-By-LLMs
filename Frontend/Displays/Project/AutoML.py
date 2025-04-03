@@ -106,7 +106,6 @@ class AutoML:
                     self.visualize()
 
     def visualize(self):
-            print(self.autoML_session['autoML']['eval_report'])
             # st.write(self.autoML_session['autoML']['eval_report'])
             if self.autoML_session['autoML']['eval_report']['mode']=='HERMES':
                 mode='⚡ HERMES'
@@ -222,7 +221,7 @@ class AutoML:
             st.markdown(f"<h1 style='text-align: center; font-size: 50px;'>Modeling</h1>", unsafe_allow_html=True)    
 
             for model_evaluation,model_info in zip(model_evaluation_reports,self.autoML_session['autoML']['eval_report']['models']):
-                st.markdown(f"<h1 font-size: 25px;'>{model_info['model']}</h1>", unsafe_allow_html=True)
+                st.markdown(f"<h1 font-size: 25px;'>{list(model_info.keys())[0]}</h1>", unsafe_allow_html=True)
                 if 'params_distribution' in model_info and  model_info['params_distribution'] is not None:
                     cols=2
                 else:
@@ -241,8 +240,8 @@ class AutoML:
                 elif model_evaluation['problem_type']=='regression':
                     self.visualize_regression(model_evaluation)
                 with st.expander('Test Model'):
-                    display_feature_form(model_info['deployment'],model_info['model'],self.autoML_session['project_id'],feature_columns=model_info['X_columns'] if 'X_columns' in model_info else None)
-                    if f"{model_info['model']}_predictions" in st.session_state:
+                    display_feature_form(model_info['deployment'],list(model_info.keys())[0],self.autoML_session['project_id'],feature_columns=model_info['X_columns'] if 'X_columns' in model_info else None)
+                    if f"{list(model_info.keys())[0]}_predictions" in st.session_state:
                         text=f"Prediction(s):"
                         predictions=str(st.session_state[f'{model_info["model"]}_predictions'])
                         if 'encoder_mapping' in model_info and model_info['encoder_mapping']:
