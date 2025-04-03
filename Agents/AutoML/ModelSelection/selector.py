@@ -3,6 +3,9 @@ from pydantic import BaseModel,Field
 from langchain_google_genai import ChatGoogleGenerativeAI
 from typing import Literal
 from langchain import hub
+from langchain_core.tools import tool,InjectedToolArg
+from typing_extensions import Annotated,Optional
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -77,14 +80,14 @@ class ModelRecommendation(BaseModel):
 
 class Selector(BaseModel):
     """Main structured output model"""
-    models: List[ModelRecommendation] = Field(
-        description="List of recommended models with explanations",
-        min_items=1,
-        max_items=5
-    )
+    models: List[ModelRecommendation] = Field(description="List of recommended models with explanations")
 
-
-async def model_selector_node(state):
+@tool
+async def model_selector_node(state: Annotated[dict, InjectedToolArg] = None,
+                            number_of_models: Annotated[int, "Number of models to be selected"] = 3,
+                            task: Optional[Annotated[str, "This is the task that the supervisor node should assign or give. It is completely optional, You can write what are your preferences or comments"]] = None):
+    """This agent is responsible for selecting the best model for the given data and problem type. It will use the provided data report and other information to make its recommendations.
+    The agent will also provide reasoning for its choices, and it will be able to handle both classification and regression tasks. The agent will return a list of recommended models along with their reasoning and reference URLs."""
     print(f"Model Selection Started")
     llm = ChatGoogleGenerativeAI(
         model=CONFIGURATIONS["model"],
@@ -96,40 +99,44 @@ async def model_selector_node(state):
     X_columns = state['X_columns']
     y_column = state['y_column']
     mode = state['mode']
+    model_list = list(classification_docs.keys()) if problem_type == 'classification' else list(regression_docs.keys())
+    messages = [{"role": "system","content": system_prompt}]+state.get('model_selection_messages', [])
+    content=""
+    if state.get('evaluation_metrics', None):
+        content+=f"Here are the evaluation metrics for your previous steps: {state['evaluation_metrics']}\n\n Attempt to Analyze and Improve, if possible, if not return the same values.\n\n"
+    if task:
+        content+=f"Here are the instructions for you given by the supervisor: {task}\n\n"
+    content+=f"""\n\nCurrent Mode: {mode}
+    Problem Type: {problem_type}
+    this is the model list: {model_list}\n 
+    this is the data report:{data_report}\n
+    this is the X columns: {X_columns}\n And this is the y column: {y_column}\n
+    This is the preprocessing steps that were applied for the X_columns: {state['X_preprocessing_logic'][-1]}\n
+    This is the preprocessing steps that were applied for the y_column: {state['Y_preprocessing_logic'][-1]}\n
+    Please provide recommendations strictly following the format requirements. Give me the best {number_of_models} models for the given data and problem type."""
     
-    model_list = list(classification_docs.keys()) if problem_type == 'classification' else list(regression_docs.keys()
-)
-    messages = [
-        {
-            "role": "system",
-            "content": system_prompt
-        },
-        {
-            "role": "user",
-            "content": 
-                f"\n\nCurrent Mode: {mode}\nProblem Type: {problem_type}"
-                f"this is the model list: {model_list}\n" 
-                f"this is the data report:{data_report}\n"
-                f"this is the X columns: {X_columns}\n And this is the y column: {y_column}\n"
-                f"This is the preprocessing steps that are going to be applied for the X_columns: {state['X_preprocessing_logic']}\n"
-                f"This is the preprocessing steps that are going to be applied for the y_column: {state['Y_preprocessing_logic']}\n"
-                "Please provide recommendations strictly following the format requirements."
-        }
-    ]
-    response = await llm.with_structured_output(Selector).ainvoke(messages)
-    
+    messages.append({"role": "user", "content": content})
 
-    return {
-        "models": [
-            {"model": rec.model, "reasoning": rec.reasoning, 'reference_url': classification_docs[rec.model] if problem_type == 'classification' else regression_docs[rec.model]}
-            for rec in response.models
-        ]
+    response = await llm.with_structured_output(Selector).ainvoke(messages)
+    models_response=[]
+    old_model_dict=state.get('models',{})
+    for model in response.models:
+        old_model_dict[model.model] = {
+            "reasoning": model.reasoning,
+            'reference_url': classification_docs[model.model] if problem_type == 'classification' else regression_docs[model.model]
+        }
+
+        models_response.append({
+            model.model: {
+                "reasoning": model.reasoning,
+                'reference_url': classification_docs[model.model] if problem_type == 'classification' else regression_docs[model.model]
+            }
+        })
+
+
+    new_state={
+        "models": old_model_dict,
+        'model_selection_messages': [messages[-1],{"role": "assistant", "content": f"Here is the output: {response.model_dump_json()}"}]
     }
 
-
-async def brancher(state) -> Literal["model_trainer_node", "model_tuner_node"]:
-    """Determine workflow continuation based on state validation"""
-    if state['mode']=='HERMES':
-        return "model_trainer_node"
-    else:
-        return "model_tuner_node"
+    return [f'The model selection is done, here are the models selected {[list(model.keys())[0] for model in models_response]}', new_state]
