@@ -1,14 +1,14 @@
-import pandas as pd
+import fireducks.pandas as pd
 from langchain_core.messages import ToolMessage
 from sklearn.impute import KNNImputer
-from typing import Annotated, Optional,Union,List
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder,FunctionTransformer,OrdinalEncoder,MinMaxScaler,StandardScaler,RobustScaler
+from typing import Annotated, Optional,Union,List,Any
+from sklearn.preprocessing import OneHotEncoder,FunctionTransformer,OrdinalEncoder,MinMaxScaler,StandardScaler,RobustScaler
 from functools import partial
 from helperFunctions import *
 from API.Requests import projectRequests
 from langchain_core.tools import tool,InjectedToolArg
 from sklearn.pipeline import Pipeline
-from pipeline_cache import get_cached_pipeline, update_cached_pipeline, remove_project_pipelines,save_model,fetch_model,remove_project_models # leave them
+from sklearn.compose import ColumnTransformer
 
 
 @tool
@@ -238,35 +238,66 @@ async def remove_duplicates(
         (f"Drop_Duplicates_{column_name if column_name else subset}",transformer)
     except Exception as e:
         raise ValueError(f"Error in remove_duplicates")
-
+@tool
+async def remove_preprocessing_steps(
+    column_names: Annotated[List[str], 'Columns to erase their preprocessing steps. If you want to remove all preprocessing steps, use the "remove_all" option.'],
+    preprocessor: Annotated[Any, InjectedToolArg] = None,
+) -> Any:
+    """Remove preprocessing steps from the pipeline for multiple columns. 
+    This is useful for undoing previous preprocessing steps, resetting the pipeline, 
+    fixing errors, or improving performance.
+    If you want to remove all preprocessing steps, use the "remove_all" option.
+    """
+    if 'remove_all' in column_names:
+        # Remove all preprocessing steps
+        preprocessor = ColumnTransformer([('Drop', Pipeline(steps=[]), preprocessor.transformers[0][2])], remainder='passthrough', sparse_threshold=0)
+        return preprocessor
+    
+    preprocessor.transformers = [preprocessor.transformers[0]] + [
+        transformer for transformer in preprocessor.transformers[1:]
+        if not any(col in transformer[2] for col in column_names)
+    ]
+    return preprocessor
+    
 tools=[
     handle_outliers,
     parse_datetime,
     handle_null_values,
     remove_duplicates,
     encode_categorical_feature,
-    normalize_continous_feature
+    normalize_continous_feature,
+    remove_preprocessing_steps,
 ]
 
 async def tool_node(state):
     print("Executing Tool Calls")
     tools_by_name = {tool.name: tool for tool in tools}
 
-    if state['preprocessing_mode']=='X':
-        messages = state["X_preprocessing_messages"]
-        mode='X'
-    else:
-        messages = state['Y_preprocessing_messages']
-        mode='Y'
-    # get the last message of this state
-    last_message = messages[-1]
+    mode=state['preprocessing_mode']
+    messages = state["preprocessing_messages"]
     project_id = state["project_id"]
-    preprocessor = await get_cached_pipeline(project_id, mode, state)
 
+
+    preprocessor = state.get("preprocessing_pipeline", None)
+    if preprocessor is None:
+            droper = ('Drop', Pipeline(steps=[]), state["X_columns"] if mode=='X' else state['y_column'])
+            pipeline = ColumnTransformer([droper], remainder='passthrough', sparse_threshold=0)
     output_messages = []
-    for tool_call in last_message.tool_calls:
+    for tool_call in messages[-1].tool_calls:
         print("Tool Name: ",tool_call["name"])
         print("Tool Args: ",tool_call["args"])
+        
+        if tool_call['name']=='remove_preprocessing_steps':
+            #Remove Preprocessing Steps
+            preprocessor=await remove_preprocessing_steps(tool_call["args"]["column_name"],preprocessor)
+            output_messages.append(
+                ToolMessage(
+                    content=f"Preprocessing step removed: {tool_call['name']} for column {tool_call['args']['column_name']}",
+                    name=tool_call["name"],
+                    tool_call_id=tool_call["id"],
+                )
+            )
+            continue
         try:
             
             # Invoke the tool based on the tool call
@@ -317,15 +348,11 @@ async def tool_node(state):
             # Return the error if the tool call fails
             output_messages.append(
                 ToolMessage(
-                    content=f"an error occurred while running the tool: {str(e)}",
+                    content=f"an error occurred while running the tool: {str(e)}\n\n The step has not been added",
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
                     status="error",
                 )
             )
             print(f"Error in tool_node: {e}")
-    await update_cached_pipeline(project_id,mode, preprocessor)
-    if mode=='X':
-        return {'X_preprocessing_messages':output_messages}
-    else:
-        return {'Y_preprocessing_messages':output_messages}
+    return {"preprocessing_messages": output_messages, "preprocessing_pipeline": preprocessor}    

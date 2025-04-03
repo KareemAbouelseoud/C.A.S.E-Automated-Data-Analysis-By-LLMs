@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+import fireducks.pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator, TransformerMixin
