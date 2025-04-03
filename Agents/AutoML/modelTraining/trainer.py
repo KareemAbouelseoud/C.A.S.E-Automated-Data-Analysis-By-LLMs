@@ -1,6 +1,6 @@
 from sklearn.impute import SimpleImputer
 from API.Requests import projectRequests
-import pandas as pd
+import fireducks.pandas as pd
 from typing import Literal
 from sklearn import model_selection
 import importlib
