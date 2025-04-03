@@ -8,6 +8,8 @@ from SubSpaceSearch.node import SubspaceSearchNode
 from Explainer.node import ExplainerNode
 from Reports.node import ReportNode
 from models import InsightCard, InsightCards
+import loggerModule
+logger=loggerModule.setup_logging(module_name="InsightGeneration")
 sys.path.append(os.getcwd())
 load_dotenv()
 
@@ -54,19 +56,19 @@ graph = graph_builder.compile(checkpointer=checkpointer)
 
 async def Start_Auto_InsightGen(project_id:str=None):
     df = await get_dataset(project_id)
-    print("Dataset loaded")
+    logger.info("Dataset loaded")
     state = AgentGraphState({"df": df.to_json()})  
     thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
     try:
         async for chunk in graph.astream(state, config=thread_config):
             for node_id, value in chunk.items():
-                print(f"Processing node {node_id}")  # Debug logging
+                logger.info(f"Processing node {node_id}")  # Debug logging
                 if node_id == "__interrupt__":
                     yield tuple((value[0],{"thread_id":thread_config["configurable"]["thread_id"]}))
                 else:
-                    print(f"Node {node_id} output: {value}")
+                    logger.info(f"Node {node_id} output: {value}")
     except Exception as e:
-        print(f"Error in test(): {str(e)}")
+        logger.error(f"Error in test(): {str(e)}")
         raise
 
 async def Continue_Auto_InsightGen(feedback: str, thread_id: str):
@@ -74,6 +76,7 @@ async def Continue_Auto_InsightGen(feedback: str, thread_id: str):
     result = graph.get_state(config=config)
     
     if not result[0]:
+        logger.error(f"No state found for thread_id: {thread_id}")
         raise ValueError(f"No state found for thread_id: {thread_id}")
     
     # Get the current state directly from result[0]
@@ -91,7 +94,7 @@ async def Continue_Auto_InsightGen(feedback: str, thread_id: str):
     try:
         if feedback.lower() == 'done':
             # Use await instead of async for with ainvoke
-            print("Continuing Pipeline ...")
+            logger.info("Continuing Pipeline ...")
             result = await graph.ainvoke(Command(resume=feedback), config=config)
             
             yield tuple((result, {"thread_id": str(config["configurable"]["thread_id"])}))
@@ -101,7 +104,7 @@ async def Continue_Auto_InsightGen(feedback: str, thread_id: str):
                     if node_id == "__interrupt__":
                         yield tuple((value[0], {"thread_id": config["configurable"]["thread_id"]}))
     except Exception as e:
-        print(f"Error in Continue_Auto_InsightGen: {str(e)}")
-        raise
+        logger.error(f"Error in Continue_Auto_InsightGen: {str(e)}")
+        raise e
 
 

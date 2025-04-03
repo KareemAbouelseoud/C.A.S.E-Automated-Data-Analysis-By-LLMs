@@ -60,8 +60,8 @@ def subspace_search(df:pd.DataFrame,card:InsightCard,desc:DataDescription, beam_
     for depth in range(1, max_depth + 1):
         # print("Original QUGEN CARD",card.question)
         for S, _card in beam:
+            #TODO: Threading for the Expfactor Loop
             for i in range(exp_factor):
-                
                 Snew,Advanced_Card = EXPAND(S, df, _card,desc=desc)
                 if Advanced_Card == None:
                     # print(f"Warning: Skipping current Advanced Card as - no suggested cards available.")

@@ -38,7 +38,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','Ag
 import loggerModule
 from typing import Annotated
 from API.Requests.projectRequests import get_dataset
-logger=loggerModule.setup_logging()
+logger=loggerModule.setup_logging(module_name="VizGeneration")
+
 import numpy as np
 def make_serializable(obj):
     """

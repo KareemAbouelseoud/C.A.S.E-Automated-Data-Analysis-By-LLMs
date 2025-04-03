@@ -37,6 +37,7 @@ class ProjectService:
             container_client = self.blob_service_client.get_container_client("datasets")
         
             # Generate unique blob name
+            # NOTE: Used user_id and current timestamp to ensure uniqueness as Project ID is not available yet
             blob_name = f"{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
             
             # Upload to blob storage

@@ -1,5 +1,5 @@
 import logging
-def setup_logging(log_file="logfile.log", log_level=logging.ERROR):
+def setup_logging(log_file="logfile.log", log_level=logging.ERRO,module_name="main"):
     """
     Configures logging for the entire project.
     
@@ -8,7 +8,7 @@ def setup_logging(log_file="logfile.log", log_level=logging.ERROR):
         log_level (int): Logging level (e.g., logging.DEBUG, logging.INFO).
     """
     # Create a custom logger
-    logger = logging.getLogger()
+    logger = logging.getLogger(module_name)
     logger.setLevel(log_level)  # Set the root logger level
 
     # Remove existing handlers to avoid duplicates

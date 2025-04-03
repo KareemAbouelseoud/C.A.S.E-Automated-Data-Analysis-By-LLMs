@@ -14,18 +14,23 @@ import json
 
 def generate_profile_data(df:pd.DataFrame) -> dict:
     """Generate a pandas-profiling report and parse it into a JSON-serializable dict."""
+    start_time = time.time()
     profile = ProfileReport(
         df,
+        explorative=True,
         samples=None,
         interactions=None,
         missing_diagrams=None,
     )
+    profile_time = time.time() - start_time
+    start_time = time.time()
     json_str = profile.to_json()
-    return json.loads(json_str)
+    json_time = time.time() - start_time
+    return (json.loads(json_str),json_time,profile_time)
 
-def clean_profile_report(df:pd.DataFrame) -> dict:
+def clean_profile_report(df:pd.DataFrame):
     """Clean a generated profile report and return cleaned data structure."""
-    data = generate_profile_data(df)
+    data,json_time,profile_time = generate_profile_data(df)
 
     #  top-level section
     for key in ["scatter", "missing", "package", "interactions"]:
@@ -94,13 +99,48 @@ def clean_profile_report(df:pd.DataFrame) -> dict:
             for key in CATEGORICAL_TEXT_METADATA + COMMON_TEXT_METADATA:
                 var_data.pop(key, None)
 
-    return data
+    return (data,json_time,profile_time)
 
+def extract_key_findings(profile: dict) -> dict:
+    pearson_correlations = profile["correlations"].get("pearson", {})
+    return {
+        "missing_values": [
+            f"{k}: {v['p_missing']}% missing"
+            for k, v in profile["variables"].items()
+            if v["p_missing"] > 5
+        ],
+        "skewed_columns": [
+            k for k, v in profile["variables"].items() if v.get("skewness", 0) > 2
+        ],
+        "top_correlations": [
+            f"{k[0]} & {k[1]}: {v:.2f}"
+            for k, v in pearson_correlations.items()
+            if abs(v) > 0.7
+        ]
+        if pearson_correlations
+        else ["No significant numerical correlations found"],
+    }
 
 def ReportNode(state:dict):
     """Generate a profile report and save it to a file."""
     df = pd.read_json(StringIO(state["df"]))
-    return ({"report": make_serializable(clean_profile_report(df))})
+    profile_json,json_time,profile_time = clean_profile_report(profile_json)
+    
+    report = {
+        "description_insights": {"key_findings": extract_key_findings(profile_json)},
+        "dataset_description": state.get("description", ""),
+        "metadata": {
+            "generation_date": pd.Timestamp.now().isoformat(),
+            "profile_generation_sec": round(profile_time, 2),
+            "json_conversion_sec": round(json_time, 2),
+        },
+        "dataset_profile": {
+            "overview": profile_json["table"],
+            "variables": profile_json["variables"],
+            "correlations": profile_json["correlations"]
+        },
+    }
+    return ({"report": make_serializable(report)})
 
 def make_serializable(obj):
     """
