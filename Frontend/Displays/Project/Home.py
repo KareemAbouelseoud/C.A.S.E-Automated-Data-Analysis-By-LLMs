@@ -2,6 +2,7 @@ import streamlit as st
 from Project.AutoML import AutoML
 from Project.Visualizations import Visualizations
 from Project.Dataset import Dataset
+from Project.Insights import Insights
 from Requests import databaseRequests
 import uuid
 from Style import general,buttons
@@ -46,6 +47,7 @@ class Project:
                 st.markdown(buttons.back_button,unsafe_allow_html=True)
                 st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
                 st.button('',icon=":material/arrow_back:",on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
+            Insights()
         with tabs[3]:
             st.markdown("<h1 style='text-align: center; font-size: 65px;'>IRIS</h1>", unsafe_allow_html=True)    
             with st.columns(19)[-1]:
