@@ -9,7 +9,7 @@ import json
 import numpy as np
 from langchain.load import dump,load
 from langgraph.checkpoint.memory import MemorySaver
-import pandas as pd
+import fireducks.pandas as pd
 from API.Requests import chatbotRequests
 checkpointer = MemorySaver()
 

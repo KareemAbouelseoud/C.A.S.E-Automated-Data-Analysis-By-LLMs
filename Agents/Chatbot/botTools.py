@@ -88,7 +88,7 @@ async def predictor(project_id:Annotated[str,InjectedToolArg]=None):
     if report:
         deployment_dict={"deployment":{}}
         for model in report['models']:
-            deployment_dict["deployment"][model['model']]={'features':model['deployment'],'feature_columns':model['X_columns']}
+            deployment_dict["deployment"][list(model.keys())[0]]={'features':model['deployment'],'feature_columns':model['X_columns']}
 
         return ['You must inform the user that the model is ready for prediction, and they can find the form below',deployment_dict]
     else:
