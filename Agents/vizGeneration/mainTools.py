@@ -26,17 +26,14 @@ Variables:
 - logger: A logger instance for logging messages.
 """
 import plotly.express as px
-from typing import Dict, Optional,List
-import pandas as pd
-from typing import Literal
-import pandas as pd
+from typing import Dict, Optional,List,Literal,Annotated
+import fireducks.pandas as pd
 from langchain_core.tools import tool,InjectedToolArg
 from langchain_core.messages import ToolMessage
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','Agents')))
 import loggerModule
-from typing import Annotated
 from API.Requests.projectRequests import get_dataset
 logger=loggerModule.setup_logging()
 import numpy as np
