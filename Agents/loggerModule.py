@@ -1,5 +1,5 @@
 import logging
-def setup_logging(log_file="logfile.log", log_level=logging.ERRO,module_name="main"):
+def setup_logging(log_file="logfile.log", log_level=logging.ERROR,module_name="main"):
     """
     Configures logging for the entire project.
     

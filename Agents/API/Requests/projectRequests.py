@@ -5,6 +5,7 @@ from joblib import Memory
 import joblib
 import json
 import io
+import requests
 url="http://Backend:8005"
 
 # Create a memory cache in a temporary directory
@@ -17,12 +18,15 @@ async def get_dataset(project_id):
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.get(url + f"/project/{project_id}/fetchDataset")
-            except:
+            except Exception as e:
+                print("Error in fetching dataset from backend:", e)
                 response = await client.get(f"http://localhost:8005/project/{project_id}/fetchDataset")
-        dataset = response.json()['data']
-    except:
+        dataset = json.loads(response.json()["data"])
+    except Exception as e:
+        print(f"Error fetching dataset: {e}")
+        raise e
         return None
-    return pd.read_json(StringIO(dataset))
+    return pd.DataFrame(dataset)
 
 
 @memory.cache

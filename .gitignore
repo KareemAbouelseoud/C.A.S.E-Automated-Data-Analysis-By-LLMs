@@ -21,4 +21,6 @@ Thumbs.db
 cache/
 
 # Log files
+.log
 *.log
+/Agents/.cache

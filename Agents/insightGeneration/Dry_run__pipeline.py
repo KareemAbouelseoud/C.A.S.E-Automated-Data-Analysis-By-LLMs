@@ -64,12 +64,12 @@ async def Start_Auto_InsightGen(project_id:str=None):
             for node_id, value in chunk.items():
                 logger.info(f"Processing node {node_id}")  # Debug logging
                 if node_id == "__interrupt__":
-                    yield tuple((value[0],{"thread_id":thread_config["configurable"]["thread_id"]}))
+                    yield tuple((value[0].value,{"thread_id":thread_config["configurable"]["thread_id"]}))
                 else:
                     logger.info(f"Node {node_id} output: {value}")
     except Exception as e:
         logger.error(f"Error in test(): {str(e)}")
-        raise
+        raise e
 
 async def Continue_Auto_InsightGen(feedback: str, thread_id: str):
     config = {'configurable': {'thread_id': uuid.UUID(thread_id)}}

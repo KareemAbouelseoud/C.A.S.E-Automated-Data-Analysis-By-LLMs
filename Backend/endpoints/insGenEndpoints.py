@@ -2,10 +2,18 @@ import asyncio
 from config import *
 insGen_router = APIRouter(prefix="/insGen", tags=["insGen"])
 insGen_service = insGenService()
-@insGen_router.get("/description")
+@insGen_router.get("/project/{project_id}/description")
 
-async def get_description():
-    return await insGen_service.get_description()
+async def get_description(project_id):
+    if not project_id:
+        raise HTTPException(status_code=400, detail="Project ID cannot be empty")
+    try:
+        task = asyncio.create_task(insGen_service.get_description(project_id))
+        result = await task 
+        return result
+    except Exception as e:
+        print(f"Error in get_description: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @insGen_router.post("/description/feedback")
 async def post_description(body:Feedback):

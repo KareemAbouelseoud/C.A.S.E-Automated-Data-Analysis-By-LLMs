@@ -1,10 +1,9 @@
 services:
   Agents:
-    build: 
-      context: ./Agents
-      dockerfile: dockerfile
-    
-    image: agents:3.0
+    # build: 
+    #   context: ./Agents
+    #   dockerfile: dockerfile
+    image: agents:3.0.1
     networks:
       - case-pb
     ports:
@@ -20,9 +19,9 @@ services:
       - .env
 
   Backend:
-    build: 
-      context: ./Backend
-      dockerfile: dockerfile
+    # build: 
+    #   context: ./Backend
+    #   dockerfile: dockerfile
     image: backend:2.0
     networks:
       - case-pb
@@ -38,9 +37,9 @@ services:
       - .env
 
   Frontend:
-    build: 
-      context: ./Frontend
-      dockerfile: dockerfile
+    # build: 
+    #   context: ./Frontend
+    #   dockerfile: dockerfile
     image: frontend:2.0
     networks:
       - case-pb

@@ -25,21 +25,22 @@ class ProjectService:
         return projects
 
     async def create_project(self,file:UploadFile = File(...), user_id: str = Form(...), name: str = Form(...)) -> Project:
-        user,contents = await asyncio.gather(self.userRepository.get_by_id(user_id),file.read())
+
+        user = await self.userRepository.get_by_id(user_id)
 
         if user==None:
             raise HTTPException(status_code=400, detail="Invalid user_Id Please provide an existing user id.")
         # 1. Validate file type (ensure it's a CSV)
         if file.filename[-4:].lower().strip() != ".csv":
-            raise HTTPException(status_code=400, detail="Invalid file type. Only CSV files are allowed.")
+            raise HTTPException(status_code=500, detail="Invalid file type. Only CSV files are allowed.")
         # 2. Upload CSV to the BlobStorage
         try:
             container_client = self.blob_service_client.get_container_client("datasets")
-        
             # Generate unique blob name
             # NOTE: Used user_id and current timestamp to ensure uniqueness as Project ID is not available yet
             blob_name = f"{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
             
+            contents = await file.read()
             # Upload to blob storage
             blob_client = container_client.upload_blob(name=blob_name, data=contents)
             
@@ -49,15 +50,14 @@ class ProjectService:
             
             
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Error Uploading the csv to teh blob storage: {e}")
+            raise HTTPException(status_code=500, detail=f"Error Uploading the csv to the blob storage: {e}")
         
         new_project = Project(name=name, user_id=user_id,Dataset=dataframe,created_Date=datetime.now())
         new_project.model_Chat=projectChat(last_update=datetime.now())
         new_project.streamlit_Chat=projectChat(last_update=datetime.now())
         ## BUG: The below code is for testing purposes only we will remove it later
-        data_report_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'data_report_1.json')
-        with open(data_report_path, 'r') as file:
-            new_project.data_report = json.dumps(json.load(file))
+       
+        new_project.data_report = ""
         new_project.thread_id = str(uuid.uuid4())
         # 5.  Important: Save ٍProject to MongoDB
         try:       
@@ -72,7 +72,7 @@ class ProjectService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error creating project visualization and data to MongoDB: {e}")
 
-        return project
+        return project.model_dump(mode="json")
         
 
     async def update_project(self, id: str, project: Project) -> bool:
@@ -189,7 +189,7 @@ class ProjectService:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
         
         datasetUrl=f"{project.Dataset}{os.environ.get('AZURE_STORAGE_SAS_TOKEN')}"
-        print(datasetUrl)
+        # print(datasetUrl)
         return pd.read_csv(datasetUrl)
 
     async def fetch_thread_id(self, project_id: str) -> Optional[str]:
