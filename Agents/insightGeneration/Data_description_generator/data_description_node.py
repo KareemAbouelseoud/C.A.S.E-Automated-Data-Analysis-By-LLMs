@@ -16,6 +16,14 @@ def data_description_prompt(df, feedback):
         2. An overview description of the dataset.
         3. Key patterns in the data distribution.
         4. Notable data quality issues.
+        5. The output should be string not markdown format and the format should be like this:
+        
+        "description": {{
+            "col_explanation": "Explanation of each column in bullet points.",
+            "overview": "Overview of the dataset.",
+            "key_patterns": "Key patterns in the data distribution.",
+            "qual_issues": "Notable data quality issues."
+        }}
         """
         
 

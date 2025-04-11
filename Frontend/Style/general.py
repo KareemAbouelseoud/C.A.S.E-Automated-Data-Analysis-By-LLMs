@@ -164,12 +164,12 @@ dialog_box="""
     padding-right: 1rem;
     padding-bottom: 1rem;
     padding-left: 1rem;
-    width: 100%;
+    
     box-sizing: border-box;
     color: rgb(255, 246, 236);
     outline: none;
     min-width: 0px;
-    max-width: 100%;
+    
     cursor: text;
     margin: 0px;
     line-height: 1.4;
@@ -186,18 +186,19 @@ div[data-baseweb="textarea"]:nth-child(2){
     position: static !important;
     border: none !important;
 }
-.stVerticalBlock.st-emotion-cache-t85rj.eiemyj3{
+.st-key-description_area{
     top: -113px !important;
     border-top-right-radius: 1rem;
     border-bottom-right-radius: 1rem;
-    width: 58vw;
+    right: -54px;
     height: 85.8vh;
     background:rgb(19, 19, 22);
     position:absolute;
+    margin-left:43px;
 }
-.stVerticalBlock.st-emotion-cache-p6f4r1.eiemyj3 {
+.st-key-chat_area {
     position: relative !important;
-    left: -24px !important;
+    
 }
 div[data-testid="stChatInput"] textarea {
         box-sizing: border-box;
@@ -227,10 +228,11 @@ div[data-testid="stChatInput"] textarea {
         background: url("app/static/imagemeshgradient.png") no-repeat center center fixed;
         background-position: center 200px;
             }
-.chat-history-container {
-    max-height:55vh;
+.st-key-chat-history-container {
+    max-height:50vh;
     overflow-y: auto; /* Enables scrolling */
-    padding: 1rem;
+    right: -20px;
+    top:-40px;
     margin-bottom: 60px;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
@@ -258,21 +260,21 @@ div[data-testid="stChatInput"] textarea {
     margin-left: 0;
 }
 
-.chat-history-container::-webkit-scrollbar {
+.st-key-chat-history-container::-webkit-scrollbar {
     width: 6px;
 }
 
-.chat-history-container::-webkit-scrollbar-track {
+.st-key-chat-history-container::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1);
 }
 
-.chat-history-container::-webkit-scrollbar-thumb {
+.st-key-chat-history-container::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
 }
 
 /* Ensure the last message is always visible */
-.chat-history-container::-webkit-scrollbar-thumb:vertical {
+.st-key-chat-history-container::-webkit-scrollbar-thumb:vertical {
     height: 6px;
     background-color: rgba(255, 255, 255, 0.5);
 }

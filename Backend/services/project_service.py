@@ -19,6 +19,10 @@ class ProjectService:
     async def get_project(self, id: str) -> Optional[Project]:
         project=await self.project_repository.get_by_id(id)
         return project.model_dump()
+    
+    async def get_Incomplete_project(self, id: str) -> Optional[Project]:
+        project=await self.project_repository.get_by_id(id)
+        return project.model_dump(include=["id","name","user_id","dataset_description","description_confirmed"])
 
     async def get_user_projects(self,userId:str) -> List[Project]:
         projects=await self.project_repository.Filter({"user_id":userId})
@@ -177,6 +181,16 @@ class ProjectService:
             
         if project==None:
             raise HTTPException(status_code=400, detail="Invalid project_id Please provide an existing Project id.")
+        if f"{project_id}_Raw_report.json" in project.data_report:
+            blob_client=self.blob_service_client.get_blob_client(container="reports", blob=f"{project_id}_Raw_report.json")
+            try:
+                report = json.loads(blob_client.download_blob().readall().decode('utf-8'))
+                return report
+            except azure.core.exceptions.ResourceNotFoundError:
+                # Return None if the blob doesn't exist
+                return None
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error downloading report from blob storage: {str(e)}")
         return project.data_report
     
     async def fetch_dataset(self, project_id: str) -> Optional[str]:

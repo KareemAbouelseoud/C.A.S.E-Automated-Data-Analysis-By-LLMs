@@ -1,5 +1,13 @@
+from typing import List, Optional
 import requests
 import json
+from pydantic import BaseModel
+class Feedback(BaseModel):
+    feedback:List[str]
+    thread_id:str
+    user_id:str
+    project_id:Optional[str]=None
+    description:Optional[str]=None
 
 url = 'http://Backend:8005/insGen'
 
@@ -58,4 +66,29 @@ def fetch_insights(project_id):
         return None
     except json.JSONDecodeError:
         print(f"Error decoding JSON from file: {file_path}")
+        return None
+    
+def modify_on_user_input(project_id, user_input,thread_id,description="",user_id=""):
+    """
+    Modifies the project description based on user input.
+    """
+    userFeedback=Feedback(
+        feedback=user_input,
+        project_id=project_id,
+        thread_id=thread_id,
+        user_id=user_id,
+        description=description
+    )
+    response = requests.post(f"{url}/description/feedback", json=userFeedback.model_dump(mode="json"))
+    if response.status_code == 200:
+        if user_input[-1]!="done":
+            result = json.loads(response.content)
+            description = result.get("description")
+            thread_id = result.get("thread_id")
+            return description,thread_id
+        else:
+            pass
+    else:
+        print(f"Failed to fetch insights: HTTP {response.status_code}")
+        print(f"Response: {response.text}")
         return None

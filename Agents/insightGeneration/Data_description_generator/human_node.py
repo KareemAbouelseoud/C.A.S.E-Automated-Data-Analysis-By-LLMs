@@ -11,9 +11,9 @@ def human_input(state):
     current_feedback = state.get("human_feedback", [])
 
     user_feedback = interrupt(
-        {"description": description, "message": "Provide feedback or type 'done' to finish."})
+        {"description": description, "report": state.get("report", "")},)
 
-    if user_feedback.lower() == "done":
+    if user_feedback[-1].lower() == "done":
         return Command(
             update={"human_feedback": current_feedback + ["Finalized"]},
             goto="qugen_node"

@@ -19,11 +19,16 @@ class Recommender(BaseModel):
     prompt:str
     data_report:str
 class Feedback(BaseModel):
-    feedback:str
-    project_id:str
+    feedback:List[str]
     thread_id:str
     user_id:str
     project_id:Optional[str]=None
+    description:Optional[str]=None
+class SaveInsights(BaseModel):
+    insight_cards: List[object]
+    advanced_insight_cards : dict
+    insights_explanation: dict
+    num_cards: int
 class Train(BaseModel):
     target_feature:str
     training_features:List[str]

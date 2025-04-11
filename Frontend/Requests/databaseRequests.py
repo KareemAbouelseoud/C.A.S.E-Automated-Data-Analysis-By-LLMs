@@ -150,6 +150,10 @@ def get_project_details(project_id):
      response=requests.get(url+f'/project/projectDetails/{str(project_id)}')
      project=json.loads(response.json())['data']
      return project
+def get_Incomplete_project_details(project_id):
+     response=requests.get(url+f'/project/projectDetails/{str(project_id)}/{False}')
+     project=json.loads(response.json())['data']
+     return project
 #endregion
 
 def fetch_dataset(project_id):

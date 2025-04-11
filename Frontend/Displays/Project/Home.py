@@ -15,11 +15,19 @@ def stream_text(text_area_value,lock):
         for char in text_area_value:
             current_text += char
             yield current_text
-            time.sleep(0.0001)  # Adjust the speed of typing
-def desc_confirm():
-    st.session_state['user_data']['projects']['current_project']["description_confirmed"] = True
+            time.sleep(0.00001)  # Adjust the speed of typing
 class Project:
     
+    def desc_confirm(self):
+        self.home_session["description_confirmed"] = True
+        final_feedback=self.home_session['project_details']["dataset_description"]["feedback_history"]+["done"]
+        insightRequests.modify_on_user_input(
+            project_id=self.home_session['project_id'],
+            user_input=final_feedback, 
+            description=self.home_session['project_details']["dataset_description"]['description'],
+            thread_id=self.home_session['project_details']["dataset_description"]["thread_id"]
+        )
+        st.toast("Content confirmed!", icon="✅")
     def sanitize_user_input(self, user_input):
         # Remove any potentially harmful characters or sequences        
         sanitized = user_input.replace('<', '&lt;').replace('>', '&gt;')
@@ -36,54 +44,51 @@ class Project:
     @st.fragment
     @st.dialog("Confirm Data Description", width="large") 
     def Confirm_data_description(self,description=None, thread_id:str=None):
-        if st.session_state['user_data']['projects']['current_project']["description_confirmed"]==False:
+        description = self.home_session['project_details']["dataset_description"]['description']
+        thread_id = self.home_session['project_details']["dataset_description"]['thread_id']
+        if self.home_session["description_confirmed"]==False:
             col1, col2 = st.columns([1,3])
-        
-            with col1:
+            chat_area = col1.container(key="chat_area")
+            description_area = col2.container(key="description_area")
+            with chat_area:
                 st.write("Feedback History")
                 # Display chat messages from session state
-                if 'feedback_history' not in st.session_state:
-                    st.session_state.feedback_history = []
+                if 'feedback_history' not in self.home_session['project_details']["dataset_description"]:
+                    self.home_session['project_details']["dataset_description"]["feedback_history"] = []
                 st.markdown(chatbot.assistant_messages, unsafe_allow_html=True)
                 st.markdown(chatbot.user_messages, unsafe_allow_html=True)        
                 st.markdown(general.dialog_box,unsafe_allow_html=True)
-                chat_html = """
-                <div class="chat-history-container">
-                """
+                with st.container(key="chat-history-container"):
+                    for feedback in self.home_session['project_details']["dataset_description"]["feedback_history"]:
+                        with st.chat_message("user"):
+                            st.markdown(feedback, unsafe_allow_html=True)
+                
                 
                 # Add messages to container
-                for feedback in st.session_state.feedback_history:
-                    chat_html += f"""
-                    <div class="chat-message user-message">
-                        {feedback}
-                    </div>
-                    """
                 
-                chat_html += "</div>"
-                
-                # Render chat container
-                st.html(chat_html)
                 
                 # Chat input
                 if prompt := st.chat_input("Type your message...", key="chat_input"):
-                    st.session_state.feedback_history.append(prompt)
+                    sanitized_input = self.sanitize_user_input(prompt)
+                    self.home_session['project_details']["dataset_description"]["feedback_history"].append(sanitized_input)
+                    self.home_session['project_details']["dataset_description"]['description'], self.home_session['project_details']["dataset_description"]['description_thread_id'] = insightRequests.modify_on_user_input(self.home_session['project_id'],self.home_session['project_details']["dataset_description"]["feedback_history"], thread_id)
                     st.rerun(scope="fragment")
-            with col2:
-                if st.session_state['user_data']['projects']['current_project']["description_confirmed"]==False:
-                    text_generator = stream_text(description,st.session_state['user_data']['projects']['current_project']["description_confirmed"])
+            with description_area:
+                if self.home_session['project_details']["description_confirmed"]==False:
+                    text_generator = stream_text(description,self.home_session['project_details']["description_confirmed"])
                     text_area = st.empty()
                     for text in text_generator:
                         if text == description:
                             output = text_area.text_area('Description Area', value=text,label_visibility="hidden")
-                        else:
+                        else: 
                             text_area.text_area('Description Area', value=text,label_visibility="hidden")
-                        time.sleep(0.0001)  # Adjust the speed of typing
+                        time.sleep(0.00001)  # Adjust the speed of typing
                 
-                if st.button("Confirm",on_click=desc_confirm):
-                    print(output)
-                    st.toast("Content confirmed!", icon="✅")
-                    time.sleep(3)
-                    st.session_state['user_data']['projects']['current_project']["description_confirmed"]=True
+                if st.button("Confirm"):
+                    self.desc_confirm()
+                    
+                    
+                    self.home_session['project_details']["description_confirmed"]=True
                     st.rerun(scope="app")
 
         else:
@@ -91,12 +96,15 @@ class Project:
 
     def selectedProject(self):
         self.home_session=st.session_state['user_data']['projects']['current_project']
-        if 'project_details' not in self.home_session or self.home_session['project_details']==None:
-            # self.home_session['project_details']=databaseRequests.get_project_details(self.home_session['project_id'])
-            self.home_session['project_details']={"name":"Dummy Name to save Backend requests","data_report":""}
-        st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{self.home_session['project_details']['name']}</h1>", unsafe_allow_html=True)     
+        if self.home_session["description_confirmed"]==True:
+            if 'project_details' not in self.home_session or self.home_session['project_details']==None:
+                self.home_session['project_details']=databaseRequests.get_project_details(self.home_session['project_id'])
+                st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{self.home_session['project_details']['name']}</h1>", unsafe_allow_html=True)     
+        else:
+            self.home_session['project_details']=databaseRequests.get_Incomplete_project_details(self.home_session['project_id'])
+            st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{self.home_session['name']}</h1>", unsafe_allow_html=True)     
         
-        if st.session_state['user_data']['projects']['current_project']["description_confirmed"]:
+        if self.home_session['project_details']["description_confirmed"]:
             st.markdown(general.tab_design,unsafe_allow_html=True)
             tabs=st.tabs(['Dataset','Processing','Insights','Visualizations','AutoML'])
             with tabs[0]:
@@ -140,43 +148,25 @@ class Project:
                 AutoML()
 
         else:
-            # desc, thread_id=insightRequests.get_description(self.home_session['project_id'])
-            desc="""
-            
-                        Column Explanation:
-*   **PassengerId:** A unique identifier for each passenger.
-*   **Survived:** Indicates whether the passenger survived (0 = No, 1 = Yes).
-*   **Pclass:** The passenger's class (1 = 1st class, 2 = 2nd class, 3 = 3rd class).
-*   **Name:** The name of the passenger.
-*   **Sex:** The gender of the passenger (male or female).
-*   **Age:** The age of the passenger in years.
-*   **SibSp:** The number of siblings/spouses aboard.
-*   **Parch:** The number of parents/children aboard.
-*   **Ticket:** The passenger's ticket number.
-*   **Fare:** The fare paid by the passenger.
-*   **Cabin:** The cabin number of the passenger.
-*   **Embarked:** The port where the passenger embarked (C = Cherbourg, Q = Queenstown, S = Southampton).
-                        Overview:
-The dataset contains information about passengers aboard the Titanic, including their demographics, ticket information, and survival status. It is commonly used for predictive modeling tasks, particularly for predicting passenger survival.
-                        Key Patterns:
-*   Survival rate appears to be correlated with passenger class and sex.
-*   A significant portion of passengers are traveling without siblings/spouses or parents/children.
-*   Fare prices vary widely, with some passengers paying significantly more than others.
-*   The majority of passengers embarked from Southampton (S).
-                        Quality Issues:
-*   **Missing Values:** The 'Age' column has a significant number of missing values, which may require imputation or other handling.
-    The 'Cabin' column has a large number of missing values, potentially indicating that this information was not recorded for many passengers, or the passengers didn't have a cabin.
-    The 'Embarked' column has some missing values.
-*   **Data Types:** The 'Age' column is numerical but contains null values, which might need to be addressed before certain analyses.
-*   **Inconsistent Data:** There might be inconsistencies in the 'Name' column (e.g., titles, nicknames) that could affect analysis if not handled properly.
-                
-            """
-            st.markdown(buttons.back_button,unsafe_allow_html=True)
-            st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
-            st.button('',icon=":material/arrow_back:",on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
-            
-            self.Confirm_data_description( description=desc)
-
+            if self.home_session['project_details']['dataset_description']==None or self.home_session['project_details']['dataset_description']=={}:
+                self.home_session['project_details']["dataset_description"]={}
+                self.home_session['project_details']["dataset_description"]['description'], self.home_session['project_details']["dataset_description"]['thread_id']=insightRequests.get_description(self.home_session['project_id'])
+            with st.columns(19)[-1]:
+                    st.markdown(buttons.back_button,unsafe_allow_html=True)
+                    st.markdown(f'<span id="button-back"></span>', unsafe_allow_html=True)
+                    st.button('',icon=":material/arrow_back:",on_click=self.backtooverview,key=f"back_{uuid.uuid4()}")
+            cols=st.columns(3)
+            with cols[1]:
+                st.markdown(
+                    buttons.primary_button,
+                    unsafe_allow_html=True,
+                )
+                st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+                placeholder = st.empty()
+                if placeholder.button("Confirm Data Description"):
+                    self.Confirm_data_description()
+                else:
+                    self.Confirm_data_description()
 
 if 'project_id' in st.session_state['user_data']['projects']['current_project'] and st.session_state['user_data']['projects']['current_project']['project_id']!=None:
     

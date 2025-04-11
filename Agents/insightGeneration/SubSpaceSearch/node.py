@@ -76,57 +76,61 @@ def subspace_search(df:pd.DataFrame,card:InsightCard,desc:DataDescription, beam_
                     # print("="*60)
                     Advanced_Card=run_pandas_Coder_agent_ad_card(filtered_df=_filtered_df,card=Advanced_Card)
                     # print("="*60)
-                    if Advanced_Card.breakdown != _card.breakdown:
-                        # print(f"Warning: Dropping This view - breakdown column mismatch.")
-                        continue
-                    if Advanced_Card.resulted_df=="":
-                        # print(f"Warning: Skipping current Advance Card as - resulted_df is empty.")
-                        if df_index == filtered_dfs.__len__()-1:
-                            # If it's the last DataFrame in the list, remove the last filter and used column
-                            # This ensures that the filter is not removed in the middle of the iterations of the muliple views
-                            # and only removed when the last DataFrame is reached
-                            # for example the max view
-                            # print(f"Removing the last filter and used column from Snew")
-                            Snew["filters"].pop()  # Remove the last filter added
-                            Snew["used_cols"].pop()
-                        else:
-                            # If it's not the last DataFrame, continue to the next iteration and start the next Card in the multiple views
+                    try:
+                        if Advanced_Card.breakdown != _card.breakdown:
+                            # print(f"Warning: Dropping This view - breakdown column mismatch.")
                             continue
-                        
-                        
-                    # Select and score: try each scoring function and pick the highest score and pattern
-                    # AS WE ALREADY MAKE THE LLM SUGGEST THE INSIGHT TYPE FROM THE BEGINNING
-                    print(Advanced_Card.insight_type)
-                    if Advanced_Card.insight_type == "Distribution Difference":
-                        Advanced_Card_resulted_df =pd.read_json(StringIO(Advanced_Card.resulted_df))
-                        if Advanced_Card_resulted_df.shape != original_card_df.shape:
-                            print(f"Warning: Resulted_df shape mismatch. Fixing Card using validate_dfs")
-                        # Advanced_Card.Score=score_distribution_difference(card.resulted_df,Advanced_Card.resulted_df)
-                        original_card_df,Advanced_Card_resulted_df=validate_dfs(original_card_df,Advanced_Card_resulted_df,card)
-                        # print(Advanced_Card.resulted_df)
-                        # print(original_card_df)
-                        _s=(distance.jensenshannon(original_card_df.iloc[:,1].values,Advanced_Card_resulted_df.iloc[:,1].values)**2)*2
-                        if _s==np.nan:
-                            # print(f"Warning: Skipping current Advanced Card as -Score is not available.")
-                            continue
-                        if _s == np.nan or _s == None or _s == np.inf or _s == -np.inf:
-                            # print(f"Warning: Skipping current Advanced Card as -Score is not available.")
-                            continue
+                        if Advanced_Card.resulted_df==pd.DataFrame.empty or Advanced_Card.resulted_df=="":
+                            # print(f"Warning: Skipping current Advance Card as - resulted_df is empty.")
+                            if df_index == filtered_dfs.__len__()-1:
+                                # If it's the last DataFrame in the list, remove the last filter and used column
+                                # This ensures that the filter is not removed in the middle of the iterations of the muliple views
+                                # and only removed when the last DataFrame is reached
+                                # for example the max view
+                                # print(f"Removing the last filter and used column from Snew")
+                                Snew["filters"].pop()  # Remove the last filter added
+                                Snew["used_cols"].pop()
+                            else:
+                                # If it's not the last DataFrame, continue to the next iteration and start the next Card in the multiple views
+                                continue
+                            
+                            
+                        # Select and score: try each scoring function and pick the highest score and pattern
+                        # AS WE ALREADY MAKE THE LLM SUGGEST THE INSIGHT TYPE FROM THE BEGINNING
+                        print(Advanced_Card.insight_type)
+                        if Advanced_Card.insight_type == "Distribution Difference":
+                            Advanced_Card_resulted_df =pd.read_json(StringIO(Advanced_Card.resulted_df))
+                            if Advanced_Card_resulted_df.shape != original_card_df.shape:
+                                print(f"Warning: Resulted_df shape mismatch. Fixing Card using validate_dfs")
+                            # Advanced_Card.Score=score_distribution_difference(card.resulted_df,Advanced_Card.resulted_df)
+                            original_card_df,Advanced_Card_resulted_df=validate_dfs(original_card_df,Advanced_Card_resulted_df,card)
+                            # print(Advanced_Card.resulted_df)
+                            # print(original_card_df)
+                            _s=(distance.jensenshannon(original_card_df.iloc[:,1].values,Advanced_Card_resulted_df.iloc[:,1].values)**2)*2
+                            if _s==np.nan:
+                                # print(f"Warning: Skipping current Advanced Card as -Score is not available.")
+                                continue
+                            if _s == np.nan or _s == None or _s == np.inf or _s == -np.inf:
+                                # print(f"Warning: Skipping current Advanced Card as -Score is not available.")
+                                continue
 
-                        Advanced_Card.Score=float(_s)
-                        Advanced_Card.Considered=True
-                    else:
-                        _s=Score_card(Advanced_Card)
-                        Advanced_Card.Score=float(_s.Score)
-                    
-                    # WE CHANGED THE ALGORITHM AND THE WAY OF THINKING 
-                    
-                    # print(f"Advanced Insight Card: {Advanced_Card.insight_type}")
-                    print(f"Original Card id {card.id}\nSubspace: {Snew}, Score: {Advanced_Card.Score}")
-                    print("-" * 40)
-                    _new_subspace=copy.deepcopy(Snew)
-                    # Advanced_Card.subSpace=_new_subspace["filters"]
-                    beam.append((_new_subspace, Advanced_Card))  # Save the new beam with the best attributes
+                            Advanced_Card.Score=float(_s)
+                            Advanced_Card.Considered=True
+                        else:
+                            _s=Score_card(Advanced_Card)
+                            Advanced_Card.Score=float(_s.Score)
+                        
+                        # WE CHANGED THE ALGORITHM AND THE WAY OF THINKING 
+                        
+                        # print(f"Advanced Insight Card: {Advanced_Card.insight_type}")
+                        print(f"Original Card id {card.id}\nSubspace: {Snew}, Score: {Advanced_Card.Score}")
+                        print("-" * 40)
+                        _new_subspace=copy.deepcopy(Snew)
+                        # Advanced_Card.subSpace=_new_subspace["filters"]
+                        beam.append((_new_subspace, Advanced_Card))  # Save the new beam with the best attributes
+                    except:
+                        # print(f"Warning: Skipping current Advanced Card as - no suggested cards available.")
+                        continue
                 # for _ss in beam:
                 #     print("*" * 40)
                 #     print("Printing the beam array After Expanding")

@@ -18,7 +18,8 @@ from Data_description_generator.data_description_node import data_description_ge
 from Data_description_generator.human_node import human_input
 from Filteration.filteration_node import filterationA_node
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from API.Requests.projectRequests import get_dataset
+from API.Requests.projectRequests import get_dataset,save_insights
+from API.Endpoints.dataItems import Feedback,SaveInsights
 
 def finalize_output(state: Dict[str, str]):
     """
@@ -65,10 +66,10 @@ def finalize_output(state: Dict[str, str]):
         if key in state:
             final_state[key] = state[key]
     
-    print("Final state keys:", final_state.keys())
-    print("Serialization check complete")
+    # print("Final state keys:", final_state.keys())
     final_state = make_serializable(final_state)
-    print("Final state after serialization:", final_state)
+    print("Serialization check complete")
+    # print("Final state after serialization:", final_state)
     return final_state
 
 

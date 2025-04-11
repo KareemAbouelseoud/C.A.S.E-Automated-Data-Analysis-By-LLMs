@@ -49,6 +49,12 @@ async def getProject(project_id:str):
     API endpoint to receive and save uploaded files.
     """
     return json.dumps({'data':await project_service.get_project(project_id)})
+@Project_router.get("/project/projectDetails/{project_id}/{description_confirmed}",tags=["Project"])
+async def getProject(project_id:str,description_confirmed:bool):
+    """
+    API endpoint to receive and save uploaded files.
+    """
+    return json.dumps({'data':await project_service.get_Incomplete_project(project_id)})
 
 
 

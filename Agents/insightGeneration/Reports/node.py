@@ -73,16 +73,22 @@ def clean_profile_report(df:pd.DataFrame):
             var_data.pop(key, None)
 
         col_type = var_data.get("type", "")
-        value_counts = var_data.get("value_counts_index_sorted", {})
+        value_counts_index_sorted = var_data.get("value_counts_index_sorted", {})
+        value_counts_without_nan = var_data.get("value_counts_without_nan", {})
 
         if col_type == "Numeric":
             var_data["value_counts_index_sorted"] = dict(
-                list(value_counts.items())[:10]
+                list(value_counts_index_sorted.items())[:10]
+            )
+            var_data["value_counts_without_nan"] = dict(
+                list(value_counts_without_nan.items())[:10]
             )
         elif col_type == "Text":
-            var_data.pop("value_counts_without_nan", None)
+            var_data["value_counts_without_nan"] = dict(
+                list(value_counts_without_nan.items())[:10]
+            )
             var_data["value_counts_index_sorted"] = dict(
-                list(value_counts.items())[:10]
+                list(value_counts_index_sorted.items())[:10]
             )
             for key in COMMON_TEXT_METADATA:
                 var_data.pop(key, None)
@@ -95,6 +101,11 @@ def clean_profile_report(df:pd.DataFrame):
                     var_data["word_counts"].items(), key=lambda x: x[1], reverse=True
                 )[:10]
                 var_data["word_counts"] = dict(sorted_words)
+            if "character_counts" in var_data:
+                sorted_chars = sorted(
+                    var_data["character_counts"].items(), key=lambda x: x[1], reverse=True
+                )[:10]
+                var_data["character_counts"] = dict(sorted_chars)
         elif col_type == "Categorical":
             for key in CATEGORICAL_TEXT_METADATA + COMMON_TEXT_METADATA:
                 var_data.pop(key, None)
@@ -124,7 +135,7 @@ def extract_key_findings(profile: dict) -> dict:
 def ReportNode(state:dict):
     """Generate a profile report and save it to a file."""
     df = pd.read_json(StringIO(state["df"]))
-    profile_json,json_time,profile_time = clean_profile_report(profile_json)
+    profile_json,json_time,profile_time = clean_profile_report(df)
     
     report = {
         "description_insights": {"key_findings": extract_key_findings(profile_json)},

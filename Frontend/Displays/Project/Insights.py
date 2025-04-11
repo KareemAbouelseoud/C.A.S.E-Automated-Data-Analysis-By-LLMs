@@ -1,3 +1,4 @@
+from io import StringIO
 import streamlit as st
 from Requests import insightRequests
 import streamlit_nested_layout # Leave it here, dont remove it.
@@ -61,7 +62,7 @@ class Insights:
                     st.markdown("<h1 style=' font-size: 20px;'>Insight Table</h1>", unsafe_allow_html=True)
                     df=basic_insight['resulted_df']
                     try:
-                        df=pd.read_json(df)
+                        df=pd.read_json(StringIO(df))
                         st.dataframe(df,use_container_width=True, hide_index=True,height=200)
                     except:
                         pass
@@ -90,7 +91,7 @@ class Insights:
         cols_mr = st.columns(2)
         with cols_mr[0]:
             st.markdown("<h1 style=' font-size: 20px;'>Insight Table</h1>", unsafe_allow_html=True)
-            df=pd.read_json(advanced_insight[1]['resulted_df'])
+            df=pd.read_json(StringIO(advanced_insight[1]['resulted_df']))
             st.dataframe(df,use_container_width=True, hide_index=True,height=200)
         with cols_mr[1]:
             st.write("\n")

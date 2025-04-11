@@ -6,6 +6,7 @@ import joblib
 import json
 import io
 import requests
+from ..Endpoints.dataItems import SaveInsights
 url="http://Backend:8005"
 
 # Create a memory cache in a temporary directory
@@ -39,7 +40,41 @@ async def get_data_report(project_id):
             response = await client.get(f"http://localhost:8005/project/{project_id}/fetchDataReport")
     
     return response.json()['data']
-
+async def save_insights(project_id, insights:SaveInsights):
+    """
+    Uploads insights to the backend API.
+    
+    Args:
+        project_id (str): The ID of the project
+        insights (dict): The insights data to upload
+        
+    Returns:
+        dict: Response from the server or None if an error occurred
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(
+                    url + f"/insGen/project/{project_id}/save_Insights",
+                    json= insights.model_dump(mode='json')
+                )
+            except Exception as e:
+                print("Error in posting insights:", e)
+                response = await client.post(
+                    f"http://localhost:8005/insGen/project/{project_id}/save_Insights",
+                    json=insights.model_dump(mode='json')
+                )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Failed to upload insights: HTTP {response.status_code}")
+            print(f"Response: {response.text}")
+            return None
+                
+    except Exception as e:
+        print(f"Error uploading insights: {e}")
+        return None
 async def get_preprocessing_pipeline(project_id, pipeline_type):
     """
     Retrieves a preprocessing pipeline from the backend API.

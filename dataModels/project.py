@@ -41,7 +41,7 @@ class Project(BaseModel):
     streamlit_Chat:Optional[Chat]= Field(default=Chat(last_update=datetime.now()), alias="streamlit_Chat")
     model_Chat:Optional[Chat]= Field(default=Chat(last_update=datetime.now()), alias="model_Chat")
     data_report:Optional[str]= Field(default=None, alias="data_report")
-    dataset_description:Optional[str]= Field(default=None, alias="dataset_description")
+    dataset_description:Optional[dict]= Field(default=None, alias="dataset_description")
     created_Date:Optional[datetime]= Field(default=None, alias="created_Date")
     thread_id: Optional[str] = Field(default=None, alias="thread_id")
     description_confirmed: Optional[bool] = Field(default=False, alias="description_confirmed")

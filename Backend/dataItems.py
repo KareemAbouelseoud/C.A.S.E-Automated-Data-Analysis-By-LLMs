@@ -45,10 +45,16 @@ class DatasetVis(BaseModel):
     plot_type:Optional[str]=None
 
 class Feedback(BaseModel):
-    feedback:str
-    project_id:str
+    feedback:List[str]
     thread_id:str
     user_id:str
+    project_id:Optional[str]=None
+    description:Optional[str]=None
+class SaveInsights(BaseModel):
+    insight_cards: List[object]
+    advanced_insight_cards : dict
+    insights_explanation: dict
+    num_cards: int
     
 class SplitDistribution(BaseModel):
     train_size: int

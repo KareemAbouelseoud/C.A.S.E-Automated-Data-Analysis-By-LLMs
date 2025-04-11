@@ -29,14 +29,22 @@ async def get_description(project_id:str=None):
         raise HTTPException(status_code=500, detail=str(e))
 
 @InsGen_router.post("/description/feedback",tags=["insGen"])
-async def post_description(body:Feedback):
-    print("This is a user feedback :",body.__str__())
+async def post_description(_feedback:Feedback):
+    print("This is a user feedback :",_feedback.__str__())
     # Assuming you want to use the feedback in some way
-    try:
-        result = Continue_Auto_InsightGen(body.feedback, body.thread_id)
-        feedback = await anext(result)  # Use anext() instead of __anext__()
-        # print("RESULT", feedback)
-    except Exception as e:
-        print(f"Error in post_description: {str(e)}")
-        raise
-    return {"feedback": feedback}
+    if _feedback.feedback[-1].lower() == 'done':
+        try:
+            result = await Continue_Auto_InsightGen(_feedback, _feedback.thread_id)
+        except Exception as e:
+            print(f"Error in post_description: {str(e)}")
+            raise
+        return result
+    else:
+        try:
+            result = change_desc_on_feedback(_feedback, _feedback.thread_id)
+            feedback = await anext(result)  # Use anext() instead of __anext__()
+            # print("RESULT", feedback)
+        except Exception as e:
+            print(f"Error in post_description: {str(e)}")
+            raise
+        return feedback

@@ -18,6 +18,12 @@ async def get_description(project_id):
 @insGen_router.post("/description/feedback")
 async def post_description(body:Feedback):
     return await insGen_service.accept_human_feedback(body)
+@insGen_router.post("/project/{project_id}/save_Insights")
+async def post_save_Insights(body:SaveInsights, project_id:str):
+    if not project_id:
+        raise HTTPException(status_code=400, detail="Project ID cannot be empty")
+    asyncio.create_task(insGen_service.save_Insights(body, project_id))
+    pass
 
 @insGen_router.get("/custom_events")
 async def custom_events():
