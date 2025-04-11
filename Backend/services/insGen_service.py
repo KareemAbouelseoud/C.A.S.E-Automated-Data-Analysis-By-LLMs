@@ -104,11 +104,11 @@ class insGenService:
                 elif description_confirmed:
                     report=f"{project_id}_Raw_report.json"
 
-                    blob_client=self.blob_service_client.get_blob_client(container="model-reports", blob=report)
+                    blob_client=self.blob_service_client.get_blob_client(container="reports", blob=report)
                     try:
                         report = json.loads(blob_client.download_blob().readall().decode('utf-8'))
                         
-                        report["dataset_description"] = self.extract_description_sections(updated_description["description"])
+                        report["dataset_description"] = updated_description["description"]
                         project.data_report=await self.save_report(project_id, report) 
                     except azure.core.exceptions.ResourceNotFoundError:
                         # Return None if the blob doesn't exist
@@ -192,7 +192,7 @@ class insGenService:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.url}/description/feedback",
-                timeout=30.0,
+                timeout=None,
                 json=feedback.model_dump(mode="json")  # Add timeout
 
             )

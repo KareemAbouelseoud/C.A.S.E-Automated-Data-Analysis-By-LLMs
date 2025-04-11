@@ -185,7 +185,7 @@ class ProjectService:
             blob_client=self.blob_service_client.get_blob_client(container="reports", blob=f"{project_id}_Raw_report.json")
             try:
                 report = json.loads(blob_client.download_blob().readall().decode('utf-8'))
-                return report
+                return json.dumps(report)
             except azure.core.exceptions.ResourceNotFoundError:
                 # Return None if the blob doesn't exist
                 return None

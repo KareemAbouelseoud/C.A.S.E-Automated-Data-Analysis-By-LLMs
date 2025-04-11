@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, HTTPException
 from .dataItems import Chat,Recommender, Feedback
 from fastapi.responses import StreamingResponse
@@ -34,11 +35,11 @@ async def post_description(_feedback:Feedback):
     # Assuming you want to use the feedback in some way
     if _feedback.feedback[-1].lower() == 'done':
         try:
-            result = await Continue_Auto_InsightGen(_feedback, _feedback.thread_id)
+            asyncio.create_task(Continue_Auto_InsightGen(_feedback, _feedback.thread_id))
         except Exception as e:
             print(f"Error in post_description: {str(e)}")
             raise
-        return result
+        pass
     else:
         try:
             result = change_desc_on_feedback(_feedback, _feedback.thread_id)
