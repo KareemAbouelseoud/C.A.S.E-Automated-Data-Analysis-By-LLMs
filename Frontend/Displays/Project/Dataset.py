@@ -71,6 +71,7 @@ class Dataset:
                 dataset=self.dataset_session['dataset_session']['processed_dataset']
             with st.container(border=True):
                     st.dataframe(dataset,use_container_width=True,)
+                    # st.write(data_report,unsafe_allow_html=True)
             st.markdown(general.expander,unsafe_allow_html=True)
             cols=st.columns(2)
             with cols[0]:

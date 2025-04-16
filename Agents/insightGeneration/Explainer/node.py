@@ -60,7 +60,7 @@ def Explain_InsightCard(card:InsightCard,advanced_cards_dict:Dict[str, List[Tupl
 
     response = llm.invoke(messages)
     # Extract the explanation from the response
-    explanation = response.content
+    explanation = parse_insights_Explanation_response(response)
     # Store the explanation in the insights_explanation dictionary using the unique card ID as the key
     insights_explanation[card.id] = explanation
 
@@ -81,8 +81,9 @@ def explainer_prompt(basic_insight_card:InsightCard,advanced_insight_card:Dict[s
     
     And here are the Advanced Insights for this card:
     """
-    for ss,card in advanced_insight_card:
+    for i,(ss,card) in enumerate(advanced_insight_card):
         prompt += f"""
+        Advanced Insight Card {i+1}:
         1- Insight Type: {card.insight_type}
         2-Question: {card.question}
         3-Reason: {card.reason}
@@ -98,3 +99,21 @@ def explainer_prompt(basic_insight_card:InsightCard,advanced_insight_card:Dict[s
     Now, I want you to explain the basic insight card and the advanced insight cards in a detailed way.
     """ 
     return prompt
+def parse_insights_Explanation_response(response):
+    """
+    Parses the response from the response and return insight explanation dict.
+    """
+    
+    text = response.content
+    # Define the regular expression pattern to match JSON blocks
+    pattern = r"```json(.*?)```"
+
+    # Find all non-overlapping matches of the pattern in the string
+    matches = re.findall(pattern, text, re.DOTALL)
+
+    # Return the list of matched JSON strings, stripping any leading or trailing whitespace
+    try:
+        data =json.loads(matches[0].strip())
+        return data
+    except Exception:
+        raise ValueError(f"Failed to parse Insight cards: {text}")

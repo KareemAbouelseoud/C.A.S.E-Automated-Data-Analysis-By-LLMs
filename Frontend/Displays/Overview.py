@@ -111,7 +111,7 @@ class Projects:
             
 
     @st.fragment
-    @st.dialog("New Project", width="large")  # Made dialog box wider
+    @st.dialog("New Project" ,width="large")  # Made dialog box wider
     def Create_project_dialog(self):
         
         project_name = st.text_input("Enter a name for your project:", key="project_name")

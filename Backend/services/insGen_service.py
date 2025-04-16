@@ -109,7 +109,8 @@ class insGenService:
                         report = json.loads(blob_client.download_blob().readall().decode('utf-8'))
                         
                         report["dataset_description"] = updated_description["description"]
-                        project.data_report=await self.save_report(project_id, report) 
+                        project.data_report=await self.save_report(project_id, report)
+                        project.insights_file=f"https://case2025.blob.core.windows.net/insights/{project.id}_Insights.json" 
                     except azure.core.exceptions.ResourceNotFoundError:
                         # Return None if the blob doesn't exist
                         return None

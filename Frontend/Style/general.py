@@ -203,7 +203,7 @@ div[data-baseweb="textarea"]:nth-child(2){
 div[data-testid="stChatInput"] textarea {
         box-sizing: border-box;
         bottom: 5px ;
-        position: fixed;
+        
         z-index: 1000; 
     }
     div[data-baseweb="textarea"]:first-of-type {

@@ -22,7 +22,7 @@ def generate_qugen_prompt(state: Dict) -> str:
         f"MEASURE: {c.measure}"
         for i,c in enumerate(state.get("insight_cards", [])[-3:])
     )
-    print(state.keys())
+    # print(state.keys())
     
     df = pd.read_json(StringIO(state['df']))
     
@@ -34,9 +34,9 @@ def generate_qugen_prompt(state: Dict) -> str:
     }
 
     schema_list = ', '.join(state['schema'])
-    print(f"Schema List: {schema_list}")
-    print(f"Numerical Stats: {numerical_stats.to_markdown()}")
-    print(f"Categorical Stats: {categorical_stats.to_markdown()}")
+    # print(f"Schema List: {schema_list}")
+    # print(f"Numerical Stats: {numerical_stats.to_markdown()}")
+    # print(f"Categorical Stats: {categorical_stats.to_markdown()}")
 
     prompt = f"""
     Generate {os.getenv("Insight_cards_number")} analytical questions about this dataset:
@@ -50,6 +50,10 @@ def generate_qugen_prompt(state: Dict) -> str:
     Numerical: { basic_stats['numerical'].to_markdown()}
     Categorical: { basic_stats['categorical'].to_markdown()}
     
+    DataReport:
+    {state['report']}
+
+
     Use format:
     ### Insight Card [NUMBER]
     REASON: [Analysis rationale]

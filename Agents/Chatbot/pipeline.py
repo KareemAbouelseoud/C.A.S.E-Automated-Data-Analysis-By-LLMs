@@ -43,6 +43,7 @@ class State(TypedDict):
     project_id:str
     messages: Annotated[list[AnyMessage], operator.add]
     visual: Annotated[list[AnyMessage], operator.add]
+    user_input: str
 
 
 builder = StateGraph(State)
@@ -62,7 +63,7 @@ async def chat(user_input,thread_id=None):
     result=graph.get_state(config=config)
 
     if result[0]:
-        graph_input = {'input':{'messages':[{'role':'user','content':user_input}]},'config':config,'stream_mode':["messages",'updates','values']}
+        graph_input = {'input':{'messages':[{'role':'user','content':user_input}],"user_input":user_input},'config':config,'stream_mode':["messages",'updates','values']}
     else:
         response=await chatbotRequests.get_history(thread_id)
         if response:
@@ -74,7 +75,7 @@ async def chat(user_input,thread_id=None):
             data_report=response[1]
             project_id=response[2]
             messages.append({'role':'user','content':user_input})
-            graph_input = {'input':{"messages": messages,'data_report':data_report,'project_id':project_id},'config':config,'stream_mode':["messages",'updates','values']}
+            graph_input = {'input':{"messages": messages,'data_report':data_report,'project_id':project_id,"user_input":user_input},'config':config,'stream_mode':["messages",'updates','values']}
     
     
     async for chunk in graph.astream(**graph_input,subgraphs=True):

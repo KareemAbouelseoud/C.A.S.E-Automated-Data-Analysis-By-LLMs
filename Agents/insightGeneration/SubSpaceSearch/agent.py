@@ -7,7 +7,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_experimental.agents import create_pandas_dataframe_agent
 from models import InsightCards, InsightCard
 from Filteration.pandas_codeGenerator import parse_agent_response, generate_pandas_agent_prompt
-
+import loggerModule
+logger=loggerModule.setup_logging(module_name="InsightGeneration")
 CONFIGURATIONS={
     'temperature':0.5,
     'model':"gemini-2.0-flash",
@@ -17,6 +18,15 @@ CONFIGURATIONS={
     "max_depth":1,
     "w_llm":0.5,
 }
+agg_map = {
+        "MEAN": "mean",
+        "SUM": "sum",
+        "COUNT": "count",
+        "MIN": "min",
+        "MAX": "max",
+        "STD": "std",
+        "VAR": "var"
+    }
 system_prompt = hub.pull("subspace-system-prompt").messages[0].prompt.template
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 
@@ -37,27 +47,35 @@ def run_advanced_insight_agent(df:pd.DataFrame,desc:str,card:InsightCard,subspac
         insight_cards_containter = parse_advanced_insights_response(df,response,OriginalCard=card)
         return insight_cards_containter
     except Exception as e:
-        print(f"Error in qugen_node: {str(e)}")
+        print(f"Error in Advanced_insights_card_Generation: {str(e)}")
         raise
 
 def run_pandas_Coder_agent_ad_card(filtered_df:pd.DataFrame,card:InsightCard) -> InsightCard:
     """Generates a Pandas DataFrame agent based on the provided Insight Card."""
-    global_dict={"df":filtered_df}
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
-    agent_executor = create_pandas_dataframe_agent(
-        llm,
-        filtered_df,
-        agent_type="tool-calling",
-        verbose=False,
-        allow_dangerous_code=True,
-    )
-    response = agent_executor.invoke(generate_pandas_agent_prompt(card))
+    
     try:
-        exec(parse_agent_response(response['output']),global_dict)
-        card.resulted_df = str(global_dict['resulted_df'].to_json()) if global_dict['resulted_df'] is not None or global_dict["resulted_df"].empty else ""
+        
+        resulted_df = static_pandas_code(card, filtered_df)
+        # print(f"Resulted DataFrame: {resulted_df}")
+        card.resulted_df = str(resulted_df.to_json()) if resulted_df is not None or resulted_df.empty else ""
     except Exception as e:
-        # logger.error(f"Error in executing the agent response: {e}")
-        card.resulted_df = pd.DataFrame()
+        print(f"Error in static pandas code: {e}")
+        try:
+            global_dict={"df":filtered_df}
+            llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
+            agent_executor = create_pandas_dataframe_agent(
+                llm,
+                filtered_df,
+                agent_type="tool-calling",
+                verbose=False,
+                allow_dangerous_code=True,
+            )
+            response = agent_executor.invoke(generate_pandas_agent_prompt(card))
+            exec(parse_agent_response(response['output']),global_dict)
+            card.resulted_df = str(global_dict['resulted_df'].to_json()) if global_dict['resulted_df'] is not None or global_dict["resulted_df"].empty else ""
+        except:
+            logger.error(f"Error in executing the agent response: {e}")
+            card.resulted_df = pd.DataFrame()
     return card
 def parse_advanced_insights_response(df:pd.DataFrame,response,OriginalCard:InsightCard):
     """
@@ -190,3 +208,20 @@ def validate_card(df:pd.DataFrame, card:InsightCard,OriginalCard:InsightCard)-> 
         print(f"Warning: Dropping card - Used columns in the Insight Card Must be greater than its parent.")
         valid_card = False
     return valid_card
+
+def static_pandas_code(card:InsightCard, df:pd.DataFrame) -> pd.DataFrame:
+    try:
+        grouped = df.groupby(card.breakdown)[card.measure].agg(agg_map[card.aggregation]).reset_index()
+    except Exception as e:
+        print('Error during the grouping ,returning the dataset itself', e)
+        return df
+    try:
+        grouped.rename(columns={grouped.columns[1]: f'{card.aggregation.lower()}_{card.measure}'}, inplace=True)
+    except Exception as e:
+        print('Error during the renaming ,returning grouped view', e)
+        return grouped
+    try:
+        return grouped.sort_values(by=f'{card.aggregation.lower()}_{card.measure}', ascending = True if {card.aggregation}=="MIN" else False )
+    except Exception as e:
+        print('Error during the sorting ,returning the dataset itself', e)
+        return grouped

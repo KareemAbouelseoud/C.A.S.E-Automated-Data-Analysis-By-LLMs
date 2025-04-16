@@ -17,7 +17,8 @@ class Chat(BaseModel):
 
 class Recommender(BaseModel):
     prompt:str
-    data_report:str
+    project_id:str
+    thread_id:str
 class Feedback(BaseModel):
     feedback:List[str]
     thread_id:str

@@ -26,7 +26,7 @@ async def recommend(item: Recommender):
     async with httpx.AsyncClient(timeout=1000) as client:
         response = await client.post(
             url + "/recommend",
-            json={"prompt": item.prompt, 'project_id': item.project_id}
+            json=item.model_dump(mode="json")
         )
         data = response.json()
         recommendations = data['data']

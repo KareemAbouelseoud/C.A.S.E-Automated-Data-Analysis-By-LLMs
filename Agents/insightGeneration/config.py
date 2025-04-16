@@ -51,7 +51,7 @@ def finalize_output(state: Dict[str, str]):
                 serializable_subspace = subspace.copy()
                 if "filters" in serializable_subspace:
                     serializable_subspace["filters"] = [
-                        (str(col), str(val) if not isinstance(val, (int, float,np.int64, np.int32, np.int16, np.int8,np.float64, np.float32, np.float16)) else val)
+                        (str(col), str(val) if isinstance(val, (int, float,np.int64, np.int32, np.int16, np.int8,np.float64, np.float32, np.float16,np.datetime64, pd.Timestamp)) else val)
                         for col, val in serializable_subspace["filters"]
                     ]
                 
@@ -69,6 +69,7 @@ def finalize_output(state: Dict[str, str]):
     # print("Final state keys:", final_state.keys())
     final_state = make_serializable(final_state)
     print("Serialization check complete")
+
     # print("Final state after serialization:", final_state)
     return final_state
 
@@ -89,6 +90,10 @@ def make_serializable(obj):
         return {'left': obj.left, 'right': obj.right, 'closed': obj.closed}
     elif isinstance(obj, np.ndarray):
         return obj.tolist()
+    elif isinstance(obj, (np.datetime64, pd.Timestamp)):
+        print("FOUND DATETIME")
+        print(obj)
+        return obj.astype(str)
     elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
         return None
     else:

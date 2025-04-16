@@ -97,9 +97,8 @@ class Project:
     def selectedProject(self):
         self.home_session=st.session_state['user_data']['projects']['current_project']
         if self.home_session["description_confirmed"]==True:
-            if 'project_details' not in self.home_session or self.home_session['project_details']==None:
-                self.home_session['project_details']=databaseRequests.get_project_details(self.home_session['project_id'])
-                st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{self.home_session['project_details']['name']}</h1>", unsafe_allow_html=True)     
+            self.home_session['project_details']=databaseRequests.get_project_details(self.home_session['project_id'])
+            st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{self.home_session['project_details']['name']}</h1>", unsafe_allow_html=True)     
         else:
             self.home_session['project_details']=databaseRequests.get_Incomplete_project_details(self.home_session['project_id'])
             st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{self.home_session['name']}</h1>", unsafe_allow_html=True)     

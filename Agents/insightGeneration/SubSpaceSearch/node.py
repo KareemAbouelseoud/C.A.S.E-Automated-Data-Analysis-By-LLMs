@@ -1,4 +1,6 @@
 from io import StringIO
+import math
+import time
 import threading
 from typing import Dict, List, Tuple
 import numpy as np
@@ -28,15 +30,18 @@ async def SubspaceSearchNode(state: dict) -> str:
     """
     advanced_cards_dict={}
     print("Running Subspace Search Node...")
+    
     df = pd.read_json(StringIO(state['df']))
+    start = time.time()
     thread_function(df, state["insight_cards"], state["description"],advanced_cards_dict)
+    print(f"Subspace Search Node took {time.time()-start} seconds")
     # Extracting the original insight card from the state
     
     return ({"advanced_insight_cards" : advanced_cards_dict})
 
 def process_card(df: pd.DataFrame, card: InsightCard, DataDescription: DataDescription, advanced_cards_dict: Dict[str, List[Tuple[Dict[str,List],InsightCard]]]) -> None:
     """Processes a single InsightCard, including subspace search."""
-    response = subspace_search(df, card, DataDescription, beam_width=3, max_depth=1, exp_factor=2) #remove await because it has no async
+    response = subspace_search(df, card, DataDescription, beam_width=10, max_depth=1, exp_factor=2) #remove await because it has no async
 
     advanced_cards_dict[card.id] = response
 
@@ -75,6 +80,7 @@ def subspace_search(df:pd.DataFrame,card:InsightCard,desc:DataDescription, beam_
                     # print(f"Original Card id {card.id},{card.insight_type}\n")
                     # print("="*60)
                     Advanced_Card=run_pandas_Coder_agent_ad_card(filtered_df=_filtered_df,card=Advanced_Card)
+                    
                     # print("="*60)
                     try:
                         if Advanced_Card.breakdown != _card.breakdown:
@@ -116,6 +122,7 @@ def subspace_search(df:pd.DataFrame,card:InsightCard,desc:DataDescription, beam_
 
                             Advanced_Card.Score=float(_s)
                             Advanced_Card.Considered=True
+                            Advanced_Card.resulted_df=Advanced_Card_resulted_df.to_json()
                         else:
                             _s=Score_card(Advanced_Card)
                             Advanced_Card.Score=float(_s.Score)
@@ -123,6 +130,7 @@ def subspace_search(df:pd.DataFrame,card:InsightCard,desc:DataDescription, beam_
                         # WE CHANGED THE ALGORITHM AND THE WAY OF THINKING 
                         
                         # print(f"Advanced Insight Card: {Advanced_Card.insight_type}")
+                        
                         print(f"Original Card id {card.id}\nSubspace: {Snew}, Score: {Advanced_Card.Score}")
                         print("-" * 40)
                         _new_subspace=copy.deepcopy(Snew)

@@ -23,7 +23,7 @@ class InsightCard(BaseModel):
     resulted_df: str = Field(default="", description="Generated DataFrame", alias="resulted_df")
     Score: float = Field(default=0.0, description="Score of the insight card", alias="score")
     Considered: bool = Field(default=False, description="Whether the card was considered important", alias="considered")
-    subSpace: str = Field(default=None,description="Subspace of the DataFrame",alias="SubSpace")
+    subSpace: str = Field(default="",description="Subspace of the DataFrame",alias="SubSpace")
     used_columns: list = Field(default=[], description="Columns used in the analysis", alias="used_columns")
     
 class InsightCards(BaseModel):

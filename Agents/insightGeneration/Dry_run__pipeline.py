@@ -1,5 +1,6 @@
 import asyncio
 from typing import Tuple, TypedDict
+from typing_extensions import Any
 
 from dotenv import load_dotenv
 
@@ -22,7 +23,7 @@ class AgentGraphState(TypedDict):
     schema: list[str]
     insight_cards: List[object]
     advanced_insight_cards: Dict[str, List[Tuple[Dict[str,List],object]]]
-    insights_explanation: Dict[str, str]
+    insights_explanation: Dict[str, Dict[str,Any]]
     num_cards: int
     report: str
    
@@ -108,7 +109,9 @@ async def Continue_Auto_InsightGen(_feedback: Feedback, thread_id: str):
             insights_explanation=result["insights_explanation"],
             num_cards=result["num_cards"]
         )
-        asyncio.create_task(save_insights(project_id=_feedback.project_id,insights=_SaveInsights))
+        print("Saving insights to the database...")
+        print(f"Saving insights to the database...{_SaveInsights.model_dump()}")
+        await save_insights(project_id=_feedback.project_id,insights=_SaveInsights)
         return tuple((backend_dict, {"thread_id": str(config["configurable"]["thread_id"])}))
         
     except Exception as e:

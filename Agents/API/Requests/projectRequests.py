@@ -66,6 +66,7 @@ async def save_insights(project_id, insights:SaveInsights):
                 )
         
         if response.status_code == 200:
+            print("Insights uploaded successfully.")
             return response.json()
         else:
             print(f"Failed to upload insights: HTTP {response.status_code}")
