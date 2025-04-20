@@ -10,7 +10,7 @@ from API.Requests import projectRequests
 load_dotenv()
 
 CONFIGURATIONS = {
-    'temperature': 0.0,
+    'temperature': 0.5,
     'model': "gemini-2.0-flash",
     'number of retries': 3
 }
