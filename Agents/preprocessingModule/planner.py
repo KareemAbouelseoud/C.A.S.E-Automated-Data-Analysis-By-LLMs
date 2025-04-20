@@ -52,12 +52,13 @@ async def planner_node(state):
     ]
     try:
         response = await llm.with_structured_output(Planner).ainvoke(messages)
-        print(f"\nPlanner input messages:\n{messages}")
+        #print(f"\nPlanner input messages:\n{messages}")
         print(f"Planner decided next step: {response.next}\n")
-        return response.next
+        return {"next": response.next}
     except Exception as e:
         print(f"Planner failed to determine next step. Error: {e}")
-        return "planner"
+        return {"next": "planner"}
 
 async def planner_brancher(state) -> Literal["caller", "coder"]:
+    print(f"i am here in planner_brancher and going to {state['next']}")
     return state['next']
