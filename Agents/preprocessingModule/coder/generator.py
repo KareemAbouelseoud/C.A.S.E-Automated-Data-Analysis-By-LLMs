@@ -36,17 +36,23 @@ async def generator_node(state):
     Returns:
         state (dict): New key added to state, generation
     """
+    print(f"the error is here in generator node")
     print("---GENERATING CODE SOLUTION---")
+    print(f"the state is {state}")
     
     # Get the current dataframe from state
     if state['preprocessed_dataframe'] is None:
         # If no preprocessed dataframe exists yet, get the original dataset
-        state['preprocessed_dataframe'] = await projectRequests.get_dataset(state['project_id'])
-    
+        state['preprocessed_dataframe'] = await projectRequests.get_dataset(state['project_id']).copy()
+    print(f"after getting the dataframe in generator node")
     # Model with structured output
+    print(f"before structured llm")
     structured_llm = llm.with_structured_output(CODE, include_raw=True)
+    print(f"after structured llm")
     
     # Prompt template with task and column information
+    print(f"before code gen prompt")
+    print(f"the state is {state}")
     code_gen_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         ("human", f"""
@@ -57,7 +63,7 @@ async def generator_node(state):
         """)
 
     ])
-
+    print(f"after code gen prompt")
     code_chain_raw = (code_gen_prompt | structured_llm)
 
     # Fallback chain for retries
@@ -79,17 +85,21 @@ async def generator_node(state):
                 "Now, try again. Invoke the code tool to structure the output with a prefix, imports, and code block:"
             )
         ]
+        print(f"before code gen chain1")
         code_solution = await code_gen_chain.ainvoke({"messages": state['messages'] + messages})
+        print(f"after code gen chain1")
     else:
+        print(f"before code gen chain2")
         code_solution = await code_gen_chain.ainvoke({"messages": state["messages"]})
+        print(f"after code gen chain2")
 
     messages += [
         (
             "assistant",
-            f"{code_solution.prefix}\nImports: {code_solution.imports}\nCode: {code_solution.code}"
+            f"prefix: {code_solution.description}\nImports: {code_solution.imports}\nCode: {code_solution.code}"
         )
     ]
-
+    print(f"generation : {code_solution}")
     iterations += 1
     return {"generation": code_solution, "messages": messages, "iterations": iterations}
 
