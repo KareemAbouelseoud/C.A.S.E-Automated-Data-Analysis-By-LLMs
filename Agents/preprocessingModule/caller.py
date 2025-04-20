@@ -46,7 +46,8 @@ async def caller_node(state):
     print("Calling tools \n")
     messages = [
         {"role": "system", "content": system_prompt},
-    ] + state['messages']
+        {"role": "user", "content": f"target column: {state['target_column']}, strategy: '{state['strategy']}'"}
+    ]
     # the model can now see the tools, and is forced to choose one
     model_with_tools = llm.bind_tools(tools)
     print(f"the state is {state} \n")
