@@ -9,7 +9,7 @@ from typing import Literal
 import pandas as pd
 
 CONFIGURATIONS = {
-    'FLAG': 'do not reflect',
+    'FLAG': 'reflect',
     'MAX_ITERATIONS': 3
 }
 
