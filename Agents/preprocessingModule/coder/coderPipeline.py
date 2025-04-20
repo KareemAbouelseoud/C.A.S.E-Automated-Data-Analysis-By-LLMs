@@ -30,6 +30,9 @@ class CoderState(TypedDict):
     project_id: str
     data_report: NotRequired[str]
     preprocessed_dataframe: NotRequired[pd.DataFrame]
+    preprocessing_task: NotRequired[str]
+    target_column: NotRequired[str]
+    strategy: NotRequired[str]
 
 def decide_to_finish(state) -> Literal["generator", 'reflector', "__end__"]:
     """
