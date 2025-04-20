@@ -24,7 +24,7 @@ from langchain_core.messages import AnyMessage
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
-
+from API.Requests.projectRequests import get_dataset
 from typing_extensions import TypedDict, Annotated, NotRequired
 import operator
 from langgraph.graph import StateGraph, START
@@ -36,9 +36,11 @@ class State(TypedDict):
     """
     project_id: str
     data_report: NotRequired[str]
+    next : NotRequired[str]
     messages: Annotated[list[AnyMessage], operator.add]
     preprocessing_task: NotRequired[str]
-    target_column_name: NotRequired[str]
+    target_column: NotRequired[str]
+    strategy: NotRequired[str]
     preprocessed_dataframe: NotRequired[pd.DataFrame]
     generation: NotRequired[dict]
     iterations: NotRequired[int] = 0
@@ -63,7 +65,7 @@ builder.add_conditional_edges("tools", tool_brancher)
 # Compile graph
 preprocessing_pipeline = builder.compile()
 
-async def preprocess_data(project_id: str, preprocessing_task: str, target_column: str,strategy: str = None):
+async def preprocess_data(project_id: str, preprocessed_dataframe: pd.DataFrame, preprocessing_task: str, target_column: str,strategy: str = None):
     """
     Execute the preprocessing pipeline on the data.
     
@@ -81,7 +83,8 @@ async def preprocess_data(project_id: str, preprocessing_task: str, target_colum
         "messages": [],
         "preprocessing_task": preprocessing_task,
         "target_column": target_column,
-        "strategy": strategy
+        "strategy": strategy,
+        "preprocessed_dataframe": preprocessed_dataframe
     })
     
     return response
@@ -95,8 +98,9 @@ if __name__ == "__main__":
         preprocessing_task = "handle_missing_values"
         target_column = "age"
         strategy = "mean"
+        dataframe = get_dataset(project_id)
         try:
-            result = await preprocess_data(project_id, preprocessing_task, target_column,strategy)
+            result = await preprocess_data(project_id, dataframe, preprocessing_task, target_column,strategy)
             print("Preprocessing completed successfully")
             print(f"Result: {result}")
         except Exception as e:
