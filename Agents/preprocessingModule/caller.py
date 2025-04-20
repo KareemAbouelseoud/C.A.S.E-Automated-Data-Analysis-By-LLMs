@@ -41,13 +41,15 @@ llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGUR
 system_prompt = hub.pull("preprocessing-caller").messages[0].prompt.template
 
 async def caller_node(state):
-    print("Calling tools")
+    print("i am here in caller node \n")
+    
+    print("Calling tools \n")
     messages = [
         {"role": "system", "content": system_prompt},
     ] + state['messages']
     # the model can now see the tools, and is forced to choose one
-    model_with_tools = llm.bind_tools(tools, tool_choice='any')
-    
+    model_with_tools = llm.bind_tools(tools)
+    print(f"the state is {state} \n")
     try:
         response = await model_with_tools.ainvoke(messages)
         print(f"---TOOL CALL DEBUG: {response.tool_calls if hasattr(response, 'tool_calls') else 'No tool call'}---")
