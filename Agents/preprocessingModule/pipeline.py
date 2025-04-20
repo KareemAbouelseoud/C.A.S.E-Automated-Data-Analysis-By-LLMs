@@ -94,13 +94,13 @@ if __name__ == "__main__":
     import sys
     
     async def main():
-        project_id = "1234567890"
+        project_id = "1"
         preprocessing_task = "handle_missing_values"
         target_column = "age"
         strategy = "mean"
         dataframe = get_dataset(project_id)
         try:
-            result = await preprocess_data(project_id, dataframe, preprocessing_task, target_column,strategy)
+            result = await preprocess_data("1", dataframe, preprocessing_task, target_column,strategy)
             print("Preprocessing completed successfully")
             print(f"Result: {result}")
         except Exception as e:
@@ -108,3 +108,4 @@ if __name__ == "__main__":
             sys.exit(1)
 
     asyncio.run(main())
+
