@@ -28,6 +28,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from mainTools import tools
 from dotenv import load_dotenv
 from langchain import hub
+from typing import Literal
+from langgraph.graph import END
 
 load_dotenv()
 
@@ -46,7 +48,7 @@ async def caller_node(state):
     print("Calling tools \n")
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": f"target column: {state['target_column']}, strategy: '{state['strategy']}'"}
+        {"role": "user", "content": f"target column: {state['target_column']}, preprocessing task: {state['preprocessing_task']}, strategy: '{state['strategy']}', project id: {state['project_id']}"}
     ]
     # the model can now see the tools, and is forced to choose one
     model_with_tools = llm.bind_tools(tools)
@@ -59,3 +61,9 @@ async def caller_node(state):
         return {"messages": [{"role": "assistant", "content": "Something went wrong calling the tools."}]}
 
     return {"messages": [response]}
+
+async def caller_should_continue(state) -> Literal['tools','__end__','planner_node']:
+    if state['messages'][-1].tool_calls:
+        return "tools"
+    else:
+        return "__end__"
