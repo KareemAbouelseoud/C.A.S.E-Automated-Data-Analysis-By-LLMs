@@ -6,65 +6,90 @@ import re
 
 async def checker_node(state):
     """
-    Check code
+    Check code with robust data validation and error handling
 
     Args:
         state (dict): The current graph state
 
     Returns:
-        state (dict): New key added to state, error
+        state (dict): Updated state with error information
     """
-
     print("---CHECKING CODE---")
 
-    # State
-    messages = state["messages"]
-    code_solution = state["generation"]
-    iterations = state["iterations"]
+    # State unpacking with validation
+    messages = state.get("messages", [])
+    code_solution = state.get("generation")
+    iterations = state.get("iterations", 0)
 
-    # Get solution components
-    imports = code_solution.imports
-    code = code_solution.code
-
-    # Check imports
-    try:
-        exec(imports)
-    except Exception as e:
-        print("---CODE IMPORT CHECK: FAILED---")
-        error_message = [("user", f"Your solution failed the import test: {e}")]
-        messages += error_message
+    if not code_solution or not hasattr(code_solution, "imports") or not hasattr(code_solution, "code"):
         return {
-            "generation": code_solution,
-            "messages": messages,
-            "iterations": iterations,
+            "generation": None,
+            "messages": messages + [("user", "Invalid code solution format")],
             "error": "yes",
+            "iterations": iterations
         }
 
-    # Check execution
+    # Check imports with isolation
     try:
+        print(f"Checking imports: {code_solution.imports}")
+        exec(code_solution.imports, {})
+    except Exception as e:
+        error_msg = f"Import check failed: {str(e)}"
+        print(f"---IMPORT CHECK FAILED: {error_msg}---")
+        return {
+            "generation": code_solution,
+            "messages": messages + [("user", error_msg)],
+            "iterations": iterations,
+            "error": "yes"
+        }
+
+    # Data validation pipeline
+    try:
+        # dataset
         dataframe = await get_dataset(state['project_id'])
-        # Create a copy of the dataframe for preprocessing
+        
+        # dataset existence
+        if dataframe is None:
+            raise ValueError("Dataset fetch returned None")
+            
+        #  DataFrame type
+        if not isinstance(dataframe, pd.DataFrame):
+            raise TypeError(f"Expected DataFrame, got {type(dataframe)}")
+            
+        # Validate DataFrame content
+        if dataframe.empty:
+            raise ValueError("Dataset is empty")
+            
+        #  copy
         df = dataframe.copy()
         globals_dict = {'df': df}
-        print("CODE:", imports + "\n" + code)
-        exec(imports + "\n" + code, globals_dict)
+
+        # Execute code with isolation
+        print(f"Executing code:\n{code_solution.imports}\n{code_solution.code}")
+        exec(f"{code_solution.imports}\n{code_solution.code}", globals_dict)
         
-        # Save the preprocessed dataframe in the state
+        #  Validate 
+        processed_df = globals_dict.get('df', None)
+        if not isinstance(processed_df, pd.DataFrame):
+            raise TypeError("Code did not produce a valid DataFrame")
+            
+        if processed_df.empty:
+            raise ValueError("Processing resulted in empty DataFrame")
+
         return {
             "generation": code_solution,
             "messages": messages,
             "iterations": iterations,
             "error": "no",
-            "preprocessed_dataframe": df
+            "preprocessed_dataframe": processed_df
         }
-        
+
     except Exception as e:
-        print("---CODE BLOCK CHECK: FAILED---")
-        error_message = [("user", f"Your solution failed the code execution test: {e}")]
-        messages += error_message
+        error_msg = f"Code execution failed: {str(e)}"
+        print(f"---EXECUTION FAILED: {error_msg}---")
         return {
             "generation": code_solution,
-            "messages": messages,
+            "messages": messages + [("user", error_msg)],
             "iterations": iterations,
-            "error": "yes",
+            "error": "yes"
         }

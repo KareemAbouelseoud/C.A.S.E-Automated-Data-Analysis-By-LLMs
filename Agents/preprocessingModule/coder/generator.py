@@ -5,15 +5,26 @@ from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 import sys
 import os
+import pandas as pd
+from google.api_core import client_options
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from API.Requests import projectRequests
 load_dotenv()
+
+
 
 CONFIGURATIONS = {
     'temperature': 0.5,
     'model': "gemini-2.0-flash",
     'number of retries': 3
 }
+
+client_options = client_options.ClientOptions(
+    api_endpoint="generativelanguage.googleapis.com",
+    quota_project_id=os.getenv("GOOGLE_PROJECT_ID")
+)
+
 
 llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 
@@ -41,15 +52,39 @@ async def generator_node(state):
     print(f"the state is {state}")
     
     # Get the current dataframe from state
-    if state['preprocessed_dataframe'] is None:
-        # If no preprocessed dataframe exists yet, get the original dataset
-        state['preprocessed_dataframe'] = await projectRequests.get_dataset(state['project_id']).copy()
-    print(f"after getting the dataframe in generator node")
-    # Model with structured output
-    print(f"before structured llm")
-    structured_llm = llm.with_structured_output(CODE, include_raw=True)
-    print(f"after structured llm")
-    
+    try:
+
+        if state['preprocessed_dataframe'] is None:
+            print("DEBUG Attempting to fetch raw dataset...")
+            # If no preprocessed dataframe exists yet, get the original dataset
+            raw_data = await projectRequests.get_dataset(state['project_id'])
+            print(f"[DEBUG] Received data type: {type(raw_data)}")
+            
+            if not isinstance(raw_data, pd.DataFrame):
+                print("[DEBUG] Data contents:", raw_data)
+                raise ValueError("Failed to fetch valid DataFrame")
+            state['preprocessed_dataframe'] = raw_data.copy()
+            print("[DEBUG] Successfully initialized DataFrame")
+        df = state['preprocessed_dataframe']
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError("Invalid DataFrame in state")
+   
+        print(f"after getting the dataframe in generator node")
+        # Model with structured output
+        print(f"before structured llm")
+        structured_llm = llm.with_structured_output(CODE, include_raw=True)
+        print(f"after structured llm")
+    except Exception as e:
+        error_msg = f"Data initialization failed: {str(e)}"
+        print(f"!!! CRITICAL ERROR: {error_msg}")
+        return {
+            "generation": None,
+            "messages": [("system", error_msg)],
+            "error": "yes",
+            "iterations": state.get("iterations", 0) + 1,
+            "preprocessed_dataframe": None
+        }
+
     # Prompt template with task and column information
     print(f"before code gen prompt")
     print(f"the state is {state}")

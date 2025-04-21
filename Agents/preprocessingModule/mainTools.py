@@ -36,7 +36,7 @@ Variables:
 """
 
 @tool
-async def handle_missing_values(column: str, strategy: str, project_id: Annotated[str,InjectedToolArg] = None) -> pd.DataFrame:
+async def handle_missing_values(column: str, strategy: str, project_id:str) -> pd.DataFrame:
     """Handle missing values in a specified column using the given strategy.
     
     Args:
@@ -47,8 +47,8 @@ async def handle_missing_values(column: str, strategy: str, project_id: Annotate
     Returns:
         pd.DataFrame: The preprocessed DataFrame
     """
-    df = await projectRequests.get_dataset(project_id)
-    
+
+    df = await projectRequests.get_dataset(project_id)    
     try:
         if column not in df.columns:
             raise ValueError(f"Column '{column}' not found in dataset")
@@ -154,25 +154,36 @@ async def tool_node(state)->Literal["caller", "__end__"]:
     last_message = messages[-1]
     output_messages = []
     tool_outputs = []
+    retries = state.get("tool_retries", 0) + 1
+    if retries > 3:
+        return {"next": "__end__", "error": "Max tool retries exceeded"}
+
     for tool_call in last_message.tool_calls:
         try:
             # Invoke the tool based on the tool call
+            args = tool_call["args"].copy()
+            args["project_id"] = state["project_id"]
+            
             tool_call["args"]["project_id"] = state['project_id']
+            print(f"---TOOL CALL ARGS: {args}---")
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             tool_outputs.append(tool_result)
-            return {"next": "__end__", 'preprocessing': tool_outputs}
+            return {"next": "__end__", 'preprocessing': tool_outputs , "tool_retries": 0}
         
         except Exception as e:
             # Return the error if the tool call fails
+            error_msg = f"{type(e).__name__}: {str(e)}"
             output_messages.append(
                 ToolMessage(
                     content="an error occurred while running the tool",
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
-                    additional_kwargs={"error": e},
+                    additional_kwargs={"error":  error_msg},
                 )
             )
-            return {'next':'caller', 'messages':output_messages}
+            return {'next':'caller', 'messages':output_messages , 'tool_retries': retries}
 
-async def tool_brancher(state)-> Literal["caller", "__end__"]:
-    return state['next']
+async def tool_brancher(state):
+    if state.get("tool_retries", 0) > state.get("max_retries", 3):
+        return "__end__"
+    return "caller"

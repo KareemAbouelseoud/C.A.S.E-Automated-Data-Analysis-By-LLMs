@@ -55,10 +55,22 @@ builder.add_node("caller", caller_node)
 builder.add_node("coder", coder_pipeline)
 builder.add_node("tools", tool_node)
 
+def route_planner(state : State) -> str:
+    next_node = state.get("next", "coder")
+    print(f"PLANER to {next_node.upper()}")
+    return next_node
+
 # Add edges
 builder.add_edge(START, "planner")
-builder.add_edge("planner", "caller")
-builder.add_edge("planner", "coder")
+
+builder.add_conditional_edges(
+    "planner",
+    route_planner,
+    {
+        "caller": "caller",
+        "coder": "coder"
+    }
+)
 builder.add_edge("caller", "tools")
 builder.add_conditional_edges("tools", tool_brancher)
 
@@ -98,7 +110,7 @@ if __name__ == "__main__":
         preprocessing_task = "handle_missing_values"
         target_column = "age"
         strategy = "mean"
-        dataframe = get_dataset(project_id)
+        dataframe = await get_dataset(project_id)
         try:
             result = await preprocess_data("1", dataframe, preprocessing_task, target_column,strategy)
             print("Preprocessing completed successfully")
