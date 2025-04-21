@@ -7,8 +7,9 @@ from langchain_core.tools import InjectedToolArg
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from API.Requests import projectRequests
 
+# Global variable for the preprocessed dataframe
+global_df = None
 
 """
 mainTools.py
@@ -36,139 +37,149 @@ Variables:
 """
 
 @tool
-async def handle_missing_values(column: str, strategy: str, project_id:str) -> pd.DataFrame:
+async def handle_missing_values(column: str, strategy: str) -> pd.DataFrame:
     """Handle missing values in a specified column using the given strategy.
     
     Args:
         column: The column name to process
         strategy: The strategy to use ('mean', 'median', 'mode', 'drop')
-        project_id: The ID of the project to get data from
     
     Returns:
         pd.DataFrame: The preprocessed DataFrame
     """
-
-    df = await projectRequests.get_dataset(project_id)    
+    global global_df
+    preprocessed_df = global_df.copy()
     try:
-        if column not in df.columns:
+        if global_df is None:
+            raise ValueError("No DataFrame loaded. Please load a DataFrame first.")
+            
+        if column not in global_df.columns:
             raise ValueError(f"Column '{column}' not found in dataset")
             
-        if not pd.api.types.is_numeric_dtype(df[column]):
+        if not pd.api.types.is_numeric_dtype(global_df[column]):
             raise TypeError(f"Column '{column}' must be numeric for {strategy} strategy")
             
         if strategy == 'mean':
-            df[column] = df[column].fillna(df[column].mean())
+            preprocessed_df[column] = global_df[column].fillna(global_df[column].mean())
         elif strategy == 'median':
-            df[column] = df[column].fillna(df[column].median())
+            preprocessed_df[column] = global_df[column].fillna(global_df[column].median())
         elif strategy == 'mode':
-            df[column] = df[column].fillna(df[column].mode()[0])
+            preprocessed_df[column] = global_df[column].fillna(global_df[column].mode()[0])
         elif strategy == 'drop':
-            df.dropna(subset=[column], inplace=True)
+            global_df.dropna(subset=[column], inplace=True)
         else:
             raise ValueError(f"Invalid strategy: {strategy}. Must be one of: mean, median, mode, drop")
             
-        return df
+        return preprocessed_df
         
     except Exception as e:
         raise ValueError(f"Error handling missing values in column {column}: {str(e)}")
 
 @tool
-async def remove_outliers(column: str, method: str, threshold: float = 3.0, project_id: Annotated[str,InjectedToolArg] = None) -> pd.DataFrame:
+async def remove_outliers(column: str, method: str, threshold: float = 3.0) -> pd.DataFrame:
     """Remove outliers from a column using the specified method.
     
     Args:
         column: The column name to process
         method: The method to use ('zscore', 'iqr')
         threshold: The threshold for outlier detection
-        project_id: The ID of the project to get data from
     
     Returns:
         pd.DataFrame: The preprocessed DataFrame
     """
-    df = await projectRequests.get_dataset(project_id)
-    
+    global global_df
+    preprocessed_df = global_df.copy()
     try:
-        if column not in df.columns:
+        if global_df is None:
+            raise ValueError("No DataFrame loaded. Please load a DataFrame first.")
+            
+        if column not in global_df.columns:
             raise ValueError(f"Column '{column}' not found in dataset")
             
-        if not pd.api.types.is_numeric_dtype(df[column]):
+        if not pd.api.types.is_numeric_dtype(global_df[column]):
             raise TypeError(f"Column '{column}' must be numeric for outlier detection")
             
         if method == 'zscore':
-            z_scores = np.abs((df[column] - df[column].mean()) / df[column].std())
-            df = df[z_scores < threshold]
+            z_scores = np.abs((global_df[column] - global_df[column].mean()) / global_df[column].std())
+            global_df = global_df[z_scores < threshold]
         elif method == 'iqr':
-            Q1 = df[column].quantile(0.25)
-            Q3 = df[column].quantile(0.75)
+            Q1 = global_df[column].quantile(0.25)
+            Q3 = global_df[column].quantile(0.75)
             IQR = Q3 - Q1
-            df = df[~((df[column] < (Q1 - 1.5 * IQR)) | (df[column] > (Q3 + 1.5 * IQR)))]
+            preprocessed_df = global_df[~((global_df[column] < (Q1 - 1.5 * IQR)) | (global_df[column] > (Q3 + 1.5 * IQR)))]
         else:
             raise ValueError(f"Invalid method: {method}. Must be one of: zscore, iqr")
             
-        return df
+        return preprocessed_df
         
     except Exception as e:
         raise ValueError(f"Error removing outliers from column {column}: {str(e)}")
 
 @tool
-async def change_column_type(column: str, target_type: str, format: str = None, project_id: Annotated[str,InjectedToolArg] = None) -> pd.DataFrame:
+async def change_column_type(column: str, target_type: str, format: str = None) -> pd.DataFrame:
     """Change the data type of a column.
     
     Args:
         column: The column name to change type
         target_type: The target data type ('datetime', 'int', 'float', 'string')
         format: Format string for datetime conversion (e.g. '%Y-%m-%d')
-        project_id: The ID of the project to get data from
     
     Returns:
         pd.DataFrame: The DataFrame with changed column type
     """
-    df = await projectRequests.get_dataset(project_id)
-    
+    global global_df
+    preprocessed_df = global_df.copy()
     try:
-        if column not in df.columns:
+        if global_df is None:
+            raise ValueError("No DataFrame loaded. Please load a DataFrame first.")
+            
+        if column not in global_df.columns:
             raise ValueError(f"Column '{column}' not found in dataset")
             
         if target_type == 'datetime':
-            df[column] = pd.to_datetime(df[column], format=format)
+            preprocessed_df[column] = pd.to_datetime(global_df[column], format=format)
         elif target_type == 'int':
-            df[column] = df[column].astype(int)
+            preprocessed_df[column] = global_df[column].astype(int)
         elif target_type == 'float':
-            df[column] = df[column].astype(float)
+            preprocessed_df[column] = global_df[column].astype(float)
         elif target_type == 'string':
-            df[column] = df[column].astype(str)
+            preprocessed_df[column] = global_df[column].astype(str)
         else:
             raise ValueError(f"Unsupported target type: {target_type}. Must be one of: datetime, int, float, string")
     except Exception as e:
         raise ValueError(f"Error converting column {column} to {target_type}: {str(e)}")
             
-    return df
+    return preprocessed_df
 
-tools = [handle_missing_values,remove_outliers, change_column_type]
+tools = [handle_missing_values, remove_outliers, change_column_type]
 
 async def tool_node(state)->Literal["caller", "__end__"]:
+    global global_df
     tools_by_name = {tool.name: tool for tool in tools}
-    
     messages = state["messages"]
-    # get the last message of this state
     last_message = messages[-1]
     output_messages = []
-    tool_outputs = []
-    retries = state.get("tool_retries", 0) + 1
+    if 'iterations' not in state or state['iterations'] is None:
+        state['iterations'] = 0
+    retries = state['iterations'] + 1
+    # get the last message of this state
     if retries > 3:
         return {"next": "__end__", "error": "Max tool retries exceeded"}
-
+    
+    global_df = state['dataframe']
+    
     for tool_call in last_message.tool_calls:
         try:
             # Invoke the tool based on the tool call
-            args = tool_call["args"].copy()
-            args["project_id"] = state["project_id"]
-            
-            tool_call["args"]["project_id"] = state['project_id']
+            args = tool_call["args"]
             print(f"---TOOL CALL ARGS: {args}---")
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
-            tool_outputs.append(tool_result)
-            return {"next": "__end__", 'preprocessing': tool_outputs , "tool_retries": 0}
+            print(f"---TOOL RESULT: {tool_result}---")
+            return {
+                "next": "__end__", 
+                "iterations": retries,
+                'preprocessed_dataframe': tool_result
+            }
         
         except Exception as e:
             # Return the error if the tool call fails
@@ -181,9 +192,7 @@ async def tool_node(state)->Literal["caller", "__end__"]:
                     additional_kwargs={"error":  error_msg},
                 )
             )
-            return {'next':'caller', 'messages':output_messages , 'tool_retries': retries}
+            return {'next':'caller', 'messages':output_messages, 'iterations': retries}
 
-async def tool_brancher(state):
-    if state.get("tool_retries", 0) > state.get("max_retries", 3):
-        return "__end__"
-    return "caller"
+async def tool_brancher(state)-> Literal["caller", "__end__"]:
+    return state['next']
