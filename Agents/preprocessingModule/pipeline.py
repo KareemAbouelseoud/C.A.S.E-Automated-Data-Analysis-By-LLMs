@@ -17,14 +17,13 @@ Dependencies:
 - sys
 """
 from caller import caller_node
-from planner import planner_node
+from planner import planner_node, planner_brancher
 from mainTools import tool_node, tool_brancher
 from coder.coderPipeline import coder_pipeline
 from langchain_core.messages import AnyMessage
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..')))
-from API.Requests.projectRequests import get_dataset
 from typing_extensions import TypedDict, Annotated, NotRequired
 import operator
 from langgraph.graph import StateGraph, START
@@ -41,6 +40,7 @@ class State(TypedDict):
     preprocessing_task: NotRequired[str]
     target_column: NotRequired[str]
     strategy: NotRequired[str]
+    dataframe: NotRequired[pd.DataFrame]
     preprocessed_dataframe: NotRequired[pd.DataFrame]
     generation: NotRequired[dict]
     iterations: NotRequired[int] = 0
@@ -55,29 +55,17 @@ builder.add_node("caller", caller_node)
 builder.add_node("coder", coder_pipeline)
 builder.add_node("tools", tool_node)
 
-def route_planner(state : State) -> str:
-    next_node = state.get("next", "coder")
-    print(f"PLANER to {next_node.upper()}")
-    return next_node
-
 # Add edges
 builder.add_edge(START, "planner")
-
-builder.add_conditional_edges(
-    "planner",
-    route_planner,
-    {
-        "caller": "caller",
-        "coder": "coder"
-    }
-)
+builder.add_conditional_edges("planner",planner_brancher,{"caller": "caller","coder": "coder"})
 builder.add_edge("caller", "tools")
 builder.add_conditional_edges("tools", tool_brancher)
+
 
 # Compile graph
 preprocessing_pipeline = builder.compile()
 
-async def preprocess_data(project_id: str, preprocessed_dataframe: pd.DataFrame, preprocessing_task: str, target_column: str,strategy: str = None):
+async def preprocess_data(project_id: str, dataframe: pd.DataFrame, preprocessing_task: str, target_column: str,strategy: str = None):
     """
     Execute the preprocessing pipeline on the data.
     
@@ -96,28 +84,27 @@ async def preprocess_data(project_id: str, preprocessed_dataframe: pd.DataFrame,
         "preprocessing_task": preprocessing_task,
         "target_column": target_column,
         "strategy": strategy,
-        "preprocessed_dataframe": preprocessed_dataframe
+        "dataframe": dataframe
     })
     
     return response
 
-if __name__ == "__main__":
-    import asyncio
-    import sys
+# if __name__ == "__main__":
+#     import asyncio
+#     import sys
     
-    async def main():
-        project_id = "1"
-        preprocessing_task = "handle_missing_values"
-        target_column = "age"
-        strategy = "mean"
-        dataframe = await get_dataset(project_id)
-        try:
-            result = await preprocess_data("1", dataframe, preprocessing_task, target_column,strategy)
-            print("Preprocessing completed successfully")
-            print(f"Result: {result}")
-        except Exception as e:
-            print(f"Error during preprocessing: {str(e)}")
-            sys.exit(1)
+#     async def main():
+#         project_id = "1"
+#         preprocessing_task = "handle_missing_values"
+#         target_column = "age"
+#         strategy = "mean"
+#         try:
+#             result = await preprocess_data("1", dataframe, preprocessing_task, target_column,strategy)
+#             print("Preprocessing completed successfully")
+#             print(f"Result: {result}")
+#         except Exception as e:
+#             print(f"Error during preprocessing: {str(e)}")
+#             sys.exit(1)
 
-    asyncio.run(main())
+#     asyncio.run(main())
 
