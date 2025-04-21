@@ -56,11 +56,11 @@ def fetch_insights(project_id):
     #     print(f"Response: {response.text}")
     #     return None
 
-    file_path = 'static/response_1743535680381.json'
+    file_path = 'static/67ffa6dcfdb4bc6cf5a5a171_Insights.json'
     try:
         with open(file_path, 'r') as file:
             data = json.load(file)
-            return data.get('feedback', [])[0]
+            return data
     except FileNotFoundError:
         print(f"File not found: {file_path}")
         return None

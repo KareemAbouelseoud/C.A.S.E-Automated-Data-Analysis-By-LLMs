@@ -159,7 +159,7 @@ class insGenService:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
                     f"{self.url}/project/{project_id}/description",
-                    timeout=30.0  # Add timeout
+                    timeout=100.0  # Add timeout
                 )
                 response.raise_for_status()  # Raise for bad status codes
                 

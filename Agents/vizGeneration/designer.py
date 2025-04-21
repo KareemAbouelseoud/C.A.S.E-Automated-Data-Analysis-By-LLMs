@@ -27,7 +27,7 @@ Variables:
 - prompt: A ChatPromptTemplate created from the system and user messages.
 - designer_chain: A chain that combines the prompt and the language model with structured output.
 """
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.prompts import ChatPromptTemplate
 from langchain import hub
 from dotenv import load_dotenv
@@ -36,7 +36,8 @@ load_dotenv()
 
 
 CONFIGURATIONS={
-    'model':"gemini-2.5-pro-preview-03-25",
+    'temperature':0.7,
+    'model':"deepseek-ai/deepseek-r1",
 }
 
 # The Designer should respond with this sturcture of a List of json strings
@@ -46,7 +47,7 @@ system_prompt = hub.pull("viz-generation-designer").messages[0].prompt.template
 
 async def designer_node(data_report,features=None):
     print("Designing visualizations")
-    llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'])
+    llm=ChatNVIDIA(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'],max_tokens=4096)
     feature_request = f"The user has requested to focus on the following features: {features}, you can still add more features to the visualizations. but make it focused around the features mentioned." if features else ""
     prompt = ChatPromptTemplate.from_messages([
     ("system", system_prompt),

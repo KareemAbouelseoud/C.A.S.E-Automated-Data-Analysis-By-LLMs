@@ -56,13 +56,13 @@ async def save_insights(project_id, insights:SaveInsights):
             try:
                 response = await client.post(
                     url + f"/insGen/project/{project_id}/save_Insights",
-                    json= insights.model_dump(mode='json')
+                    json= insights.model_dump(mode='json'),timeout=100
                 )
             except Exception as e:
                 print("Error in posting insights:", e)
                 response = await client.post(
                     f"http://localhost:8005/insGen/project/{project_id}/save_Insights",
-                    json=insights.model_dump(mode='json')
+                    json=insights.model_dump(mode='json'),timeout=100
                 )
         
         if response.status_code == 200:
