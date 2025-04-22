@@ -50,15 +50,16 @@ async def handle_missing_values(column: str, strategy: str) -> pd.DataFrame:
     global global_df
     preprocessed_df = global_df.copy()
     try:
+        print(f"running handle missing values tool on column: {column} with strategy: {strategy}")
         if global_df is None:
             raise ValueError("No DataFrame loaded. Please load a DataFrame first.")
             
         if column not in global_df.columns:
             raise ValueError(f"Column '{column}' not found in dataset")
-            
-        if not pd.api.types.is_numeric_dtype(global_df[column]):
-            raise TypeError(f"Column '{column}' must be numeric for {strategy} strategy")
-            
+        
+        if strategy != 'drop':
+            if not pd.api.types.is_numeric_dtype(global_df[column]):
+                raise TypeError(f"Column '{column}' must be numeric for {strategy} strategy")   
         if strategy == 'mean':
             preprocessed_df[column] = global_df[column].fillna(global_df[column].mean())
         elif strategy == 'median':
@@ -66,14 +67,15 @@ async def handle_missing_values(column: str, strategy: str) -> pd.DataFrame:
         elif strategy == 'mode':
             preprocessed_df[column] = global_df[column].fillna(global_df[column].mode()[0])
         elif strategy == 'drop':
-            global_df.dropna(subset=[column], inplace=True)
+            preprocessed_df = global_df.dropna(subset=[column])
         else:
             raise ValueError(f"Invalid strategy: {strategy}. Must be one of: mean, median, mode, drop")
             
-        return preprocessed_df
+        return {"status" : "success", "preprocessed_dataframe" : preprocessed_df}
         
     except Exception as e:
-        raise ValueError(f"Error handling missing values in column {column}: {str(e)}")
+        print(f"Tool-Error handling missing values in column {column} with strategy {strategy},: {str(e)}")
+        return {"status" : "error", "error" : str(e)}
 
 @tool
 async def remove_outliers(column: str, method: str, threshold: float = 3.0) -> pd.DataFrame:
