@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from API.Requests import projectRequests
 
 load_dotenv()
 
@@ -20,39 +19,59 @@ system_prompt = hub.pull("preprocessing-coder-reflector").messages[0].prompt.tem
 
 async def reflector_node(state):
     """
-    Reflect on errors
+    Reflect on errors in failed code solutions
 
     Args:
         state (dict): The current graph state
 
     Returns:
-        state (dict): New key added to state, generation
+        state (dict): Updated state with reflections
     """
-
-    print("---GENERATING CODE SOLUTION---")
+    print("---REFLECTING ON ERRORS---")
 
     # State
     messages = state["messages"]
     iterations = state["iterations"]
-    code_solution = state["generation"]
-    data_report = await projectRequests.get_data_report(state['project_id'])
-    
-    messages.append(("user", f"Data Report: {data_report}"))
+    generated_errors = state["generated_errors"]
+    preprocessing_tasks = state["preprocessing_tasks"]
 
-    # Prompt to enforce tool use
-    reflector_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("placeholder", "{messages}")
-    ])
+    if not generated_errors:
+        return {
+            "generation": state.get("generation", []),
+            "messages": messages + [("assistant", "No errors to reflect on")],
+            "iterations": iterations,
+            "preprocessing_tasks": preprocessing_tasks,
+            "generated_errors": []
+        }
 
-    reflector_chain = (reflector_prompt | llm)
-    
-    # Add reflection
-    reflections = await reflector_chain.ainvoke({"messages": messages})
-    
+    # Process each error
+    for error_case in generated_errors:
+        task_index = error_case["task_index"]
+        current_task = error_case["task"]
+        error_msg = error_case["error"]
+
+        # Prompt to enforce tool use
+        reflector_prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", f"""
+            Current Task: {current_task['task']}
+            Target Column: {current_task['column']}
+            Strategy: {current_task['strategy']}
+            Error Message: {error_msg}
+            Please analyze the error and suggest improvements.
+            """)
+        ])
+
+        reflector_chain = (reflector_prompt | llm)
+        reflections = await reflector_chain.ainvoke({"messages": messages})
+        
+        messages.append(("assistant", f"Reflections for task {task_index}: {reflections}"))
+
     return {
-        "generation": code_solution,
-        "messages": [("assistant", f"Here are reflections on the error: {reflections}")],
+        "generation": state["generation"],
+        "messages": messages,
         "iterations": iterations,
-        "data_report": data_report
+        "current_task_index": state["current_task_index"],
+        "preprocessing_tasks": preprocessing_tasks,
+        "generated_errors": []
     }

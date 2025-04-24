@@ -20,19 +20,29 @@ class CoderState(TypedDict):
     Attributes:
         error : Binary flag for control flow to indicate whether test error was tripped
         messages : With user question, error messages, reasoning
-        generation : Code solution
+        generation : List of code solutions for all tasks
         iterations : Number of tries
+        preprocessing_tasks : The task to process
+        target_column : The column to process
+        strategy : The strategy to use
+        generated_responses : List of successfully generated code solutions
+        generated_errors : List of code solutions that failed validation
+        executed_responses : List of successfully executed code solutions
     """
     messages: Annotated[list[AnyMessage], operator.add]
-    generation: str
+    generation: list[dict]  # List of code solutions
     iterations: NotRequired[int] = 0
     error: NotRequired[str] = ''
     project_id: str
     data_report: NotRequired[str]
+    dataframe: NotRequired[pd.DataFrame]
     preprocessed_dataframe: NotRequired[pd.DataFrame]
-    preprocessing_task: NotRequired[str]
-    target_column: NotRequired[str]
-    strategy: NotRequired[str]
+    preprocessing_tasks: NotRequired[str]  # The task to process
+    target_column: NotRequired[str]  # The column to process
+    strategy: NotRequired[str]  # The strategy to use
+    generated_responses: NotRequired[list[dict]] = []  # Successfully generated code
+    generated_errors: NotRequired[list[dict]] = []  # Code that failed validation
+    executed_responses: NotRequired[list[dict]] = []  # Successfully executed code
 
 def decide_to_finish(state) -> Literal["generator", 'reflector', "__end__"]:
     """
@@ -44,21 +54,28 @@ def decide_to_finish(state) -> Literal["generator", 'reflector', "__end__"]:
     Returns:
         str: Next node to call
     """
-    error = state.get("error", "")
+    error = state["error"]
     if 'iterations' in state:
-        iterations = state.get("iterations", 0)
+        iterations = state["iterations"]
     else:
         iterations = 0
 
     #debugger
     print(f"---DEBUG: Iteration: {iterations}, Error: {error}---")
 
-    if error == "no" or iterations == CONFIGURATIONS["MAX_ITERATIONS"]:
-        print("---DECISION: FINISH---")
+    if error == "no":
+        print("---DECISION: TASK COMPLETED---")        
+        # If task is processed and no errors, finish
+        return "__end__"
+    elif iterations >= CONFIGURATIONS["MAX_ITERATIONS"]:
+        print("---DECISION: MAX ITERATIONS REACHED---")
         return "__end__"
     else:
         print("---DECISION: RE-TRY SOLUTION---")
-        return "reflector" if CONFIGURATIONS["FLAG"] == "reflect" else "generator"
+        if state.get("generated_errors") and CONFIGURATIONS["FLAG"] == "reflect":
+            return "reflector"
+        else:
+            return "generator"
 
 workflow = StateGraph(CoderState)
 # Define the nodes

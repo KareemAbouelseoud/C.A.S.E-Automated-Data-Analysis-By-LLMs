@@ -9,7 +9,6 @@ import pandas as pd
 from google.api_core import client_options
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from API.Requests import projectRequests
 load_dotenv()
 
 
@@ -39,104 +38,100 @@ class CODE(BaseModel):
 
 async def generator_node(state):
     """
-    Generate a code solution for preprocessing the dataframe
+    Generate code solutions for a preprocessing task
 
     Args:
-        state (dict): The current graph state
+        state (dict): The current graph state containing:
+            - preprocessing_tasks: The task to perform
+            - target_column: The column to process
+            - strategy: The strategy to use
+            - dataframe: The input DataFrame
+            - messages: List of messages in the conversation
 
     Returns:
-        state (dict): New key added to state, generation
+        state (dict): Updated state with generated code solutions
     """
-    print(f"the error is here in generator node")
-    print("---GENERATING CODE SOLUTION---")
-    print(f"the state is {state}")
+    print("---GENERATING CODE SOLUTIONS---")
+    print(f"state in generator: {state}")
+    # Get task details
+    task = state["preprocessing_tasks"]
+    column = state["target_column"]
+    strategy = state["strategy"]
     
     # Get the current dataframe from state
     try:
-
-        if state['preprocessed_dataframe'] is None:
-            print("DEBUG Attempting to fetch raw dataset...")
-            # If no preprocessed dataframe exists yet, get the original dataset
-            raw_data = await projectRequests.get_dataset(state['project_id'])
-            print(f"[DEBUG] Received data type: {type(raw_data)}")
-            
-            if not isinstance(raw_data, pd.DataFrame):
-                print("[DEBUG] Data contents:", raw_data)
-                raise ValueError("Failed to fetch valid DataFrame")
-            state['preprocessed_dataframe'] = raw_data.copy()
-            print("[DEBUG] Successfully initialized DataFrame")
-        df = state['preprocessed_dataframe']
+        df = state['dataframe']
         if not isinstance(df, pd.DataFrame):
             raise TypeError("Invalid DataFrame in state")
-   
-        print(f"after getting the dataframe in generator node")
+        
         # Model with structured output
-        print(f"before structured llm")
         structured_llm = llm.with_structured_output(CODE, include_raw=True)
-        print(f"after structured llm")
     except Exception as e:
         error_msg = f"Data initialization failed: {str(e)}"
         print(f"!!! CRITICAL ERROR: {error_msg}")
         return {
-            "generation": None,
+            "generation": [],
             "messages": [("system", error_msg)],
             "error": "yes",
             "iterations": state.get("iterations", 0) + 1,
-            "preprocessed_dataframe": None
+            "preprocessed_dataframe": None,
+            "preprocessing_tasks": task,
+            "target_column": column,
+            "strategy": strategy
         }
 
-    # Prompt template with task and column information
-    print(f"before code gen prompt")
-    print(f"the state is {state}")
-    code_gen_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", f"""
-        Preprocessing Task: {state['preprocessing_task']}
-        Target Column: {state['target_column']}
-        Assume there is a pandas DataFrame named `df` already available in memory.
-        Do not redefine or recreate it.
-        """)
+    # Generate code for the task
+    try:
+        # Prompt template with task and column information
+        code_gen_prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", f"""
+            Preprocessing Task: {task}
+            Target Column: {column}
+            Strategy: {strategy}
+            Assume there is a pandas DataFrame named `df` already available in memory.
+            Do not redefine or recreate it.
+            """)
+        ])
 
-    ])
-    print(f"after code gen prompt")
-    code_chain_raw = (code_gen_prompt | structured_llm)
-
-    # Fallback chain for retries
-    fallback_chain = insert_errors | code_chain_raw
-    code_gen_chain_retry = code_chain_raw.with_fallbacks(
-        fallbacks=[fallback_chain] * CONFIGURATIONS["number of retries"],
-        exception_key="error"
-    )
-    code_gen_chain = code_gen_chain_retry | parse_output
-
-    messages = []
-    iterations = state.get("iterations", 0)
-    error = state.get("error", "")
-
-    if error == "yes":
-        messages += [
-            (
-                "human",
-                "Now, try again. Invoke the code tool to structure the output with a prefix, imports, and code block:"
-            )
-        ]
-        print(f"before code gen chain1")
-        code_solution = await code_gen_chain.ainvoke({"messages": state['messages'] + messages})
-        print(f"after code gen chain1")
-    else:
-        print(f"before code gen chain2")
-        code_solution = await code_gen_chain.ainvoke({"messages": state["messages"]})
-        print(f"after code gen chain2")
-
-    messages += [
-        (
-            "assistant",
-            f"prefix: {code_solution.description}\nImports: {code_solution.imports}\nCode: {code_solution.code}"
+        code_chain_raw = (code_gen_prompt | structured_llm)
+        fallback_chain = insert_errors | code_chain_raw
+        code_gen_chain_retry = code_chain_raw.with_fallbacks(
+            fallbacks=[fallback_chain] * CONFIGURATIONS["number of retries"],
+            exception_key="error"
         )
-    ]
-    print(f"generation : {code_solution}")
-    iterations += 1
-    return {"generation": code_solution, "messages": messages, "iterations": iterations}
+        code_gen_chain = code_gen_chain_retry | parse_output
+
+        code_solution = await code_gen_chain.ainvoke({"messages": state["messages"]})
+        generated_solutions = [{
+            "task": task,
+            "column": column,
+            "strategy": strategy,
+            "solution": code_solution
+        }]
+
+        return {
+            "generation": generated_solutions,
+            "messages": state["messages"],
+            "iterations": state.get("iterations", 0) + 1,
+            "preprocessing_tasks": task,
+            "target_column": column,
+            "strategy": strategy,
+            "dataframe": state["dataframe"]
+        }
+
+    except Exception as e:
+        print(f"Error generating code: {str(e)}")
+        return {
+            "generation": [],
+            "messages": state["messages"] + [("system", f"Error generating code: {str(e)}")],
+            "error": "yes",
+            "iterations": state.get("iterations", 0) + 1,
+            "preprocessing_tasks": task,
+            "target_column": column,
+            "strategy": strategy,
+            "dataframe": state["dataframe"]
+        }
 
 async def parse_output(solution):
     """Parse structured output that includes raw response"""
