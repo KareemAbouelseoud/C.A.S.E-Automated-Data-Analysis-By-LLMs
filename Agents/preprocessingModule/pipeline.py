@@ -37,9 +37,8 @@ class State(TypedDict):
     data_report: NotRequired[str]
     next : NotRequired[str]
     messages: Annotated[list[AnyMessage], operator.add]
-    preprocessing_task: NotRequired[str]
-    target_column: NotRequired[str]
-    strategy: NotRequired[str]
+    preprocessing_tasks: NotRequired[list[dict]]  # List of tasks, each with task, column, and strategy
+    current_task_index: NotRequired[int]  # Index of current task being processed
     dataframe: NotRequired[pd.DataFrame]
     preprocessed_dataframe: NotRequired[pd.DataFrame]
     generation: NotRequired[dict]
@@ -57,23 +56,24 @@ builder.add_node("tools", tool_node)
 
 # Add edges
 builder.add_edge(START, "planner")
-builder.add_conditional_edges("planner",planner_brancher,{"caller": "caller","coder": "coder"})
+builder.add_conditional_edges("planner", planner_brancher, {"caller": "caller", "coder": "coder"})
 builder.add_edge("caller", "tools")
 builder.add_conditional_edges("tools", tool_brancher)
-
 
 # Compile graph
 preprocessing_pipeline = builder.compile()
 
-async def preprocess_data(project_id: str, dataframe: pd.DataFrame, preprocessing_task: str, target_column: str,strategy: str = None):
+async def preprocess_data(project_id: str, dataframe: pd.DataFrame, preprocessing_tasks: list[dict]):
     """
-    Execute the preprocessing pipeline on the data.
+    Execute the preprocessing pipeline on the data with multiple tasks.
     
     Args:
         project_id: The ID of the project
-        preprocessing_task: The preprocessing task to perform
-        target_column: The target column to preprocess
-        strategy: The strategy to use for the preprocessing task
+        dataframe: The input DataFrame
+        preprocessing_tasks: List of dictionaries containing:
+            - task: The preprocessing task to perform
+            - column: The target column to preprocess
+            - strategy: The strategy to use for the preprocessing task
 
     Returns:
         The preprocessed data and visualization metadata
@@ -81,30 +81,38 @@ async def preprocess_data(project_id: str, dataframe: pd.DataFrame, preprocessin
     response = await preprocessing_pipeline.ainvoke({
         "project_id": project_id,
         "messages": [],
-        "preprocessing_task": preprocessing_task,
-        "target_column": target_column,
-        "strategy": strategy,
+        "preprocessing_tasks": preprocessing_tasks,
+        "current_task_index": 0,
         "dataframe": dataframe
     })
     
     return response
 
-# if __name__ == "__main__":
-#     import asyncio
-#     import sys
+if __name__ == "__main__":
+    import asyncio
+    import sys
     
-#     async def main():
-#         project_id = "1"
-#         preprocessing_task = "handle_missing_values"
-#         target_column = "age"
-#         strategy = "mean"
-#         try:
-#             result = await preprocess_data("1", dataframe, preprocessing_task, target_column,strategy)
-#             print("Preprocessing completed successfully")
-#             print(f"Result: {result}")
-#         except Exception as e:
-#             print(f"Error during preprocessing: {str(e)}")
-#             sys.exit(1)
+    async def main():
+        project_id = "1"
+        preprocessing_tasks = [
+            {
+                "task": "handle_missing_values",
+                "column": "Age",
+                "strategy": "mean"
+            },
+            {
+                "task": "remove_outliers",
+                "column": "Fare",
+                "strategy": "zscore"
+            }
+        ]
+        dataframe = pd.read_csv(r"C:\Users\mshir\OneDrive\Desktop\Private\Python_projects\Graduation Project\datasets\titanic\Titanic-Dataset.csv")
+        try:
+            result = await preprocess_data(project_id, dataframe, preprocessing_tasks)
+            print(f"Result: {result['preprocessed_dataframe']}")
+        except Exception as e:
+            print(f"Error during preprocessing: {str(e)}")
+            sys.exit(1)
 
-#     asyncio.run(main())
+    asyncio.run(main())
 

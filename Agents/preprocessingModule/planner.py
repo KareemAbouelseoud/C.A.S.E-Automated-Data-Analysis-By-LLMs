@@ -38,6 +38,7 @@ system_prompt = hub.pull("preprocessing-planner").messages[0].prompt.template
 
 class Planner(BaseModel):
     next: Literal["coder", "caller"] = Field(description="The next step in the workflow")
+    reasoning: str = Field(description="The reasoning for the next step in the workflow")
 
 CONFIGURATIONS = {
     'temperature': 0.7,
@@ -46,19 +47,24 @@ CONFIGURATIONS = {
 
 async def planner_node(state):
     llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
+    current_task_index = state["current_task_index"]
+    preprocessing_tasks = state["preprocessing_tasks"]
+    
+    if current_task_index >= len(preprocessing_tasks):
+        return {"next": "__end__", "preprocessed_dataframe": state.get('dataframe')}
+    
+    current_task = preprocessing_tasks[current_task_index]
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": str(state["messages"])}
+        {"role": "user", "content": f"preprocessing task: {current_task['task']}, strategy: '{current_task['strategy']}'"}
     ]
     try:
         response = await llm.with_structured_output(Planner).ainvoke(messages)
-        #print(f"\nPlanner input messages:\n{messages}")
         print(f"Planner decided next step: {response.next}\n")
-        return {"next": response.next}
+        return {"next": response.next, "reasoning": response.reasoning}
     except Exception as e:
         print(f"Planner failed to determine next step. Error: {e}")
         return {"next": "planner"}
 
 async def planner_brancher(state) -> Literal["caller", "coder"]:
-    print(f"i am here in planner_brancher and going to {state['next']}")
     return state['next']

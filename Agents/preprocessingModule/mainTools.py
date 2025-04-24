@@ -112,10 +112,11 @@ async def remove_outliers(column: str, method: str, threshold: float = 3.0) -> p
         else:
             raise ValueError(f"Invalid method: {method}. Must be one of: zscore, iqr")
             
-        return preprocessed_df
+        return {"status" : "success", "preprocessed_dataframe" : preprocessed_df}
         
     except Exception as e:
-        raise ValueError(f"Error removing outliers from column {column}: {str(e)}")
+        print(f"Tool-Error removing outliers from column {column}: {str(e)}")
+        return {"status" : "error", "error" : str(e)}
 
 @tool
 async def change_column_type(column: str, target_type: str, format: str = None) -> pd.DataFrame:
@@ -148,10 +149,12 @@ async def change_column_type(column: str, target_type: str, format: str = None) 
             preprocessed_df[column] = global_df[column].astype(str)
         else:
             raise ValueError(f"Unsupported target type: {target_type}. Must be one of: datetime, int, float, string")
-    except Exception as e:
-        raise ValueError(f"Error converting column {column} to {target_type}: {str(e)}")
             
-    return preprocessed_df
+        return {"status" : "success", "preprocessed_dataframe" : preprocessed_df}
+        
+    except Exception as e:
+        print(f"Tool-Error converting column {column} to {target_type}: {str(e)}")
+        return {"status" : "error", "error" : str(e)}
 
 tools = [handle_missing_values, remove_outliers, change_column_type]
 
@@ -161,14 +164,24 @@ async def tool_node(state)->Literal["caller", "__end__"]:
     messages = state["messages"]
     last_message = messages[-1]
     output_messages = []
+    
     if 'iterations' not in state or state['iterations'] is None:
         state['iterations'] = 0
     retries = state['iterations'] + 1
-    # get the last message of this state
+    
     if retries > 3:
         return {"next": "__end__", "error": "Max tool retries exceeded"}
     
     global_df = state['dataframe']
+    
+    # Get current task
+    current_task_index = state["current_task_index"]
+    preprocessing_tasks = state["preprocessing_tasks"]
+    
+    if current_task_index >= len(preprocessing_tasks):
+        return {"next": "__end__", "preprocessed_dataframe": global_df}
+    
+    current_task = preprocessing_tasks[current_task_index]
     
     for tool_call in last_message.tool_calls:
         try:
@@ -177,11 +190,20 @@ async def tool_node(state)->Literal["caller", "__end__"]:
             print(f"---TOOL CALL ARGS: {args}---")
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             print(f"---TOOL RESULT: {tool_result}---")
-            return {
-                "next": "__end__", 
-                "iterations": retries,
-                'preprocessed_dataframe': tool_result
+            
+            # Update the global dataframe with the result
+            if isinstance(tool_result, dict) and 'preprocessed_dataframe' in tool_result:
+                global_df = tool_result['preprocessed_dataframe']
+            
+            # Move to next task
+            next_state = {
+                "next": "caller" if current_task_index + 1 < len(preprocessing_tasks) else "__end__",
+                "iterations": 0,  # Reset iterations for next task
+                "current_task_index": current_task_index + 1,
+                "preprocessed_dataframe": global_df
             }
+            
+            return next_state
         
         except Exception as e:
             # Return the error if the tool call fails
@@ -191,10 +213,10 @@ async def tool_node(state)->Literal["caller", "__end__"]:
                     content="an error occurred while running the tool",
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
-                    additional_kwargs={"error":  error_msg},
+                    additional_kwargs={"error": error_msg},
                 )
             )
-            return {'next':'caller', 'messages':output_messages, 'iterations': retries}
+            return {'next': 'caller', 'messages': output_messages, 'iterations': retries}
 
 async def tool_brancher(state)-> Literal["caller", "__end__"]:
     return state['next']
