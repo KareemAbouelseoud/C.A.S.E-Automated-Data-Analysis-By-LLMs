@@ -25,7 +25,7 @@ Variables:
 - llm: An instance of ChatOpenAI configured with the specified model and temperature.
 """
 from langchain_google_genai import ChatGoogleGenerativeAI
-from mainTools import tools
+from Agents.preprocessingModule.caller.mainTools import tools
 from dotenv import load_dotenv
 from langchain import hub
 from typing import Literal
@@ -43,35 +43,36 @@ llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGUR
 system_prompt = hub.pull("preprocessing-caller").messages[0].prompt.template
 
 async def caller_node(state):
+    """
+    Process a single preprocessing task using tools.
+    
+    Args:
+        state (dict): The current state containing:
+            - preprocessing_tasks: The task to process
+            - target_column: The column to process
+            - strategy: The strategy to use
+            - dataframe: The input DataFrame
+            - messages: List of messages in the conversation
+    
+    Returns:
+        dict: Updated state with:
+            - preprocessed_dataframe: The processed DataFrame
+            - messages: Updated message history
+            - executed_responses: List of successfully executed tasks
+            - generated_errors: List of failed tasks
+    """
     print("Calling tools \n")
-    
-    # Get current task
-    current_task_index = state["current_task_index"]
-    preprocessing_tasks = state["preprocessing_tasks"]
-    
-    if current_task_index >= len(preprocessing_tasks):
-        return {"next": "__end__", "preprocessed_dataframe": state.get('dataframe')}
-    
-    current_task = preprocessing_tasks[current_task_index]
-    
+    print(f"state in caller: {state}")
+    task = state['preprocessing_tasks']
+    column = state['target_column']
+    strategy = state['strategy']
+    # Prepare messages for tool invocation
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": f"target column: {current_task['column']}, preprocessing task: {current_task['task']}, strategy: '{current_task['strategy']}', project id: {state['project_id']}"}
+        {"role": "user", "content": f"here is the task: {task}, here is the column: {column}, here is the strategy: {strategy}"}
     ]
     
-    # the model can now see the tools, and is forced to choose one
+    # Bind tools to the model
     model_with_tools = llm.bind_tools(tools)
-    try:
-        response = await model_with_tools.ainvoke(messages)
-        print(f"---TOOL CALL DEBUG: {response.tool_calls if hasattr(response, 'tool_calls') else 'No tool call'}---")
-    except Exception as e:
-        print(f"[Caller Node Error]: {e}")
-        return {"messages": [{"role": "assistant", "content": "Something went wrong calling the tools."}]}
-
-    return {"messages": [response]}
-
-async def caller_should_continue(state) -> Literal['tools','__end__','planner_node']:
-    if state['messages'][-1].tool_calls:
-        return "tools"
-    else:
-        return "__end__"
+    response = await model_with_tools.ainvoke(messages)
+    return response

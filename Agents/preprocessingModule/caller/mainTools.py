@@ -36,46 +36,46 @@ Variables:
 - tool_brancher: A function that branches the state messages based on the tool call.
 """
 
-@tool
-async def handle_missing_values(column: str, strategy: str) -> pd.DataFrame:
-    """Handle missing values in a specified column using the given strategy.
+# @tool
+# async def handle_missing_values(column: str, strategy: str) -> pd.DataFrame:
+#     """Handle missing values in a specified column using the given strategy.
     
-    Args:
-        column: The column name to process
-        strategy: The strategy to use ('mean', 'median', 'mode', 'drop')
+#     Args:
+#         column: The column name to process
+#         strategy: The strategy to use ('mean', 'median', 'mode', 'drop')
     
-    Returns:
-        pd.DataFrame: The preprocessed DataFrame
-    """
-    global global_df
-    preprocessed_df = global_df.copy()
-    try:
-        print(f"running handle missing values tool on column: {column} with strategy: {strategy}")
-        if global_df is None:
-            raise ValueError("No DataFrame loaded. Please load a DataFrame first.")
+#     Returns:
+#         pd.DataFrame: The preprocessed DataFrame
+#     """
+#     global global_df
+#     preprocessed_df = global_df.copy()
+#     try:
+#         print(f"running handle missing values tool on column: {column} with strategy: {strategy}")
+#         if global_df is None:
+#             raise ValueError("No DataFrame loaded. Please load a DataFrame first.")
             
-        if column not in global_df.columns:
-            raise ValueError(f"Column '{column}' not found in dataset")
+#         if column not in global_df.columns:
+#             raise ValueError(f"Column '{column}' not found in dataset")
         
-        if strategy != 'drop':
-            if not pd.api.types.is_numeric_dtype(global_df[column]):
-                raise TypeError(f"Column '{column}' must be numeric for {strategy} strategy")   
-        if strategy == 'mean':
-            preprocessed_df[column] = global_df[column].fillna(global_df[column].mean())
-        elif strategy == 'median':
-            preprocessed_df[column] = global_df[column].fillna(global_df[column].median())
-        elif strategy == 'mode':
-            preprocessed_df[column] = global_df[column].fillna(global_df[column].mode()[0])
-        elif strategy == 'drop':
-            preprocessed_df = global_df.dropna(subset=[column])
-        else:
-            raise ValueError(f"Invalid strategy: {strategy}. Must be one of: mean, median, mode, drop")
+#         if strategy != 'drop':
+#             if not pd.api.types.is_numeric_dtype(global_df[column]):
+#                 raise TypeError(f"Column '{column}' must be numeric for {strategy} strategy")   
+#         if strategy == 'mean':
+#             preprocessed_df[column] = global_df[column].fillna(global_df[column].mean())
+#         elif strategy == 'median':
+#             preprocessed_df[column] = global_df[column].fillna(global_df[column].median())
+#         elif strategy == 'mode':
+#             preprocessed_df[column] = global_df[column].fillna(global_df[column].mode()[0])
+#         elif strategy == 'drop':
+#             preprocessed_df = global_df.dropna(subset=[column])
+#         else:
+#             raise ValueError(f"Invalid strategy: {strategy}. Must be one of: mean, median, mode, drop")
             
-        return {"status" : "success", "preprocessed_dataframe" : preprocessed_df}
+#         return {"status" : "success", "preprocessed_dataframe" : preprocessed_df}
         
-    except Exception as e:
-        print(f"Tool-Error handling missing values in column {column} with strategy {strategy},: {str(e)}")
-        return {"status" : "error", "error" : str(e)}
+#     except Exception as e:
+#         print(f"Tool-Error handling missing values in column {column} with strategy {strategy},: {str(e)}")
+#         return {"status" : "error", "error" : str(e)}
 
 @tool
 async def remove_outliers(column: str, method: str, threshold: float = 3.0) -> pd.DataFrame:
@@ -156,15 +156,31 @@ async def change_column_type(column: str, target_type: str, format: str = None) 
         print(f"Tool-Error converting column {column} to {target_type}: {str(e)}")
         return {"status" : "error", "error" : str(e)}
 
-tools = [handle_missing_values, remove_outliers, change_column_type]
+tools = [remove_outliers, change_column_type]
 
 async def tool_node(state)->Literal["caller", "__end__"]:
+    """
+    Process tool calls from the last message.
+    
+    Args:
+        state (dict): The current state containing:
+            - messages: List of messages in the conversation
+            - dataframe: The input DataFrame
+            - preprocessing_tasks: The task to process
+            - target_column: The column to process
+            - strategy: The strategy to use
+    
+    Returns:
+        dict: Updated state with:
+            - next: Next node to execute
+            - preprocessed_dataframe: The processed DataFrame
+            - messages: Updated message history
+            - error: Error status
+    """
     global global_df
     tools_by_name = {tool.name: tool for tool in tools}
-    messages = state["messages"]
-    last_message = messages[-1]
-    output_messages = []
     
+    # Initialize state
     if 'iterations' not in state or state['iterations'] is None:
         state['iterations'] = 0
     retries = state['iterations'] + 1
@@ -172,51 +188,54 @@ async def tool_node(state)->Literal["caller", "__end__"]:
     if retries > 3:
         return {"next": "__end__", "error": "Max tool retries exceeded"}
     
+    # Get task details from state
+    task = state.get("preprocessing_tasks")
+    column = state.get("target_column")
+    strategy = state.get("strategy")
+    
+    if not all([task, column, strategy]):
+        raise ValueError("Missing required fields in state: preprocessing_tasks, target_column, or strategy")
+    
     global_df = state['dataframe']
     
-    # Get current task
-    current_task_index = state["current_task_index"]
-    preprocessing_tasks = state["preprocessing_tasks"]
-    
-    if current_task_index >= len(preprocessing_tasks):
-        return {"next": "__end__", "preprocessed_dataframe": global_df}
-    
-    current_task = preprocessing_tasks[current_task_index]
-    
-    for tool_call in last_message.tool_calls:
-        try:
-            # Invoke the tool based on the tool call
-            args = tool_call["args"]
-            print(f"---TOOL CALL ARGS: {args}---")
-            tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
-            print(f"---TOOL RESULT: {tool_result}---")
-            
-            # Update the global dataframe with the result
-            if isinstance(tool_result, dict) and 'preprocessed_dataframe' in tool_result:
-                global_df = tool_result['preprocessed_dataframe']
-            
-            # Move to next task
-            next_state = {
-                "next": "caller" if current_task_index + 1 < len(preprocessing_tasks) else "__end__",
-                "iterations": 0,  # Reset iterations for next task
-                "current_task_index": current_task_index + 1,
-                "preprocessed_dataframe": global_df
-            }
-            
-            return next_state
+    try:
+        # Execute the tool based on the task
+        tool_name = task
+        tool_args = {
+            "column": column,
+            "method": strategy,
+            "target_type": strategy 
+        }
         
-        except Exception as e:
-            # Return the error if the tool call fails
-            error_msg = f"{type(e).__name__}: {str(e)}"
-            output_messages.append(
-                ToolMessage(
-                    content="an error occurred while running the tool",
-                    name=tool_call["name"],
-                    tool_call_id=tool_call["id"],
-                    additional_kwargs={"error": error_msg},
-                )
-            )
-            return {'next': 'caller', 'messages': output_messages, 'iterations': retries}
+        # Remove None values from args
+        tool_args = {k: v for k, v in tool_args.items() if v is not None}
+        
+        print(f"---TOOL CALL ARGS: {tool_args}---")
+        tool_result = await tools_by_name[tool_name].ainvoke(tool_args)
+        print(f"---TOOL RESULT: {tool_result}---")
+        
+        # Update the global dataframe with the result
+        if isinstance(tool_result, dict) and 'preprocessed_dataframe' in tool_result:
+            global_df = tool_result['preprocessed_dataframe']
+        
+        # Return success state
+        return {
+            "next": "__end__",
+            "iterations": 0,
+            "preprocessed_dataframe": global_df,
+            "error": "no",
+            "messages": [{"role": "system", "content": "Tool execution successful"}]
+        }
+    
+    except Exception as e:
+        # Return the error if the tool call fails
+        error_msg = f"{type(e).__name__}: {str(e)}"
+        return {
+            'next': 'caller',
+            'messages': [{"role": "system", "content": f"Tool execution failed: {error_msg}"}],
+            'iterations': retries,
+            'error': 'yes'
+        }
 
 async def tool_brancher(state)-> Literal["caller", "__end__"]:
     return state['next']
