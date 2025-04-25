@@ -58,8 +58,7 @@ async def caller_node(state):
         dict: Updated state with:
             - preprocessed_dataframe: The processed DataFrame
             - messages: Updated message history
-            - executed_responses: List of successfully executed tasks
-            - generated_errors: List of failed tasks
+            - error: Error status
     """
     print("Calling tools \n")
     print(f"state in caller: {state}")
@@ -75,4 +74,4 @@ async def caller_node(state):
     # Bind tools to the model
     model_with_tools = llm.bind_tools(tools)
     response = await model_with_tools.ainvoke(messages)
-    return response
+    return {"caller_response": response}
