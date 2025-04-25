@@ -80,42 +80,39 @@ async def preprocess_data(project_id: str, dataframe: pd.DataFrame, preprocessin
     
     # Run pipeline to get task routing
     coder_tasks, caller_tasks = await planner_node(initial_state)
-        
-    # Process caller tasks with minimal state
-    caller_results =[ 
-        await caller_pipeline.ainvoke(
-            {
-                "project_id": project_id,
-                "messages": initial_state["messages"],
-                "dataframe": initial_state["dataframe"],
-                "preprocessing_tasks": task["task"],
-                "target_column": task["column"],
-                "strategy": task["strategy"],
-                "executed_responses": initial_state["executed_responses"]
-            }
-        )
-        for task in caller_tasks
-    ]
     
-    # Process coder tasks with minimal state
-    coder_results =[ 
-        await coder_pipeline.ainvoke(
-            {
-                "project_id": project_id,
-                "messages": initial_state["messages"],
-                "dataframe": initial_state["dataframe"],
-                "preprocessing_tasks": task["task"],
-                "target_column": task["column"],
-                "strategy": task["strategy"],
-                "executed_responses": initial_state["executed_responses"]
-            }
-        )
-        for task in coder_tasks
-    ]
+    # Process caller tasks with state tracking
+    current_df = initial_state["dataframe"].copy()
+    for task in caller_tasks:
+        caller_result = await caller_pipeline.ainvoke({
+            "project_id": project_id,
+            "messages": initial_state["messages"],
+            "dataframe": current_df,  # Use the current state of the DataFrame
+            "preprocessing_tasks": task["task"],
+            "target_column": task["column"],
+            "strategy": task["strategy"],
+            "executed_responses": initial_state["executed_responses"]
+        })
+        if "preprocessed_dataframe" in caller_result:
+            current_df = caller_result["preprocessed_dataframe"]
     
-    # Combine results
+    # Process coder tasks with state tracking
+    for task in coder_tasks:
+        coder_result = await coder_pipeline.ainvoke({
+            "project_id": project_id,
+            "messages": initial_state["messages"],
+            "dataframe": current_df,  
+            "preprocessing_tasks": task["task"],
+            "target_column": task["column"],
+            "strategy": task["strategy"],
+            "executed_responses": initial_state["executed_responses"]
+        })
+        if "preprocessed_dataframe" in coder_result:
+            current_df = coder_result["preprocessed_dataframe"]
+    
+    # Return the final state of the DataFrame
     return {
-        "preprocessed_dataframe": coder_results[0]["preprocessed_dataframe"],
+        "preprocessed_dataframe": current_df,
         "messages": initial_state["messages"],
         "executed_responses": initial_state["executed_responses"]
     }
