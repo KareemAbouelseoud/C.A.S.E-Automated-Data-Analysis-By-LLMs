@@ -17,7 +17,11 @@ async def checker_node(state):
             - messages: List of messages in the conversation
 
     Returns:
-        state (dict): Updated state with validation results
+        preprocessed_dataframe: The processed dataframe
+        messages: List of messages in the conversation
+        error: Error status
+        executed_responses: List of successfully executed code solutions
+        generated_errors: List of failed code solutions
     """
     print("---CHECKING CODE SOLUTIONS---")
 
@@ -28,6 +32,8 @@ async def checker_node(state):
     preprocessing_tasks = state["preprocessing_tasks"]
     target_column = state["target_column"]
     strategy = state["strategy"]
+    dataframe = state["dataframe"]
+    globals_dict = {'df': dataframe}
 
     if not generated_solutions:
         return {
@@ -38,16 +44,13 @@ async def checker_node(state):
             "preprocessing_tasks": preprocessing_tasks,
             "target_column": target_column,
             "strategy": strategy,
-            "generated_responses": [],
             "generated_errors": [],
             "executed_responses": []
         }
 
     # Initialize lists for results
-    generated_responses = []
     generated_errors = []
     executed_responses = []
-    processed_df = state["dataframe"].copy()
 
     # Check each solution
     for solution in generated_solutions:
@@ -61,7 +64,6 @@ async def checker_node(state):
 
             # Execute code with isolation
             print(f"Executing code:\n{code_solution.imports}\n{code_solution.code}")
-            globals_dict = {'df': processed_df}
             exec(f"{code_solution.imports}\n{code_solution.code}", globals_dict)
             
             # Validate result
@@ -72,7 +74,6 @@ async def checker_node(state):
                 raise ValueError("Processing resulted in empty DataFrame")
 
             # Update processed dataframe and add to executed responses
-            processed_df = result_df
             executed_responses.append({
                 "solution": code_solution,
                 "task": current_task
@@ -89,13 +90,14 @@ async def checker_node(state):
 
     # Determine if we have any errors
     has_errors = len(generated_errors) > 0
+    print(f"preprocessed dataframe before code execution: \n {dataframe.describe()}")
+    print(f"preprocessed dataframe after code execution: \n {result_df.describe()}")
 
     return {
         "generation": generated_solutions,
         "iterations": iterations,
         "error": "no" if not has_errors else "yes",
-        "generated_responses": generated_responses,
         "generated_errors": generated_errors,
         "executed_responses": executed_responses,
-        "preprocessed_dataframe": processed_df
+        "preprocessed_dataframe": result_df
     }

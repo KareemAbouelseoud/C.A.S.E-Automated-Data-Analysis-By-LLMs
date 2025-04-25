@@ -25,7 +25,6 @@ class CoderState(TypedDict):
         preprocessing_tasks : The task to process
         target_column : The column to process
         strategy : The strategy to use
-        generated_responses : List of successfully generated code solutions
         generated_errors : List of code solutions that failed validation
         executed_responses : List of successfully executed code solutions
     """
@@ -40,7 +39,6 @@ class CoderState(TypedDict):
     preprocessing_tasks: NotRequired[str]  # The task to process
     target_column: NotRequired[str]  # The column to process
     strategy: NotRequired[str]  # The strategy to use
-    generated_responses: NotRequired[list[dict]] = []  # Successfully generated code
     generated_errors: NotRequired[list[dict]] = []  # Code that failed validation
     executed_responses: NotRequired[list[dict]] = []  # Successfully executed code
 

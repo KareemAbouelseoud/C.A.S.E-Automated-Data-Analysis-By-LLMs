@@ -52,7 +52,7 @@ async def generator_node(state):
         state (dict): Updated state with generated code solutions
     """
     print("---GENERATING CODE SOLUTIONS---")
-    print(f"state in generator: {state}")
+    
     # Get task details
     task = state["preprocessing_tasks"]
     column = state["target_column"]
@@ -117,7 +117,6 @@ async def generator_node(state):
             "preprocessing_tasks": task,
             "target_column": column,
             "strategy": strategy,
-            "dataframe": state["dataframe"]
         }
 
     except Exception as e:
@@ -130,7 +129,6 @@ async def generator_node(state):
             "preprocessing_tasks": task,
             "target_column": column,
             "strategy": strategy,
-            "dataframe": state["dataframe"]
         }
 
 async def parse_output(solution):

@@ -41,8 +41,6 @@ class CallerState(TypedDict):
     strategy: str  # The strategy to use
     dataframe: NotRequired[pd.DataFrame]
     preprocessed_dataframe: NotRequired[pd.DataFrame]
-    generated_errors: NotRequired[list[dict]] = []  # Code that failed validation
-    executed_responses: NotRequired[list[dict]] = []  # Successfully executed code
 
 # Create state graph
 workflow = StateGraph(CallerState)
