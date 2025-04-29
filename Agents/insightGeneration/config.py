@@ -12,7 +12,7 @@ import uuid
 from typing import Dict, Annotated,List
 from pydantic import BaseModel, ConfigDict,Field
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from Data_description_generator.data_description_node import data_description_generator_node,DataDescription
 from Data_description_generator.human_node import human_input
