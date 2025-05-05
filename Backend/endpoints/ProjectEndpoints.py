@@ -22,7 +22,9 @@ async def upload_file(file: UploadFile = File(...), user_id: str = Form(...), na
         raise HTTPException(status_code=400, detail="Invalid Inputs. Either the user_id or the name is null.")
     try:
         # Create the project asynchronously
-        asyncio.create_task(project_service.create_project(file, user_id, name))
+        result = await asyncio.gather(project_service.create_project(file, user_id, name))
+        # Return the result as a JSON response
+        return json.dumps({'data': result})
     except HTTPException as http_ex:
         # Re-raise HTTPExceptions
         raise http_ex
@@ -47,6 +49,12 @@ async def getProject(project_id:str):
     API endpoint to receive and save uploaded files.
     """
     return json.dumps({'data':await project_service.get_project(project_id)})
+@Project_router.get("/project/projectDetails/{project_id}/{description_confirmed}",tags=["Project"])
+async def getProject(project_id:str,description_confirmed:bool):
+    """
+    API endpoint to receive and save uploaded files.
+    """
+    return json.dumps({'data':await project_service.get_Incomplete_project(project_id)})
 
 
 

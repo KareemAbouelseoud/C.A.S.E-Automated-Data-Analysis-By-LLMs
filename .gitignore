@@ -5,6 +5,7 @@ venv/
 # Python-related files
 *.pyc
 __pycache__/
+*.ipynb
 
 # IDE/Editor-related files
 .vscode/
@@ -14,9 +15,13 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+*.cache/
+/.vs
 # Cache directories
 .cache/
 cache/
 
 # Log files
+.log
 *.log
+/Agents/.cache

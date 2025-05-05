@@ -522,3 +522,5 @@ class visualizationsService:
         # Return the figure as JSON
         return make_serializable(fig.to_json())
     #endregion
+
+    

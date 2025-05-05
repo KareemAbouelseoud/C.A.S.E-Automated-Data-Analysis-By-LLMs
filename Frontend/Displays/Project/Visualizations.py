@@ -96,10 +96,9 @@ class Visualizations:
             return w            
 
     def visualize(self,w):
-        if w.visualizations:
-            with self.placeholder.container(border=True):
-                with elements(f"demo"):
-                    event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
-                    with self.viz_session['viz']['board'](compactType='horizontal',rowHeight=57):
-                        for i in w.visualizations:
-                            i()
+        with self.placeholder.container(border=True):
+            with elements(f"demo"):
+                event.Hotkey("ctrl+s", sync(), bindInputs=True, overrideDefault=True)
+                with self.viz_session['viz']['board'](compactType='horizontal',rowHeight=57):
+                    for i in w.visualizations:
+                        i()

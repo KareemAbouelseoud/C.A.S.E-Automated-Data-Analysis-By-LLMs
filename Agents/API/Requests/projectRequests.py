@@ -5,6 +5,8 @@ from joblib import Memory
 import joblib
 import json
 import io
+import requests
+from ..Endpoints.dataItems import SaveInsights
 url="http://Backend:8005"
 
 # Create a memory cache in a temporary directory
@@ -17,12 +19,15 @@ async def get_dataset(project_id):
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.get(url + f"/project/{project_id}/fetchDataset")
-            except:
+            except Exception as e:
+                print("Error in fetching dataset from backend:", e)
                 response = await client.get(f"http://localhost:8005/project/{project_id}/fetchDataset")
-        dataset = response.json()['data']
-    except:
+        dataset = json.loads(response.json()["data"])
+    except Exception as e:
+        print(f"Error fetching dataset: {e}")
+        raise e
         return None
-    return pd.read_json(StringIO(dataset))
+    return pd.DataFrame(dataset)
 
 
 @memory.cache
@@ -35,7 +40,42 @@ async def get_data_report(project_id):
             response = await client.get(f"http://localhost:8005/project/{project_id}/fetchDataReport")
     
     return response.json()['data']
-
+async def save_insights(project_id, insights:SaveInsights):
+    """
+    Uploads insights to the backend API.
+    
+    Args:
+        project_id (str): The ID of the project
+        insights (dict): The insights data to upload
+        
+    Returns:
+        dict: Response from the server or None if an error occurred
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(
+                    url + f"/insGen/project/{project_id}/save_Insights",
+                    json= insights.model_dump(mode='json'),timeout=100
+                )
+            except Exception as e:
+                print("Error in posting insights:", e)
+                response = await client.post(
+                    f"http://localhost:8005/insGen/project/{project_id}/save_Insights",
+                    json=insights.model_dump(mode='json'),timeout=100
+                )
+        
+        if response.status_code == 200:
+            print("Insights uploaded successfully.")
+            return response.json()
+        else:
+            print(f"Failed to upload insights: HTTP {response.status_code}")
+            print(f"Response: {response.text}")
+            return None
+                
+    except Exception as e:
+        print(f"Error uploading insights: {e}")
+        return None
 async def get_preprocessing_pipeline(project_id, pipeline_type):
     """
     Retrieves a preprocessing pipeline from the backend API.

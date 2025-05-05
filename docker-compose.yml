@@ -1,16 +1,16 @@
 services:
   Agents:
-    build: 
-      context: ./Agents
-      dockerfile: dockerfile
-    image: agents:1.0
+    # build: 
+    #   context: ./Agents
+    #   dockerfile: dockerfile
+    image: agents:3.0.1
     networks:
       - case-pb
     ports:
       - "8006:8006"
     volumes:
       - ./Agents:/app
-    
+      
     restart: always
     environment:
       - PYTHONUNBUFFERED=1
@@ -19,10 +19,10 @@ services:
       - .env
 
   Backend:
-    build: 
-      context: ./Backend
-      dockerfile: dockerfile
-    image: backend:1.0
+    # build: 
+    #   context: ./Backend
+    #   dockerfile: dockerfile
+    image: backend:2.0
     networks:
       - case-pb
     ports:
@@ -37,10 +37,10 @@ services:
       - .env
 
   Frontend:
-    build: 
-      context: ./Frontend
-      dockerfile: dockerfile
-    image: frontend:1.0
+    # build: 
+    #   context: ./Frontend
+    #   dockerfile: dockerfile
+    image: frontend:2.0
     networks:
       - case-pb
     ports:

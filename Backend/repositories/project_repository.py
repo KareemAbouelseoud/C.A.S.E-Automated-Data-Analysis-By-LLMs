@@ -36,14 +36,12 @@ class ProjectRepository(BaseRepository[Project]):
     
     async def Filter(self, filter: dict) -> List[Project]:
         filtered_Items = []
-        projection={'_id': 1, 'name': 1, 'created_Date': 1, 'thread_id': 1,'user_id':1}
+        projection={'_id': 1, 'name': 1, 'created_Date': 1, 'thread_id': 1,'user_id':1,"description_confirmed":1}
         async for document in self.collection.find(filter,projection):
             project=Project.from_mongo(document)
             project.id=str(project.id)
             project.created_Date=project.created_Date.strftime("%d %B %Y")
-            project.model_Chat.last_update=project.model_Chat.last_update.strftime("%d %B %Y")
-            project.streamlit_Chat.last_update=project.streamlit_Chat.last_update.strftime("%d %B %Y")
-            filtered_Items.append(project.model_dump())  # Convert ObjectId
+            filtered_Items.append(project.model_dump(include={"id",'name','created_Date','thread_id','user_id',"description_confirmed"}))  # Convert ObjectId
 
         return filtered_Items
 

@@ -1,3 +1,4 @@
+from io import StringIO
 import streamlit as st
 from Requests import insightRequests
 import streamlit_nested_layout # Leave it here, dont remove it.
@@ -30,11 +31,11 @@ class Insights:
             with st.expander(basic_insight['question']):
                 st.markdown("<h1 style='text-align: center; font-size: 30px;'>Basic Overview</h1>", unsafe_allow_html=True)
                 st.markdown("<h1 style=' font-size: 20px;'>Description</h1>", unsafe_allow_html=True)
-                st.markdown(insights['insights_explanation'][id], unsafe_allow_html=True)
+                st.markdown(insights['insights_explanation'][id]["GeneralExplanation"], unsafe_allow_html=True)
                 cols_mr = st.columns([10.9, 0.2, 10.9])
                 with cols_mr[0]:
                     st.write("\n")
-                    st.write("\n")
+                    st.write("\n")  
                     st.write("\n")
                     cols = st.columns(2)
                     with cols[0]:
@@ -61,7 +62,7 @@ class Insights:
                     st.markdown("<h1 style=' font-size: 20px;'>Insight Table</h1>", unsafe_allow_html=True)
                     df=basic_insight['resulted_df']
                     try:
-                        df=pd.read_json(df)
+                        df=pd.read_json(StringIO(df))
                         st.dataframe(df,use_container_width=True, hide_index=True,height=200)
                     except:
                         pass
@@ -70,7 +71,7 @@ class Insights:
                 st.write("---")
                 st.markdown("<h1 style='text-align: center; font-size: 30px;'>Advanced Insights</h1>", unsafe_allow_html=True)
                 max_columns = min(self.max_columns,len(insights['advanced_insight_cards'][id]))
-                for idx,advanced_insight in enumerate(insights['advanced_insight_cards'][id]):
+                for idx,advanced_insight in enumerate(insights['advanced_insight_cards'][id][:4]):
                     if idx % max_columns == 0:
                         columns = st.columns(max_columns)
                   
@@ -78,19 +79,22 @@ class Insights:
                         st.markdown(buttons.project_button.format(first=idx,second=idx) ,unsafe_allow_html=True)
                         st.markdown(f'<span id="button-after-{idx}"></span>', unsafe_allow_html=True)
                         placeholder = st.empty()
-                        placeholder.button(f"{advanced_insight[1]['question']}",on_click=self.more_info,args=[advanced_insight],key=advanced_insight[1]['id'])
+                        Advanced_card_key = list(insights['insights_explanation'][id]["AdvancedInsightAnswers"].keys())[idx]
+                        explanation = insights['insights_explanation'][id]["AdvancedInsightAnswers"][Advanced_card_key]
+                        placeholder.button(f"{advanced_insight[1]['question']}",on_click=self.more_info,args=[advanced_insight,explanation],key=advanced_insight[1]['id'])
     
     @st.dialog("Advanced Insights", width='large')
-    def more_info(self,advanced_insight):
+    def more_info(self,advanced_insight,explanation):
         st.markdown(advanced_insight[1]['question'])
         st.write('---')
-        st.write("The Answer Should be Here but there is no explanation for advanced insight...")
+        
+        st.write(explanation)
         st.markdown("<h1 style=' font-size: 20px;'>How is this important?</h1>", unsafe_allow_html=True)
         st.markdown(advanced_insight[1]['reason'], unsafe_allow_html=True)
         cols_mr = st.columns(2)
         with cols_mr[0]:
             st.markdown("<h1 style=' font-size: 20px;'>Insight Table</h1>", unsafe_allow_html=True)
-            df=pd.read_json(advanced_insight[1]['resulted_df'])
+            df=pd.read_json(StringIO(advanced_insight[1]['resulted_df']))
             st.dataframe(df,use_container_width=True, hide_index=True,height=200)
         with cols_mr[1]:
             st.write("\n")

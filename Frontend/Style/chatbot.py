@@ -41,10 +41,10 @@ text_box="""
         position: fixed;
         z-index: 1000; 
     }
-    div[data-baseweb="textarea"] {
+    div[data-baseweb="textarea"]:first-of-type {
         box-sizing: border-box;
         bottom: 5px ;
-        position: fixed;
+        position: fixed !important;
         z-index: 1000;
         background-color: #222222; 
     }

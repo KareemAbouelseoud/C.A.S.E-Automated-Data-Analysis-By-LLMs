@@ -5,6 +5,7 @@ from langchain_core.messages import ToolMessage
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from vizGeneration.pipeline import coder_pipeline,caller_pipeline,planner_node
 from AutoML.pipeline import automl
+from insightGeneration.Chat_Pipeline import respond_to_UserQuery
 from typing import Annotated,Optional
 from API.Requests import projectRequests
 import json
@@ -94,11 +95,24 @@ async def predictor(project_id:Annotated[str,InjectedToolArg]=None):
     else:
         return 'You MUST inform the user that they should train the model first before making predictions. You can suggest them to go to the AutoML tab and train the model or tell you to train one.'
 
-
+@tool
+async def Insightor(project_id:Annotated[str,InjectedToolArg] = None,
+                    user_query:Annotated[str,'The user query to generate advanced insights'] = None,
+                    ):
+    """
+    This function is responsible for generating advanced insights based on the original insight card.
+    It uses the LangChain framework to interact with the LLM and generate new insights.
+    """
     
+    print(f"INSIGHTOR IS BEING CALLED WITH user_query: {user_query}")
+    # Create a state dictionary with the required keys
+    result = await respond_to_UserQuery(project_id=project_id, user_query=user_query)
+    
+    # return 
+    return ['You must inform the user that the answer for the his question is ready',result]
 
 
-tools = [visualizer,builder,predictor]
+tools = [visualizer,builder,predictor,Insightor]
 
 
 async def tool_node(state):
@@ -114,6 +128,7 @@ async def tool_node(state):
             # Invoke the tool based on the tool call
             tool_call["args"]["data_report"] = state["data_report"]
             tool_call['args']['project_id']=state['project_id']
+            tool_call["args"]["user_query"] = state["user_input"]
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             if not isinstance(tool_result, list):
                 tool_result=[tool_result]

@@ -33,8 +33,9 @@ class AutoML:
             self.autoML_session['autoML']['eval_report']=None
         self.placeholder=st.empty()
         if not self.autoML_session['autoML']['eval_report']:
-            self.autoML_session['autoML']['eval_report']=automlRequests.fetch_evaluation_report(self.autoML_session['project_id'])
-           
+            # BUG: Fetching the evaluation report before training
+            # self.autoML_session['autoML']['eval_report']=automlRequests.fetch_evaluation_report(self.autoML_session['project_id'])
+           pass
         self.run()
 
 

@@ -1,5 +1,7 @@
 import streamlit as st
 from streamlit_cookies_controller import CookieController
+import streamlit.components.v1 as components
+
 import os
 from Style import buttons,general
 class MultiPageApp():
@@ -23,7 +25,20 @@ class MultiPageApp():
         self.pages=[]
         self.auth_pages={}
         self.controller=controller
-        
+        components.html("""
+            <script>
+                const eventSource = new EventSource("http://localhost:8005/insGen/custom_events");
+
+                eventSource.addEventListener("update", (event) => {
+                    console.log("Update Event:", JSON.parse(event.data));
+                });
+
+                eventSource.addEventListener("done", () => {
+                    console.log("Streaming completed.");
+                    eventSource.close();
+                });
+            </script>
+        """)
         st.markdown(general.logo, unsafe_allow_html=True) 
         logo_path = os.path.join(os.path.dirname(__file__), "static", "CASE LOGO white.png")
         st.logo(
@@ -141,6 +156,7 @@ if __name__=='__main__':
     full_app.add_page("Displays/About.py",title='About') 
     full_app.add_page('Displays/Project/Home.py',title='Home')
     full_app.add_page('Displays/Project/Chatbot.py',title='ZEUS')
+    
     full_app.run()
 
 

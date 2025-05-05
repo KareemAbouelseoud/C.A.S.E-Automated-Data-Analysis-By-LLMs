@@ -1,5 +1,6 @@
 # models/project.py
 from typing import List, Optional
+import uuid
 from bson.objectid import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
@@ -34,17 +35,18 @@ class Chat(BaseModel):
 
 class Project(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True,populate_by_name=True) #Add this line
-    id: Optional[ObjectId] = Field(default=None, alias="_id")
+    id: Optional[ObjectId] = Field(default_factory=lambda: ObjectId(),alias="_id",description="Unique identifier for the insight card")
     name: Optional[str]= Field(default=None, alias="name")
     Dataset: Optional[str] = None
     user_id: str  # Reference to the User model
     streamlit_Chat:Optional[Chat]= Field(default=Chat(last_update=datetime.now()), alias="streamlit_Chat")
     model_Chat:Optional[Chat]= Field(default=Chat(last_update=datetime.now()), alias="model_Chat")
     data_report:Optional[str]= Field(default=None, alias="data_report")
-    dataset_description:Optional[str]= Field(default=None, alias="dataset_description")
+    dataset_description:Optional[dict]= Field(default=None, alias="dataset_description")
     created_Date:Optional[datetime]= Field(default=None, alias="created_Date")
     thread_id: Optional[str] = Field(default=None, alias="thread_id")
-    
+    description_confirmed: Optional[bool] = Field(default=False, alias="description_confirmed")
+    insights_file :Optional[str] = Field(default=None, alias="insights_file")
     @classmethod
     def from_mongo(cls, document):
         """Convert MongoDB document to Project model with string ID."""

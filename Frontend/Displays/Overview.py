@@ -39,11 +39,14 @@ class Projects:
     def new_project_clicked(self):
         st.session_state['user_data']['projects']["newProject"] = True
     
-    def project_clicked(self,project_id,thread_id):
+    def project_clicked(self,name,project_id,thread_id,description_confirmed):
         for placeholder in self.placeholders:
             placeholder.empty()
+        
         st.session_state['user_data']['projects']['current_project']['project_id']=str(project_id)
+        st.session_state['user_data']['projects']['current_project']['name']=str(name)
         st.session_state['user_data']['projects']['current_project']['thread_id']= str(thread_id)
+        st.session_state['user_data']['projects']['current_project']['description_confirmed']=bool(description_confirmed)
 
     def projectOverview(self):
         st.markdown("<h1 style='text-align: center; font-size: 80px;'>My Projects</h1>", unsafe_allow_html=True)
@@ -58,7 +61,7 @@ class Projects:
                 st.markdown(buttons.project_button.format(first=idx,second=idx) ,unsafe_allow_html=True)
                 st.markdown(f'<span id="button-after-{idx}"></span>', unsafe_allow_html=True)
                 placeholder = st.empty()
-                placeholder.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project["id"],project['thread_id']],key=f"project_{uuid.uuid4()}")
+                placeholder.button(f"{project['name']}\n\n{project['created_Date']}",on_click=self.project_clicked,args=[project['name'],project["id"],project['thread_id'],project["description_confirmed"]],key=f"project_{uuid.uuid4()}")
                 self.placeholders.append(placeholder)
         cols=st.columns(3)
         with cols[1]:
@@ -101,44 +104,44 @@ class Projects:
             )
             st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
             placeholder = st.empty()
-            placeholder.button(" \+ Create a new Project",on_click=self.new_project_clicked,key=f"new_project_{uuid.uuid4()}")
+            placeholder.button(" \+ Create a new Project",on_click=self.Create_project_dialog,key=f"new_project_{uuid.uuid4()}")
             self.placeholders.append(placeholder)
             
             
-            if st.session_state['user_data']['projects']['newProject']:
-                placeholder=st.empty()
-                with placeholder.container(border=True):
-                    st.header("New Project")
-                    project_name = st.text_input("Enter a name for your project:", key="project_name")
+            
 
-                    uploaded_file = st.file_uploader(
-                        "Upload a CSV file", type=["csv"], key="uploader"
-                    )
-                    if st.button('Confirm',key="confirm"):
-                        
-                        if uploaded_file:
-                            # Ask for the project name
-                            
-                            if project_name:
-                                # Save or process the uploaded file
-                                st.toast(f"Project '{project_name}' has been created!")
-                                databaseRequests.create_project(controller.get('user_id'),project_name,uploaded_file)
-                                st.session_state['user_data']['projects']['projects_updated']=True
-                                st.session_state['user_data']['projects']['newProject']=False
-                                
-                                # #NOTE THIS HERE SHOULD RETURN TWO THINGS, THE PROJECT ID
-                                # st.session_state['user_data']['projects']['current_project']={} #this is fine
-                                # st.session_state['user_data']['projects']['current_project']['project_id']= None #new project id
-                                # st.session_state['user_data']['projects']['current_project']['initial_data_description']=None #initial data description
-                                # st.session_state['user_data']['projects']['current_project']['description_confirmed']=False #this is fine
-                                st.rerun()
-                            
-                            else:
-                                st.toast('Please choose a unique name for the project')
-                        else:
-                            st.toast('Please upload a dataset')
-                self.placeholders.append(placeholder)
-                                                      
+    @st.fragment
+    @st.dialog("New Project" ,width="large")  # Made dialog box wider
+    def Create_project_dialog(self):
+        
+        project_name = st.text_input("Enter a name for your project:", key="project_name")
+
+        uploaded_file = st.file_uploader(
+            "Upload a CSV file", type=["csv"], key="uploader"
+        )
+        if st.button('Confirm',key="confirm"):
+            
+            if uploaded_file:
+                # Ask for the project name
+                
+                if project_name:
+                    # Save or process the uploaded file
+                    databaseRequests.create_project(controller.get('user_id'),project_name,uploaded_file)
+                    st.session_state['user_data']['projects']['projects_updated']=True
+                    st.session_state['user_data']['projects']['newProject']=False
+                    st.toast(f"Project '{project_name}' has been created!")
+                    
+                    # #NOTE THIS HERE SHOULD RETURN TWO THINGS, THE PROJECT ID
+                    # st.session_state['user_data']['projects']['current_project']={} #this is fine
+                    # st.session_state['user_data']['projects']['current_project']['project_id']= None #new project id
+                    # st.session_state['user_data']['projects']['current_project']['initial_data_description']=None #initial data description
+                    # st.session_state['user_data']['projects']['current_project']['description_confirmed']=False #this is fine
+                    st.rerun()
+                
+                else:
+                    st.toast('Please choose a unique name for the project')
+            else:
+                st.toast('Please upload a dataset')                                         
     def projectsPage(self):
         if 'project_id' not in st.session_state['user_data']['projects']['current_project'] or not st.session_state['user_data']['projects']['current_project']['project_id']:
             self.projectOverview()
