@@ -41,9 +41,9 @@ graph_builder.add_node("explainer_node", ExplainerNode)
 graph_builder.add_node("Finalize_output", finalize_output)
 
 #define edges
-graph_builder.add_edge(START, "data_description")
-graph_builder.add_edge("data_description", "Report_Node")
-graph_builder.add_edge("Report_Node","human_node")
+graph_builder.add_edge(START, "Report_Node")
+graph_builder.add_edge("Report_Node", "data_description")
+graph_builder.add_edge("data_description","human_node")
 graph_builder.add_edge("human_node", "qugen_node")
 graph_builder.add_conditional_edges("qugen_node", should_continue, {"qugen_node": "qugen_node", "filteration_node": "filteration_node"})
 graph_builder.add_edge("filteration_node", "SubSbaceSearch_Node")
