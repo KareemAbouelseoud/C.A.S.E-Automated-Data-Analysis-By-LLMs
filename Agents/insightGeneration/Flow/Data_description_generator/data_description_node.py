@@ -1,11 +1,6 @@
-from typing import Dict
-from genai_config import model,llm
 from pydantic import BaseModel, Field
-import pandas as pd
-from io import StringIO
-from langchain import hub
-from langsmith import Client
-from langchain.prompts import SystemMessagePromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 class DataDescription(BaseModel):
     """ Structured output schema for data description node. """
    
@@ -14,10 +9,7 @@ class DataDescription(BaseModel):
     key_patterns: str=Field(description="Key patterns in the data distribution")
     qual_issues:str=Field(description="Notable data quality issues in dataset")
     
-# system_prompt = hub.pull("data-description-prompt").messages[0].prompt.template
-# from langsmith import Client
-# client = Client(api_key="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")
-# prompt = client.pull_prompt("data_description_prompt", include_model=True)
+
 def data_description_prompt(df, feedback):
     return f"""
     Human Feedback: {feedback[-1] if feedback else 'No feedback yet'}
@@ -30,52 +22,33 @@ def data_description_prompt(df, feedback):
         3. Key patterns in the data distribution.
         4. Notable data quality issues.
         """
-
-
-
-class DataDescription(BaseModel):
-    """Structured output schema for data description node."""
-    col_explanation: str = Field(description="Explanation of each column")
-    overview: str = Field(description="Overview description of the dataset")
-    key_patterns: str = Field(description="Key patterns in the data distribution")
-    qual_issues: str = Field(description="Notable data quality issues in dataset")
+        
 
 def data_description_generator_node(state):
     """
     Generates or refines the dataset description considering human feedback if provided.
     """
-
+    CONFIGURATIONS={
+        'temperature':0.0,
+        'model':"gemini-2.0-flash",
+        'number of retries':3
+    }
+    llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
     if "df" not in state:
         raise ValueError("No dataset provided in state.")
 
     df = state["df"]
-    feedback = state.get("human_feedback", [])
+    feedback = state.get("human_feedback", ["No feedback yet"])
+    prompt=data_description_prompt(df, feedback)
+    
+  
+    structured_llm = llm.with_structured_output(DataDescription, include_raw=False)
+    response = structured_llm.invoke(prompt)
 
-    if not feedback:  
-        feedback.append("No feedback yet")
+    description = response
 
-    # Pull the prompt template
-    system_prompt_template = hub.pull("data_description_prompt").messages[0]
+    print(f"Current description:\n{response}\n")
+    
+    
 
-    # Ensure it's a PromptTemplate before formatting
-    if isinstance(system_prompt_template, SystemMessagePromptTemplate):
-        system_prompt = system_prompt_template.format(df=df, feedback=feedback[-1])
-    else:
-        raise TypeError("Expected a PromptTemplate, but got a different object.")
-
-    try:
-        messages = [{"role": "system", "content": system_prompt}]
-        
-        response = llm.invoke(messages)
-
-        structured_llm = llm.with_structured_output(DataDescription, include_raw=False)
-        structured_response = structured_llm.invoke(response)
-
-        print(f"Current description:\n{structured_response}\n")
-
-        return {"description": structured_response, "human_feedback": feedback}
-
-    except Exception as e:
-        print(f"Error in description_node: {str(e)}")
-        raise
-
+    return {"description": response, "human_feedback": feedback }

@@ -1,26 +1,23 @@
 from typing import Dict
-from .core import parse_insight_cards, validate_insight_card,filter_unique_cards
-from .prompts import generate_qugen_prompt,QUGEN
+from .prompts import generate_qugen_prompt,InsightCards
 from genai_config import model
 import pandas as pd
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-from langchain import hub
-semantic_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
 from genai_config import model,llm
 
 def qugen_node(state: Dict) -> Dict:
     """Generate questions based on current data description"""
-    prompt = generate_qugen_prompt(state)
+    # prompt = generate_qugen_prompt(state)
   
-    structured_llm = llm.with_structured_output(QUGEN, include_raw=True)
-    response = structured_llm.invoke(prompt)
+    # structured_llm = llm.with_structured_output(InsightCards, include_raw=False)
+    # response = structured_llm.invoke(prompt)
 
-    #new_cards = parse_insight_cards( parsed_cards)
-    file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
-    dataset = pd.read_csv(file_path)
+    # #new_cards = parse_insight_cards( parsed_cards)
+    # file_path = r"C:\Users\DEll\Downloads\digital_marketing_campaign_dataset.csv"
+    # dataset = pd.read_csv(file_path)
  
-    schema = dataset.columns.tolist()
+    # schema = dataset.columns.tolist()
     
    
     
@@ -33,7 +30,8 @@ def qugen_node(state: Dict) -> Dict:
     #     print(f"Breakdown: {card.breakdown}")
     #     print(f"Measure: {card.measure}")
    
-    print(response)
+    print('ok')
+    # print("QUGEN NODE")
 
     
     # Update state

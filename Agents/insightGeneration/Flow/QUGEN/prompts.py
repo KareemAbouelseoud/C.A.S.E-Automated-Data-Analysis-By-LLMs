@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict,List
 import pandas as pd
 from io import StringIO
 from genai_config import model,llm
@@ -11,6 +11,14 @@ class QUGEN(BaseModel):
     question:str=Field(description="Natural language question")
     breakdown: str=Field(description="Grouping column")
     measure: str=Field(description="[Aggregation function]([Target column])")
+
+
+class InsightCards(BaseModel):
+    """Container for multiple insight cards."""
+    insight_cards: List[QUGEN] = Field(
+        description="List of generated insight cards",
+        min_items=1
+    )
 
 def generate_qugen_prompt(state: Dict, num_cards: int = 5) -> str:
     """Construct QUGEN prompt with dynamic card count and validation rules"""
