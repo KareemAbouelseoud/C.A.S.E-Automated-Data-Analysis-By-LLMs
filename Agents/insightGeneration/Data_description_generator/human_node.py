@@ -14,10 +14,7 @@ def human_input(state):
         {"description": description, "report": state.get("report", "")},)
 
     if user_feedback[-1].lower() == "done":
-        return Command(
-            update={"human_feedback": current_feedback + ["Finalized"]},
-            goto="qugen_node"
-        )
+          return Command(update={"human_node": state["human_feedback"] + ["Finalized"]}, goto="qugen_node")
     
     return Command(
         update={"human_feedback": current_feedback + [user_feedback]},

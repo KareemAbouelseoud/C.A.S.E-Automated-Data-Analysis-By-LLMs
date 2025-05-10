@@ -40,6 +40,7 @@ async def qugen_node(state: Dict) -> Dict:
             state["insight_cards"] = []
         # Append the new insight cards to the existing list
         state["insight_cards"].extend(parsed_insight_cards.insight_cards)
+        
         return {"insight_cards": state["insight_cards"], "num_cards": str(os.getenv("Insight_cards_number"))}
 
     except Exception as e:
@@ -95,12 +96,11 @@ async def should_continue(state) -> str:
     if "insight_cards" in state:
         cards=state["insight_cards"]
         cards_count = len(cards)
-        if cards_count<int(state['num_cards']):
-            print(f"Generated {cards_count} cards, expected {int(state['num_cards'])}")
-            return "qugen_node"
-        else:
-            print(f"Generated {cards_count} cards, expected {int(state['num_cards'])}")
-            return "filteration_node"
+        # if cards_count<5:
+        #     print(f"Generated {cards_count} cards, expected {5}")
+        #     return "qugen_node"
+        print(f"Generated {cards_count} cards, expected {cards_count}")
+        return "filteration_node"
     else:
         print("No recommendations found, returning to selector node")
         return "qugen_node"

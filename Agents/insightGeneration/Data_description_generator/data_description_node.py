@@ -53,6 +53,6 @@ def data_description_generator_node(state):
 
     
     schema = [col.lower() for col in temp_df.columns.tolist()]
-
+    
     return {"description": response, "human_feedback": feedback, "schema":schema }
 
