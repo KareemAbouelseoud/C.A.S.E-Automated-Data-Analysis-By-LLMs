@@ -68,7 +68,7 @@ async def get_preprocessing_pipeline(project_id, pipeline_type):
         print(f"Error retrieving preprocessing pipeline: {e}")
         return None
 
-async def send_preprocessing_pipeline(project_id, pipeline_type, pipeline_data):
+async def send_preprocessing_pipeline(project_id,model_name, pipeline_type, pipeline_data):
     """
     Uploads a preprocessing pipeline to the backend API efficiently using in-memory file.
     
@@ -90,12 +90,12 @@ async def send_preprocessing_pipeline(project_id, pipeline_type, pipeline_data):
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
-                    url + f"/project/{project_id}/AutoML/save-preprocessing-pipeline/{pipeline_type}",
+                    url + f"/project/{project_id}/AutoML/save-preprocessing-pipeline/{model_name}/{pipeline_type}",
                     files=files
                 )
             except:
                 response = await client.post(
-                    f"http://localhost:8005/project/{project_id}/AutoML/save-preprocessing-pipeline/{pipeline_type}",
+                    f"http://localhost:8005/project/{project_id}/AutoML/save-preprocessing-pipeline/{model_name}/{pipeline_type}",
                     files=files
                 )
             
