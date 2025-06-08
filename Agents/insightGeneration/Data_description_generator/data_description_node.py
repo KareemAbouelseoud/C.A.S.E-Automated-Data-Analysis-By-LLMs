@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
 import pandas as pd
 from models import DataDescription
-    
 
 def data_description_prompt(df, feedback):
     return f"""
@@ -31,6 +30,7 @@ def data_description_generator_node(state):
     """
     Generates or refines the dataset description considering human feedback if provided.
     """
+   
     CONFIGURATIONS={
         'temperature':0.0,
         'model':"gemini-2.0-flash",
@@ -53,6 +53,7 @@ def data_description_generator_node(state):
 
     
     schema = [col.lower() for col in temp_df.columns.tolist()]
+   
     
     return {"description": response, "human_feedback": feedback, "schema":schema }
 

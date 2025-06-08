@@ -1,5 +1,5 @@
 import asyncio
-from typing import Tuple, TypedDict
+from typing import Tuple, TypedDict,NotRequired
 from typing_extensions import Any
 
 from dotenv import load_dotenv
@@ -10,7 +10,8 @@ from SubSpaceSearch.node import SubspaceSearchNode
 from Explainer.node import ExplainerNode
 from Reports.node import ReportNode
 from models import InsightCard, InsightCards
-from recommender_node import recommender_node
+from recommender_node import recommender_node,continue_pipeline
+from preprocessing.preprocessor_node import preprocessor_executor_node,restart_pipeline
 import loggerModule
 logger=loggerModule.setup_logging(module_name="InsightGeneration")
 sys.path.append(os.getcwd())
@@ -18,7 +19,7 @@ load_dotenv()
 
 #define states
 class AgentGraphState(TypedDict):
-    df: str
+    df:str
     description: str
     human_feedback: Annotated[list[str], add_messages]
     schema: list[str]
@@ -28,6 +29,7 @@ class AgentGraphState(TypedDict):
     num_cards: int
     report: str
     recommendation: List[object]
+    num_iterations:NotRequired[int]
    
 
 #GRAPH PIPELINE
@@ -43,24 +45,25 @@ graph_builder.add_node("SubSbaceSearch_Node", SubspaceSearchNode)
 graph_builder.add_node("explainer_node", ExplainerNode)
 graph_builder.add_node("Finalize_output", finalize_output)
 graph_builder.add_node("recommender",recommender_node)
+graph_builder.add_node("preprocessor_executor",preprocessor_executor_node)
+
 
 #define edges
 graph_builder.add_edge(START, "data_description")
 graph_builder.add_edge("data_description", "Report_Node")
 graph_builder.add_edge("Report_Node","human_node")
-# graph_builder.add_edge("human_node", "qugen_node")
 graph_builder.add_conditional_edges("qugen_node", should_continue, {"qugen_node": "qugen_node", "filteration_node": "filteration_node"})
 graph_builder.add_edge("filteration_node", "SubSbaceSearch_Node")
 graph_builder.add_edge("SubSbaceSearch_Node", "explainer_node")
-# graph_builder.add_edge("explainer_node","Finalize_output")
-graph_builder.add_edge("explainer_node", "recommender")
+graph_builder.add_conditional_edges("explainer_node",continue_pipeline,{"recommender":"recommender","Finalize_output":"Finalize_output"})
+graph_builder.add_edge("recommender", "preprocessor_executor")
+graph_builder.add_conditional_edges("preprocessor_executor",restart_pipeline,{"qugen_node":"qugen_node","Finalize_output":"Finalize_output"})
 graph_builder.add_edge("Finalize_output",END)
 
 #verify and display the graph
 #compile the graph
 checkpointer=MemorySaver()
 graph = graph_builder.compile(checkpointer=checkpointer)
-
 
 async def Start_Auto_InsightGen(project_id:str=None):
     df = await get_dataset(project_id)
@@ -97,7 +100,8 @@ async def Continue_Auto_InsightGen(_feedback: Feedback, thread_id: str):
         'description': _feedback.description,
         "schema": current_state.get('schema', []),
         'human_feedback': _feedback.feedback,
-        'insight_cards': current_state.get('insight_cards', [])
+        'insight_cards': current_state.get('insight_cards', []),
+        'num_iterations':0
     })
     
     try:
@@ -199,7 +203,8 @@ async def Custom_Continue_Auto_InsightGen(thread_id: str):
         'description': current_state.get('description', ''),
         "schema": current_state.get('schema', []),
         'human_feedback': ["done"],
-        'insight_cards': current_state.get('insight_cards', [])
+        'insight_cards': current_state.get('insight_cards', []),
+        'num_iterations':0
     })
     
     try:

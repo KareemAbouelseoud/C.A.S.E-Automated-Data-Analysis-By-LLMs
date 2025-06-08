@@ -10,9 +10,10 @@ CONFIGURATIONS={
 }
 llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 
-def recommender_prompt(df, insight_cards):
+def recommender_prompt(report, insight_cards,advanced_insight_cards,explanation):
     return f"""
-Given the following dataset {df} and insight cards {insight_cards}:
+Given the following dataset statistical  report {report} ,insight cards {insight_cards} ,adavanced insight cards
+{advanced_insight_cards} and the explanation of the insight cards{explanation}:
 Recommend 
 1 - preprocessing steps to be applied on the dataset for generating better quality insights.
 2 - the columns this preprocessing step should be applied to.
@@ -57,14 +58,24 @@ recommender_schema = {
 
 def recommender_node (state):
 
-    df = state["df"]
+    report=state["report"]
     insight_cards=state["advanced_insight_cards"]
-    prompt=recommender_prompt(df,insight_cards)
+    advanced_insight_cards=state["advanced_insight_cards"]
+    explanation=state["insights_explanation"]
+
+    prompt=recommender_prompt(report,insight_cards,advanced_insight_cards,explanation)
     structured_llm = llm.with_structured_output(recommender_schema)
     response = structured_llm.invoke(prompt)
+    state["num_iterations"]+=1
+
     print(response)
+     
+    return  {"recommendation": response,"num_iterations": state["num_iterations"]}
 
-    return  {"recommendation": response}
-
-
-    
+def continue_pipeline(state):
+    if state.get("num_iterations")==0 :
+        print("continue pipeline,num_iterations:", state.get("num_iterations"))
+        return "recommender"
+    else:
+        print("Finalizing output,num_iterations:", state.get("num_iterations"))
+        return "Finalize_output"

@@ -22517,3 +22517,41 @@ shape
 2025-05-10 00:56:16,442 - InsightGeneration - ERROR - Error in test(): invalid literal for int() with base 10: 'None'
 2025-05-10 00:57:40,790 - InsightGeneration - ERROR - Error in test(): 'resulted_df'
 2025-05-10 01:26:09,669 - InsightGeneration - ERROR - Error in test(): 'resulted_df'
+2025-05-19 01:02:31,474 - InsightGeneration - ERROR - Error in test(): 'preprocessing_tasks'
+2025-05-19 01:12:19,917 - InsightGeneration - ERROR - Error in test(): Expected dict, got ([{'args': {'preprocessing_steps': [{'explanation': "The column 'Total_Reviews' is highly skewed, applying log transformation will reduce the skewness and help in better insight generation for machine learning algorithms and statistical analysis. It can improve the normality of the distribution, making patterns more visible and models more reliable.", 'column_name': 'Total_Reviews', 'preprocessing_step': 'Log Transformation'}, {'explanation': "The column 'Fee(PKR)' is highly skewed, applying log transformation will reduce the skewness and help in better insight generation for machine learning algorithms and statistical analysis. It can improve the normality of the distribution, making patterns more visible and models more reliable.", 'column_name': 'Fee(PKR)', 'preprocessing_step': 'Log Transformation'}, {'explanation': "The column 'Hospital Address' contains missing values ('No Address Available'). Imputing these missing values will ensure that the insights generated are not biased due to the absence of this data. Consider using a placeholder like 'Address Unavailable' or using the City to impute the address if possible.", 'column_name': 'Hospital Address', 'preprocessing_step': 'Handle Missing Values'}, {'explanation': "The column 'Doctors Link' contains missing values ('No Link Available'). Imputing these missing values will ensure that the insights generated are not biased due to the absence of this data. Consider using a placeholder like 'Link Unavailable'.", 'column_name': 'Doctors Link', 'preprocessing_step': 'Handle Missing Values'}, {'explanation': "The column 'Doctor Qualification' has inconsistencies in formatting. Standardizing the format (e.g., converting all to uppercase or lowercase, removing extra spaces, using a consistent separator) will allow for more accurate grouping and comparison of qualifications, leading to better insights.", 'column_name': 'Doctor Qualification', 'preprocessing_step': 'Standardize Format'}]}, 'type': 'preprocessing_recommender'}], [])
+For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_GRAPH_NODE_RETURN_VALUE
+2025-05-24 04:53:58,562 - InsightGeneration - ERROR - Error in test(): 'preprocessing_tasks'
+2025-05-24 16:29:46,939 - InsightGeneration - ERROR - Error in test(): 'preprocessing_step'
+2025-05-24 16:33:57,710 - InsightGeneration - ERROR - Error in test(): 'preprocessing_step'
+2025-05-24 16:40:56,029 - InsightGeneration - ERROR - Error in test(): 'list' object has no attribute 'get'
+2025-05-24 16:50:11,117 - InsightGeneration - ERROR - Error in test(): 'preprocessing_step'
+2025-05-24 17:01:25,684 - InsightGeneration - ERROR - Error in test(): 'preprocessing_step'
+2025-05-24 17:21:34,662 - InsightGeneration - ERROR - Error in test(): 'preprocessing_step'
+2025-05-24 17:56:38,434 - InsightGeneration - ERROR - Error in test(): 'str' object has no attribute 'copy'
+2025-05-24 18:37:34,792 - InsightGeneration - ERROR - Error in test(): 'str' object has no attribute 'copy'
+2025-05-24 19:40:19,851 - InsightGeneration - ERROR - Error in test(): initial_value must be str or None, not DataFrame
+2025-05-24 19:43:06,286 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-24 19:47:34,659 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-24 20:10:13,339 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-24 20:38:09,191 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-24 20:43:56,440 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-24 21:16:13,258 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-24 21:24:17,221 - InsightGeneration - ERROR - Error in test(): 'NoneType' object has no attribute 'to_dict'
+2025-05-28 19:42:34,447 - InsightGeneration - ERROR - Error in test(): initial_value must be str or None, not DataFrame
+2025-05-29 02:02:38,007 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-29 02:05:03,380 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-29 02:12:46,536 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-29 02:34:57,530 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-29 02:37:50,027 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-05-29 02:47:09,942 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-02 18:11:56,990 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-02 18:15:41,793 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-07 20:24:38,426 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-07 21:32:26,222 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-07 21:37:17,147 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-07 21:49:16,829 - InsightGeneration - ERROR - Error in test(): The truth value of a DataFrame is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+2025-06-07 21:59:13,839 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-07 22:04:47,551 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-08 01:49:55,394 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-08 01:58:17,661 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-08 02:03:36,117 - InsightGeneration - ERROR - Error in test(): 'str' object has no attribute 'to_json'
