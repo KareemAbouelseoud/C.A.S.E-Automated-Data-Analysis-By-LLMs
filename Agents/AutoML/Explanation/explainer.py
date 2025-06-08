@@ -19,11 +19,14 @@ class Explainer(BaseModel):
     formatted_response: str = Field(description="The formatted response that will be displayed to the user")
 
 
-async def explainer_node(input_data):
+async def explainer_node(input_data=None):
+    if input_data is None:
+        return None
+    if isinstance(input_data, list):
+        input_data=input_data[-1]
     llm=ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'],max_tokens=4096)
-
-    messages=[{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': input_data}]
-
+    messages=[{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': input_data.content}]
+    print("Explainer Messages: ",messages)
     response= await llm.with_structured_output(Explainer).ainvoke(messages)
 
     return response.formatted_response
