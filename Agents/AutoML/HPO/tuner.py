@@ -52,8 +52,11 @@ async def fetch_url_content(url: str) -> str:
         return ""
 @tool
 async def tuner_node(state: Annotated[dict,InjectedToolArg] = None,
-                     model_names: Annotated[list[str],"This is the list of models that you want to tune. The naming must be identical to how model_selection has given."]=None,
-                     task: Annotated[str,"This is the task that the supervisor node should assign or give. It is completely optional, You can write what are your preferences or comments"]=None):
+                     model_names: Annotated[list[str],"This is the list of models that you want to tune. The naming must be identical to how model_selection has given."]=None,):
+                    #  task: Annotated[str,"This is the task that the supervisor node should assign or give. It is completely optional, You can write what are your preferences or comments"]=None):
+    """
+    This tool analyzes the models that were instructed by Model Selection team and creates a parameter space to be used for Hyperparameter Optimization.
+    """
     data_report=state['data_report']
     print("Tuner Node",flush=True)
     model_dict=state.get('models', {})
@@ -65,8 +68,8 @@ async def tuner_node(state: Annotated[dict,InjectedToolArg] = None,
         if state.get("evaluation_metrics", None):
             last_message+=f"Here are the evaluation metrics for your previous steps: {state['evaluation_metrics']}\n\n Attempt to Analyze and Improve, if possible, if not return the same values.\n\n"
 
-        if task:
-            last_message+=f"Here are the instructions for you given by the supervisor, if it doesn't apply to this model ignore it and move on: {task}\n\n"
+        # if task:
+        #     last_message+=f"Here are the instructions for you given by the supervisor, if it doesn't apply to this model ignore it and move on: {task}\n\n"
 
         last_message+=f"MODE: {state['mode']}\nData report: {data_report}\nTrain Feature(s): {state['X_columns']} \n Target Feature: {state['y_column']} \n Problem Type: {state['problem_type']} \n"
     
@@ -113,9 +116,11 @@ async def tuner_node(state: Annotated[dict,InjectedToolArg] = None,
         except Exception as e:
             print(f"Error in parsing the params: {e}")
             output[model] = f"Error has occured: {e}"
-
+    completed=state.get('completed',{})
+    completed['tuner']=True
     new_state={
         "models": model_dict,
-        "tuning_messages":[{"role": "user", "content": last_message},{"role": "assistant", "content": f"Here is the output: {output}"}]
+        "tuning_messages":state.get('tuning_messages', [])+[{"role": "user", "content": last_message},{"role": "assistant", "content": f"Here is the output: {output}"}],
+        'completed':completed
     }
     return [f"Here is the output: {output} ",new_state]
