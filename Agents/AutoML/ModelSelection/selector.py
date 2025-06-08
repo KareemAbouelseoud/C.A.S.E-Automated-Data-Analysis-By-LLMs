@@ -68,7 +68,8 @@ regression_docs = {
     "Passive-Aggressive Regressor": "https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html",
     "Gaussian Process Regressor": "https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html",
     "Histogram-based Gradient Boosting Regressor": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html",
-    "Isotonic Regression": "https://scikit-learn.org/stable/modules/generated/sklearn.isotonic.IsotonicRegression.html"
+    "Isotonic Regression": "https://scikit-learn.org/stable/modules/generated/sklearn.isotonic.IsotonicRegression.html",
+    "Linear Regression": "https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"
 }
 
 
@@ -84,8 +85,8 @@ class Selector(BaseModel):
 
 @tool
 async def model_selector_node(state: Annotated[dict, InjectedToolArg] = None,
-                            number_of_models: Annotated[int, "Number of models to be selected"] = 3,
-                            task: Optional[Annotated[str, "This is the task that the supervisor node should assign or give. It is completely optional, You can write what are your preferences or comments"]] = None):
+                            number_of_models: Annotated[int, "Number of models to be selected"] = 3,):
+                            # task: Optional[Annotated[str, "This is the task that the supervisor node should assign or give. It is completely optional, You can write what are your preferences or comments"]] = None
     """This agent is responsible for selecting the best model for the given data and problem type. It will use the provided data report and other information to make its recommendations.
     The agent will also provide reasoning for its choices, and it will be able to handle both classification and regression tasks. The agent will return a list of recommended models along with their reasoning and reference URLs."""
     print(f"Model Selection Started")
@@ -99,21 +100,24 @@ async def model_selector_node(state: Annotated[dict, InjectedToolArg] = None,
     X_columns = state['X_columns']
     y_column = state['y_column']
     mode = state['mode']
+    X_preprocessing_logic = state.get('X_preprocessing_logic', None)
+    Y_preprocessing_logic = state.get('Y_preprocessing_logic', None)
     model_list = list(classification_docs.keys()) if problem_type == 'classification' else list(regression_docs.keys())
     messages = [{"role": "system","content": system_prompt}]+state.get('model_selection_messages', [])
     content=""
     if state.get('evaluation_metrics', None):
         content+=f"Here are the evaluation metrics for your previous steps: {state['evaluation_metrics']}\n\n Attempt to Analyze and Improve, if possible, if not return the same values.\n\n"
-    if task:
-        content+=f"Here are the instructions for you given by the supervisor: {task}\n\n"
-    content+=f"""\n\nCurrent Mode: {mode}
+    # if task:
+    #     content+=f"Here are the instructions for you given by the supervisor: {task}\n\n"
+    content+=f"""\n
     Problem Type: {problem_type}
     this is the model list: {model_list}\n 
     this is the data report:{data_report}\n
     this is the X columns: {X_columns}\n And this is the y column: {y_column}\n
-    This is the preprocessing steps that were applied for the X_columns: {state['X_preprocessing_logic'][-1]}\n
-    This is the preprocessing steps that were applied for the y_column: {state['Y_preprocessing_logic'][-1]}\n
-    Please provide recommendations strictly following the format requirements. Give me the best {number_of_models} models for the given data and problem type."""
+    This is the preprocessing steps that were applied for the X_columns: {X_preprocessing_logic if X_preprocessing_logic else 'No preprocessing was applied for the X_columns'}\n"""
+    if state.get('Y_preprocessing_logic', None):
+        content+=f"This is the preprocessing steps that were applied for the y_column: {Y_preprocessing_logic if Y_preprocessing_logic else 'No preprocessing was applied for the y_column'}\n"
+    content+=f"Please provide recommendations strictly following the format requirements. Give me the best {number_of_models} models for the given data and problem type."
     
     messages.append({"role": "user", "content": content})
 
@@ -121,10 +125,13 @@ async def model_selector_node(state: Annotated[dict, InjectedToolArg] = None,
     models_response=[]
     old_model_dict=state.get('models',{})
     for model in response.models:
-        old_model_dict[model.model] = {
-            "reasoning": model.reasoning,
-            'reference_url': classification_docs[model.model] if problem_type == 'classification' else regression_docs[model.model]
-        }
+        if model.model in old_model_dict:
+            old_model_dict[model.model]['reasoning']=model.reasoning
+        else:
+            old_model_dict[model.model] = {
+                "reasoning": model.reasoning,
+                'reference_url': classification_docs[model.model] if problem_type == 'classification' else regression_docs[model.model]
+            }
 
         models_response.append({
             model.model: {
@@ -133,10 +140,12 @@ async def model_selector_node(state: Annotated[dict, InjectedToolArg] = None,
             }
         })
 
-
+    completed=state.get('completed',{})
+    completed['model_selector']=True
     new_state={
         "models": old_model_dict,
-        'model_selection_messages': [messages[-1],{"role": "assistant", "content": f"Here is the output: {response.model_dump_json()}"}]
+        'model_selection_messages': messages[1:]+[{"role": "assistant", "content": f"Here is the output: {response.model_dump_json()}"}],
+        'completed':completed
     }
 
     return [f'The model selection is done, here are the models selected {[list(model.keys())[0] for model in models_response]}', new_state]

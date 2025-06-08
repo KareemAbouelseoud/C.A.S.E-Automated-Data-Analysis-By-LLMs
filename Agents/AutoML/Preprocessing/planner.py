@@ -5,7 +5,7 @@ from langchain import hub
 load_dotenv()
 CONFIGURATIONS={
     'temperature':0.7,
-    'model':"gemini-2.0-flash",
+    'model':"gemini-2.5-flash-preview-04-17",
 }
 
 llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS["model"], temperature=CONFIGURATIONS["temperature"])
@@ -39,9 +39,8 @@ async def planner_node(state):
             {"role": "system", "content":system_prompt},
         ] + state.get('planner_messages', [])
     messages.append({"role": "user", "content": last_message})
-
     response= await llm.ainvoke(messages)
 
     new_messages=[messages[-1],
                   {"role": "assistant", "content": f"Here is the output: {response.model_dump_json()}"}]
-    return {"preprocessing_logic": response.logic,'planner_messages':new_messages}
+    return {"preprocessing_logic": response,'planner_messages':new_messages}

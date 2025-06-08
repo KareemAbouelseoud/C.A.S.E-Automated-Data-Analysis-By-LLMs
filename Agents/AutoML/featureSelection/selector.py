@@ -7,10 +7,13 @@ from sklearn.feature_selection import mutual_info_regression, mutual_info_classi
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
 import fireducks.pandas as pd
+from AutoML.Preprocessing.pipeline import preprocess_without_cross_validation
+from typing import Optional,Annotated
 from sklearn.feature_selection import RFE
-from sklearn.linear_model import LinearRegression  # or another estimator
-from sklearn.base import BaseEstimator, TransformerMixin
-import json
+from langchain_core.tools import InjectedToolArg,tool
+from AutoML.modelTraining.trainer import get_model
+import numpy as np
+
 load_dotenv()
 
 class Feature(BaseModel):
@@ -22,148 +25,196 @@ class Feature_list(BaseModel):
     features: List[Feature] = Field(
         description="List of Features")
 
-class LLMFeatureSelector(BaseEstimator, TransformerMixin):
-    def __init__(self,estimator,problem_type,data_report):
-        """
-        Custom feature selector for feature selection.
-        """
-        self.system_prompt = hub.pull("automl-feature-selector").messages[0].content
-        self.selected_features_ = None
-        self.feature_names_ = None
-        CONFIGURATIONS={
-            'temperature':0.7,
-            'model':"gemini-2.0-flash",
-        }
-
-        self.llm = ChatGoogleGenerativeAI(
+system_prompt= hub.pull("automl-feature-selector").messages[0].content
+CONFIGURATIONS={
+    'temperature':0.7,
+    'model':"gemini-2.5-flash-preview-04-17",
+}
+llm = ChatGoogleGenerativeAI(
         model=CONFIGURATIONS["model"],
         temperature=CONFIGURATIONS["temperature"]
         ).with_structured_output(Feature_list)
 
-        self.estimator = estimator
-        self.problem_type = problem_type
-        self.data_report = data_report
-        self.reasoning = None
 
-    def recursive_feature_elimination(self,X, y, n_features_to_select=5):
-        # Check if estimator has feature_importances_ or coef_ attribute
-        try:
-            selector = RFE(self.estimator, n_features_to_select=n_features_to_select)
-            selector = selector.fit(X, y)
-            
-            selected_features = X.columns[selector.support_]
-            ranking = selector.ranking_
-            
-            return selected_features, ranking
-        except Exception as e:
-            return None, None
+def recursive_feature_elimination(X, y, estimators, n_features_to_select=5):
+    # Make sure X contains only numeric values
+    numeric_X = X.select_dtypes(include=['number'])
     
-    def calculate_vif(self,X):
+    # If no numeric columns available, return empty results
+    if numeric_X.empty:
+        return {}
+        
+    # Ensure n_features_to_select is valid
+    n_features_to_select = min(max(1, n_features_to_select), numeric_X.shape[1])
+    
+    results = {}
+    for estimator in estimators:
+        try:
+            model = get_model(estimator)
+            selector = RFE(model, n_features_to_select=n_features_to_select)
+            selector = selector.fit(numeric_X, y)
+            results[estimator] = {'support': selector.support_.tolist(), 'ranking': selector.ranking_.tolist()}
+        except Exception as e:
+            print(f"Error in RFE for estimator {estimator}: {str(e)}")
+            # Don't add failed estimator to results
+            
+    return results
+
+def calculate_vif(X):
+    try:
+        # Check if there are enough features to calculate VIF (need at least 2)
+        if X.shape[1] < 2:
+            vif_data = pd.DataFrame()
+            vif_data["feature"] = X.columns
+            vif_data["VIF"] = [1.0] * len(X.columns)  # Default to 1.0 when not computable
+            return vif_data
+            
         X = sm.add_constant(X)
         vif_data = pd.DataFrame()
         vif_data["feature"] = X.columns
-        vif_data["VIF"] = [variance_inflation_factor(X.values, i)
-                        for i in range(X.shape[1])]
+        
+        # Calculate VIF for each feature
+        vif_values = []
+        for i in range(X.shape[1]):
+            try:
+                vif_val = variance_inflation_factor(X.values, i)
+                # Handle infinite or NaN values
+                if pd.isna(vif_val) or np.isinf(vif_val):
+                    vif_val = 999.0  # Use a high value to indicate potential issues
+                vif_values.append(vif_val)
+            except:
+                vif_values.append(999.0)  # Use a high value to indicate potential issues
+                
+        vif_data["VIF"] = vif_values
         return vif_data
-    
-    def compute_mutual_info(self,X, y, task='regression'):
+    except Exception as e:
+        # Return an empty DataFrame if an error occurs
+        print(f"Error in VIF calculation: {str(e)}")
+        vif_data = pd.DataFrame()
+        vif_data["feature"] = X.columns
+        vif_data["VIF"] = [999.0] * len(X.columns)  # Use a high value to indicate potential issues
+        return vif_data
+
+def compute_mutual_info(X, y, task='regression'):
+    # Make sure X contains only numeric values
+    try:
+        # Try to convert non-numeric columns to numeric if possible
+        numeric_X = X.select_dtypes(include=['number'])
+        
+        # If no numeric columns are available, return empty Series
+        if numeric_X.empty:
+            return pd.Series([], index=[])
+            
         # Select function based on task type
         if task == 'regression':
-            mi = mutual_info_regression(X, y)
+            mi = mutual_info_regression(numeric_X, y)
         else:
-            mi = mutual_info_classif(X, y)
+            # Ensure y is flattened and in correct format for classification
+            if hasattr(y, 'values'):
+                y_values = y.values.ravel()
+            else:
+                y_values = y.ravel()
             
-        mi_series = pd.Series(mi, index=X.columns)
+            mi = mutual_info_classif(numeric_X, y_values)
+            
+        mi_series = pd.Series(mi, index=numeric_X.columns)
         mi_series = mi_series.sort_values(ascending=False)
         return mi_series
-    
-    def fit(self, X, y=None):
-        # Convert X to DataFrame if it's a numpy array
-        if isinstance(X, pd.DataFrame):
-            X_df = X
-            self.feature_names_ = X.columns.tolist()
+    except Exception as e:
+        # Return empty series if there's an error
+        print(f"Error in compute_mutual_info: {str(e)}")
+        return pd.Series([], index=[])
+
+@tool 
+async def feature_selector_node(state: Annotated[dict,InjectedToolArg] = None):
+            # task: Optional[Annotated[str,"This is the task that the supervisor node should assign or give. It is completely optional, You can write what are your preferences or comments"]] = None):
+    """
+    Selects the best features from the given data.
+    """
+    print("Feature Selection Started")
+    X_train = state['X_train']
+    y_train = state['y_train']
+    X_preprocessing_pipeline=state.get('X_preprocessing_pipeline',None)
+    y_preprocessing_pipeline=state.get('Y_preprocessing_pipeline',None)
+    if X_preprocessing_pipeline:
+       X_train,_,_,_= preprocess_without_cross_validation(X_train,X_preprocessing_pipeline)
+    if y_preprocessing_pipeline:
+        y_train,_,_,_=preprocess_without_cross_validation(y_train,y_preprocessing_pipeline)
+
+    problem_type = state['problem_type']
+    data_report=state['data_report']
+    models=state.get('models',{})
+    if models:
+        models=list(models.keys())
+    else:
+        if problem_type=='regression':
+            models=['LinearRegression','Random Forest Regressor']
         else:
-            # If X is a numpy array, use feature indices as column names if needed
-            if hasattr(X, 'feature_names_in_'):  # From previous transformer
-                feature_names = X.feature_names_in_
-                print("FROM NUMPY",feature_names,flush=True)
-            else:
-                feature_names = [f"feature_{i}" for i in range(X.shape[1])]
-            X_df = pd.DataFrame(X, columns=feature_names)
-            self.feature_names_ = feature_names
-        
-        mutual_info = self.compute_mutual_info(X_df, y, self.problem_type).to_json()
-        vif = self.calculate_vif(X_df).to_json()
-        rfe_selected_features, rfe_ranking = self.recursive_feature_elimination(X_df, y,n_features_to_select=X_df.columns.size//2)
-        
-        # Prepare message content based on available data
-        rfe_info = ""
-        if rfe_selected_features is not None and rfe_ranking is not None:
-            rfe_info = f"This is the RFE ranking: {rfe_ranking}\nDon't choose only based on RFE ranking, consider other factors as well. You may choose more or less than what was given from RFE."
-        else:
-            rfe_info = "RFE analysis was not applicable for this model type."
+            models=['Logistic Regression','Random Forest Classifier']
 
-        messages = [
-            {
-            "role": "system",
-            "content": self.system_prompt
-            },
-            {
-            "role": "user",
-            "content": 
-                f"This is the data report:{self.data_report}\n\n\n"
-                f"\n\nCurrent Mode: {self.problem_type}\n"
-                f"This is the mutual information: {mutual_info}\n"
-                f"This is the VIF: {vif}\n"
-                f"{rfe_info}\n"
-                "Please provide recommendations strictly following the format requirements."
-            }
-        ]
-        response = self.llm.invoke(messages)
-        self.selected_features_ = [feature.feature_name for feature in response.features]
-        self.reasoning = [{"name": feature.feature_name, "reasoning": feature.reasoning} for feature in response.features]
-        
-        return self
-
-    def transform(self, X):
-        # Convert to DataFrame if it's a numpy array
-        if isinstance(X, pd.DataFrame):
-            return X[self.selected_features_]
-        else:
-            # Convert numpy array to DataFrame with selected feature names
-            X_df = pd.DataFrame(X, columns=self.feature_names_)
-            return X_df[self.selected_features_]
-
-    def get_support(self):
-        return self.selected_features_
+    # Safely compute mutual information and VIF with error handling
+    try:
+        mutual_info = compute_mutual_info(X_train, y_train, problem_type).to_json()
+    except Exception as e:
+        mutual_info = "{}"
+        print(f"Error computing mutual info: {str(e)}")
     
-
-
-class PreselectedFeatureSelector(BaseEstimator, TransformerMixin):
-    def __init__(self, feature_names,indices):
-        """
-        feature_names: List of feature names selected previously.
-        """
-        self.feature_names = feature_names
-        self.indices = indices
-
-    def fit(self, X, y=None):
-        return self
+    try:
+        # Filter to numeric columns for VIF calculation
+        numeric_X = X_train.select_dtypes(include=['number'])
+        if not numeric_X.empty:
+            vif = calculate_vif(numeric_X).to_json()
+        else:
+            vif = "{}"
+    except Exception as e:
+        vif = "{}"
+        print(f"Error computing VIF: {str(e)}")
     
-    def transform(self, X):
-        # If X is a NumPy array, convert it to a DataFrame.
-        # Assuming the original column order corresponds to your preprocessed features:
-        if not isinstance(X, pd.DataFrame):
-            # Here you may need to supply the full list of original feature names if available
-            # For illustration, assume that `full_feature_names` is available in this context.
-            full_feature_names = [f'feature{i}' for i in range(X.shape[1])]
-            X = pd.DataFrame(X, columns=full_feature_names)
+    try:
+        rfe_results = recursive_feature_elimination(X_train, y_train,estimators=models,n_features_to_select=max(1, X_train.columns.size//2))
+    except Exception as e:
+        rfe_results = None
+        print(f"Error in recursive feature elimination: {str(e)}")
+    
+    # Prepare message content based on available data
+    rfe_info = ""
+    if rfe_results is not None:
+        rfe_info = f"This is the RFE results based on different models: {rfe_results}\nDon't choose only based on RFE ranking, consider other factors as well. You may choose more or less than what was given from RFE."
+    else:
+        rfe_info = "RFE analysis was not applicable for this data."
+
+    messages= [{"role": "system","content": system_prompt}]+state.get('feature_selection_messages', [])
+    content=""
+    if state.get('evaluation_metrics', None):
+        content+=f"Here are the evaluation metrics for your previous steps: {state['evaluation_metrics']}\n\n Attempt to Analyze and Improve, if possible, if not return the same values.\n\n"
+    # if task:
+    #     content+=f"Here are the instructions for you given by the supervisor: {task}\n\n"
+    content+=f"""\n\nCurrent Mode: {problem_type}\n
+            This is the data report:{data_report}\n\n\n
+            This is the mutual information: {mutual_info}\n
+            This is the VIF: {vif}\n
+            {rfe_info}\n
+            Please provide recommendations strictly following the format requirements."""
+    
+    messages.append({"role": "user", "content": content})
+
+    response = await llm.ainvoke(messages)
+
+    selected_features_ = [feature.feature_name for feature in response.features]
+
+    # Ensure all selected features exist in the dataframe
+    valid_features = [f for f in selected_features_ if f in X_train.columns]
+    if not valid_features:
+        # If no valid features selected, use all columns
+        valid_features = X_train.columns.tolist()
         
-        # Return only the preselected features
-        # Return the selected columns by indices
-        X_subset = X.iloc[:, self.indices]
-        
-        # Rename the columns to match the feature names
-        X_subset.columns = self.feature_names
-        
-        return X_subset
+    X_train=X_train[valid_features]
+    completed=state.get('completed',{})
+    completed['feature_selector']=True
+    new_state={
+        'feature_selection_messages':messages[1:]+[{"role": "assistant", "content": f"Here is the output: {response.model_dump_json()}"}],
+        'selected_features': valid_features,
+        'completed':completed
+    }
+
+    return [f'The selected features are now {valid_features}',new_state]

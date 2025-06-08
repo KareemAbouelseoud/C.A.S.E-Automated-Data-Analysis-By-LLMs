@@ -6,9 +6,6 @@ from langchain_core.messages import AnyMessage
 import operator
 
 
-CONFIGURATIONS= {
-    'recursion_limit': 100,
-}
 class State(TypedDict):
     """
     A class to represent the state of the application.
@@ -24,7 +21,7 @@ class State(TypedDict):
     problem_type: NotRequired[str] # Problem Type Identified by the LLM
 
     #Splitting
-    splitting_logic: Annotated[NotRequired[list[str]],operator.add]=None # Splitting Steps Documented for the User and rest of Agents
+    splitting_logic: NotRequired[list[str]]# Splitting Steps Documented for the User and rest of Agents
     test_size: NotRequired[float] # Test Size
     test_count: NotRequired[int] # Test Count
     shuffle: NotRequired[bool] # Shuffle
@@ -44,18 +41,22 @@ class State(TypedDict):
 
     train_count: NotRequired[int] # Train Count
     
-    splitting_messages:Annotated[list[AnyMessage], operator.add] # conversation between supervisor and splitter
-
+    splitting_messages:list[AnyMessage] # conversation between supervisor and splitter
+    #Feature Selection
+    feature_selection_messages: list[AnyMessage] # conversation between supervisor and feature selector'
+    selected_features: NotRequired[list[str]] # Selected Features
+    
     #Tuning
     n_iter: NotRequired[int] # Number of Iterations
     params_distribution: NotRequired[dict] # Parameters Distribution
-    tuning_messages: Annotated[list[AnyMessage], operator.add]
+    tuning_messages: list[AnyMessage]
 
     #Preprocessing Pipeline
-    X_preprocessing_logic: Annotated[NotRequired[list[str]],operator.add]=None # Preprocessing Steps Documented for the User and rest of Agents
-    Y_preprocessing_logic: Annotated[NotRequired[list[str]],operator.add]=None  # Preprocessing Steps Documented for the User and rest of Agents
-    X_pipeline: NotRequired[Any] # Preprocessing Pipeline for X
-    Y_pipeline: NotRequired[Any] # Preprocessing Pipeline for Y
+    X_preprocessing_logic: NotRequired[list[str]] # Preprocessing Steps Documented for the User and rest of Agents
+    Y_preprocessing_logic: NotRequired[list[str]]  # Preprocessing Steps Documented for the User and rest of Agents
+    
+    X_preprocessing_pipeline: NotRequired[Any] # Preprocessing Pipeline for X
+    Y_preprocessing_pipeline: NotRequired[Any] # Preprocessing Pipeline for Y
 
     X_preprocessing_messages: list[AnyMessage] # Conversation between supervisor and preprocessing planner
     Y_preprocessing_messages: list[AnyMessage] # Conversation between supervisor and preprocessing planner
@@ -64,15 +65,14 @@ class State(TypedDict):
     Y_pipeline_html: NotRequired[str] # Y Pipeline HTML
     
     #Model
-    models: NotRequired[dict] # Model Names Selected by LLM
-    models_completed: NotRequired[int] # Number of Models Completed
-    model_selection_messages: Annotated[list[AnyMessage], operator.add] # Model Selection Messages
+    models: NotRequired[dict] # Model by LLM and their reasoning and evaluation metrics
+    model_selection_messages: list[AnyMessage] # Model Selection Messages
 
     #Evaluation
     evaluation_reports: NotRequired[list] # Evaluation Reports
 
     #supervisor
-    messages: Annotated[list[AnyMessage], operator.add]
+    messages: list[AnyMessage]
     completed: NotRequired[dict] # Completed
     steps: NotRequired[int] = 0
 

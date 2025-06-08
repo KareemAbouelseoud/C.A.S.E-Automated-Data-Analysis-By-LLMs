@@ -1,16 +1,9 @@
-from API.Requests import projectRequests
-from typing import Literal
-from sklearn import model_selection
 import fireducks.pandas as pd
 from sklearn.metrics import accuracy_score,precision_score, recall_score, f1_score, roc_auc_score,confusion_matrix,precision_recall_curve,roc_curve
 from sklearn.inspection import permutation_importance
-import json
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..','modelTraining')))
-from trainer import preprocess_without_cross_validation,merge_data,get_cached_pipeline,fetch_model
 import numpy as np
-import asyncio
+
+
 def make_serializable(obj):
     """
     Convert an object to a serializable format.
@@ -34,7 +27,7 @@ def make_serializable(obj):
     else:
         return obj
     
-async def evaluator_node(state):
+async def evaluator_node(model,X_test,y_test,problem_type,y_column):
     """
     Check code
 
@@ -44,70 +37,17 @@ async def evaluator_node(state):
     Returns:
         state (dict): New key added to state, error
     """
-    print("---Evaluating ALL Models---")
-    #region Processing Test
-    project_id = state["project_id"]
-    completed_models = []
-    for model in state["models"]:
-        if 'completed' in model:
-            completed_models.append(model)
-
-    # Run async operations concurrently
-    Xpreprocessing_pipeline, Ypreprocessing_pipeline, df = await asyncio.gather(
-        get_cached_pipeline(project_id, 'X'),
-        get_cached_pipeline(project_id, 'Y'),
-        projectRequests.get_dataset(project_id)
-    )
-    X=df[state['X_columns']]
-    y=df[state['y_column']]
-    stratify = state['stratify'] if 'stratify' in state else False
-    _,X_test, _, y_test=model_selection.train_test_split(X,y,test_size=state['test_size'],shuffle=state['shuffle'],stratify=y if stratify else None,random_state=42)
-    
-
-    X_test['row_id'] = range(len(X_test))
-    y_test = pd.DataFrame({state['y_column']: y_test, 'row_id': range(len(y_test))})
-    
-    if Xpreprocessing_pipeline:
-        X_temp_test,_,_,_=preprocess_without_cross_validation(X_test,Xpreprocessing_pipeline,fit=False)
-    else:
-        X_temp_test=X_test
-
-    if Ypreprocessing_pipeline:
-        y_temp_test,_,_,_=preprocess_without_cross_validation(y_test,Ypreprocessing_pipeline,fit=False)
-    else:
-        y_temp_test=y_test
-
-    X_test,y_test=merge_data(X_temp_test,y_temp_test,state['y_column'])
-    
-    # Exclude object columns that might cause issues during prediction
-    X_test = X_test.select_dtypes(exclude=['object'])
     
 
 
-    #endregion
     #region Evaluating
-    reports=[]
-    for model_dict in completed_models:
+    if problem_type=='classification':
+        metrics=classification_metrics(model,X_test,y_test,y_column)
+    else:
+        metrics=regression_metrics(model,X_test,y_test)
 
-        model_name=model_dict['model']
-        X_test_copy=X_test[model_dict['X_columns'] if 'X_columns' in model_dict else X_test.columns]
-        model=await fetch_model(project_id,model_name)
-
-        if state['problem_type']=='classification':
-            metrics=classification_metrics(model,X_test_copy,y_test,state['y_column'])
-        else:
-            metrics=regression_metrics(model,X_test_copy,y_test)
-
-        report={
-            "model":model_name,
-            'problem_type':state['problem_type'],
-            "metrics":metrics,
-            'test_count':X_test.shape[0]
-        }
-        reports.append(report)
-    reports=make_serializable(reports)
     
-    return {"evaluation_reports":reports}
+    return metrics
     
     #endregion
 
@@ -131,7 +71,8 @@ def classification_metrics(model,X_test,y_true,y_column):
         y_probs = model.decision_function(X_test)
     
     # Compute ROC-AUC score
-    if y_true.nunique() > 2:
+    unique_classes = len(np.unique(y_true))
+    if unique_classes > 2:
         roc_auc = roc_auc_score(y_true, y_probs, multi_class='ovr')
     else:
         roc_auc = roc_auc_score(y_true, y_probs)

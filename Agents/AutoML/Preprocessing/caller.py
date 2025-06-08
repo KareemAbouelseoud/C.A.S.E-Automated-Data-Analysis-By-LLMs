@@ -28,6 +28,7 @@ async def caller_node(state):
         last_message.content+=f"The current Preprocessor has these steps: {state.get('preprocessing_pipeline',[])}"
     
     model=llm.bind_tools(tools=tools)
+    print("Caller is being called")
     response= await model.ainvoke(messages)
 
     return {'preprocessing_messages': [response]}

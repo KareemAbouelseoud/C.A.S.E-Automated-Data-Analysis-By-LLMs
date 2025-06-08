@@ -4,7 +4,7 @@ from sklearn.impute import KNNImputer
 from typing import Annotated, Optional,Union,List,Any
 from sklearn.preprocessing import OneHotEncoder,FunctionTransformer,OrdinalEncoder,MinMaxScaler,StandardScaler,RobustScaler
 from functools import partial
-from helperFunctions import *
+from AutoML.Preprocessing.helperFunctions import *
 from API.Requests import projectRequests
 from langchain_core.tools import tool,InjectedToolArg
 from sklearn.pipeline import Pipeline
@@ -37,7 +37,6 @@ async def encode_categorical_feature(
     try:
         encoder.fit_transform(df[[column_name]])
     except Exception as e:
-        print("Failed Final Test")
         raise e
     return ("Encoder",encoder)
 
@@ -68,7 +67,6 @@ async def normalize_continous_feature(
     try:
         transformer.fit_transform(df[[column_name]])
     except Exception as e:
-        print("Failed Final Test")
         raise e
     return ("Scaler",transformer)
 
@@ -114,8 +112,9 @@ async def handle_outliers(
         return (f"Outlier Handler",transformer)
     
     except Exception as e:
-        print(f"Error in handle_outliers: {e}") #can we make it more descriptive? LLM generated msg?
-    
+        raise e
+
+
 @tool
 async def parse_datetime(
     column_name: Annotated[str, 'column name to be processed'],
@@ -143,7 +142,7 @@ async def parse_datetime(
         return (f"Datetime Parser",transformer)
     
     except Exception as e:
-        print(f"Error in parse_datetime: {e}")
+        raise e
 
 @tool
 async def handle_null_values(
@@ -211,7 +210,7 @@ async def handle_null_values(
 async def remove_duplicates(
     column_name: Annotated[str, 'column name to be processed. Either this or Subset should be None']=None,
     project_id: Annotated[str,InjectedToolArg] = None,
-    subset: Annotated[Optional[str], "List of columns to consider for row duplicates. Either this or column name should be None"] = None,
+    subset: Annotated[List[Optional[str]], "List of columns to consider for row duplicates. Either this or column name should be None"] = None,
     keep: Annotated[Optional[str], "Whether to keep the 'first', 'last', or False (if strategy is 'rows' or 'columns')."] = "first",
 ) -> tuple:
     """
@@ -240,7 +239,7 @@ async def remove_duplicates(
         raise ValueError(f"Error in remove_duplicates")
 @tool
 async def remove_preprocessing_steps(
-    column_names: Annotated[List[str], 'Columns to erase their preprocessing steps. If you want to remove all preprocessing steps, use the "remove_all" option.'],
+    column_names: Annotated[List[str], 'Columns to erase their preprocessing steps can be only one if you want. If you want to remove all preprocessing steps, use the "remove_all" option.'],
     preprocessor: Annotated[Any, InjectedToolArg] = None,
 ) -> Any:
     """Remove preprocessing steps from the pipeline for multiple columns. 
@@ -248,16 +247,7 @@ async def remove_preprocessing_steps(
     fixing errors, or improving performance.
     If you want to remove all preprocessing steps, use the "remove_all" option.
     """
-    if 'remove_all' in column_names:
-        # Remove all preprocessing steps
-        preprocessor = ColumnTransformer([('Drop', Pipeline(steps=[]), preprocessor.transformers[0][2])], remainder='passthrough', sparse_threshold=0)
-        return preprocessor
-    
-    preprocessor.transformers = [preprocessor.transformers[0]] + [
-        transformer for transformer in preprocessor.transformers[1:]
-        if not any(col in transformer[2] for col in column_names)
-    ]
-    return preprocessor
+    pass
     
 tools=[
     handle_outliers,
@@ -270,8 +260,8 @@ tools=[
 ]
 
 async def tool_node(state):
-    print("Executing Tool Calls")
     tools_by_name = {tool.name: tool for tool in tools}
+    error_columns=set()
 
     mode=state['preprocessing_mode']
     messages = state["preprocessing_messages"]
@@ -281,18 +271,33 @@ async def tool_node(state):
     preprocessor = state.get("preprocessing_pipeline", None)
     if preprocessor is None:
             droper = ('Drop', Pipeline(steps=[]), state["X_columns"] if mode=='X' else state['y_column'])
-            pipeline = ColumnTransformer([droper], remainder='passthrough', sparse_threshold=0)
+            preprocessor = ColumnTransformer([droper], remainder='passthrough', sparse_threshold=0)
     output_messages = []
     for tool_call in messages[-1].tool_calls:
-        print("Tool Name: ",tool_call["name"])
-        print("Tool Args: ",tool_call["args"])
-        
-        if tool_call['name']=='remove_preprocessing_steps':
-            #Remove Preprocessing Steps
-            preprocessor=await remove_preprocessing_steps(tool_call["args"]["column_name"],preprocessor)
+        if 'column_name' in tool_call['args'] and tool_call['args']['column_name'] in error_columns:
             output_messages.append(
                 ToolMessage(
-                    content=f"Preprocessing step removed: {tool_call['name']} for column {tool_call['args']['column_name']}",
+                    content=f"The step has not been added due to a previous step for the same column failing, adding it would change the order of the pipeline thus may lead to errors.",
+                    name=tool_call["name"],
+                    tool_call_id=tool_call["id"],
+                    status="error",
+                )
+            )
+            continue
+        if tool_call['name']=='remove_preprocessing_steps':
+            #Remove Preprocessing Steps
+            if 'remove_all' in tool_call["args"]["column_names"]:
+                # Remove all preprocessing steps
+                preprocessor = ColumnTransformer([('Drop', Pipeline(steps=[]), preprocessor.transformers[0][2])], remainder='passthrough', sparse_threshold=0)
+                return preprocessor
+                
+            preprocessor.transformers = [preprocessor.transformers[0]] + [
+                transformer for transformer in preprocessor.transformers[1:]
+                if not any(col in transformer[2] for col in tool_call['args']['column_names'])
+            ]
+            output_messages.append(
+                ToolMessage(
+                    content=f"Preprocessing step removed: {tool_call['name']} for column(s) {tool_call['args']['column_names']}",
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
                 )
@@ -305,7 +310,6 @@ async def tool_node(state):
             tool_result = await tools_by_name[tool_call["name"]].ainvoke(tool_call["args"])
             
             if tool_result[0][:4]=='Drop':
-                print("Droping")
                 #Droping should be the first step
                 for step in preprocessor.transformers[0][1].steps:
                     if step[0]==tool_result[0]:
@@ -314,28 +318,22 @@ async def tool_node(state):
                     preprocessor.transformers[0][1].steps.append(tool_result)
             
             else:
-                print("Preprocessing")
                 for transformer in preprocessor.transformers[1:]:
                     if transformer[2][0]==tool_call['args']['column_name']:
-                        print("Pipeline Exists")
                         #Pipeline Exists
                         for step in transformer[1].steps:
                             #Pipeline Exists AND Step Exists (Duplicate so skip)
                             if step[0]==tool_result[0]:
-                                print("Step Exists")
                                 break
                         else:
-                            print("Step Does Not Exist")
                             #Pipeline Exists AND Step Does Not Exist
                             transformer[1].steps.append(tool_result)
                             break
                 else:
-                    print("Pipeline Does Not Exist")
                     #Pipeline Does Not Exist (Create it and add step)
                     pipeline=Pipeline(steps=[tool_result])
                     preprocessor.transformers.append((f"Preprocess_{tool_call['args']['column_name']}",pipeline,[tool_call['args']['column_name']]))
             
-            print("Added to Preprocessor")
             output_messages.append(
                 ToolMessage(
                     content=f"Preprocessing step completed: {tool_call['name']} for column {tool_call['args']['column_name']} no need to call this function with this exact column again",
@@ -345,6 +343,8 @@ async def tool_node(state):
             )
 
         except Exception as e:
+            if 'column_name' in tool_call['args']:
+                error_columns.add(tool_call['args']['column_name'])
             # Return the error if the tool call fails
             output_messages.append(
                 ToolMessage(

@@ -11,6 +11,8 @@ from planner import planner_node
 from caller import caller_node,should_continue
 from langchain_core.tools import tool,InjectedToolArg
 import asyncio
+import pandas as pd
+from sklearn.utils import estimator_html_repr
 load_dotenv()
 class State(TypedDict):
     """
@@ -45,7 +47,7 @@ graph = builder.compile()
 @tool
 async def preprocessing_node(
     state: Annotated[dict, InjectedToolArg] = None,
-    task: Optional[Annotated[str, "This is the task that the supervisor node should assign or give. It is completely optional, You can write what are your preferences or comments"]] = None,
+    # task: Optional[Annotated[str, "This is the task that the supervisor node should assign or give. It is completely optional, You can write what are your preferences or comments"]] = None,
     mode:Annotated[str, "This is the mode of the preprocessing. It can be 'X' or 'Y'."] = None,
 ) -> State:
     """
@@ -60,43 +62,97 @@ async def preprocessing_node(
     You can add these steps, change them or remove them simply by addressing it in the task parameter. HOWEVER THE MAIN FUNCTIONALITY OF THE AGENT IS TO IDENTIFY THE DATA TYPES AND HANDLE THEM ACCORDINGLY WITHOUT WRITING ANYTHING.
     If enhancements are needed you can direct the agent to do so by writing them in the task parameter.
     """
-    state['task']=task
+    old_state=state.copy()
+    # state['task']=task
     state['preprocessing_mode']=mode
-    state['planner_messages']=state.get('X_preprocessing_messages', None) if mode=='X' else state.get('Y_preprocessing_messages', None)
-    state['preprocessing_pipeline']=state.get('X_pipeline', None) if mode=='X' else state.get('Y_pipeline', None)
+    if mode=='X' and state.get('X_preprocessing_messages', None):
+        state['planner_messages']=state['X_preprocessing_messages']
+    elif mode=='Y' and state.get('Y_preprocessing_messages', None):
+        state['planner_messages']=state['Y_preprocessing_messages']
+
+    if mode=='X' and state.get('X_preprocessing_pipeline', None):
+        state['preprocessing_pipeline']=state['X_preprocessing_pipeline']
+    elif mode=='Y' and state.get('Y_preprocessing_pipeline', None):
+        state['preprocessing_pipeline']=state['Y_preprocessing_pipeline']
+
     models=state.get('models', None)
     if models:
         state['model_names']=list(models.keys())
     #TODO SEE HOW TO INTEGRATE EVALUATION METRICS TO ENHANCE THE AGENT
-    new_state=graph.ainvoke(state)
-
-    returned_state={}
-    if mode=='X':
-        returned_state['X_preprocessing_messages']=new_state['planner_messaages']
-        returned_state['X_preprocessing_logic']=[new_state['preprocessing_logic']]
-        returned_state['X_pipeline']=new_state['preprocessing_pipeline']
+    new_state=await graph.ainvoke(state)
+    preprocessor=new_state.get('preprocessing_pipeline', None)
+    if preprocessor:
+        for transformer in preprocessor.transformers[:]:
+            if not transformer[1].steps:
+                preprocessor.transformers.remove(transformer)
+            
+        returned_state={}
+        if mode=='X':
+            print(preprocessor)
+            returned_state['X_preprocessing_messages']=old_state.get('X_preprocessing_messages', [])+new_state['planner_messages']
+            returned_state['X_preprocessing_logic']=old_state.get('X_preprocessing_logic', [])+[new_state['preprocessing_logic']]
+            preprocess_without_cross_validation(state['X_train'],preprocessor)[0].to_csv(f"X_preprocessing_pipeline_{state['project_id']}.csv",index=False)
+            returned_state['X_preprocessing_pipeline']=preprocessor
+            returned_state['X_pipeline_html']=estimator_html_repr(preprocessor)
+        else:
+            returned_state['Y_preprocessing_messages']=old_state.get('Y_preprocessing_messages', [])+new_state['planner_messages']
+            returned_state['Y_preprocessing_logic']=old_state.get('Y_preprocessing_logic', [])+[new_state['preprocessing_logic']]
+            returned_state['Y_preprocessing_pipeline']=preprocessor
+            returned_state['Y_pipeline_html']=estimator_html_repr(preprocessor)
+            preprocess_without_cross_validation(state['y_train'],preprocessor)
+        completed=state.get('completed',{})
+        completed['preprocessor']=True
+        returned_state['completed']=completed
+        return [f"Preprocessor has completed the task. here is the the new pipeline {preprocessor}.",returned_state]
     else:
-        returned_state['Y_preprocessing_messages']=new_state['planner_messages']
-        returned_state['Y_preprocessing_logic']=[new_state['preprocessing_logic']]
-        returned_state['Y_pipeline']=new_state['preprocessing_pipeline']
+        return [f"Preprocessor has not decided no preprocessing is needed for the task.",old_state]
 
-    # Apply Preprocessing Pipeline to the Data
-    preprocessor_name='X_pipeline' if mode=='X' else 'Y_pipeline'
-    train="X_train" if mode=='X' else 'y_train'
-    test="X_test" if mode=='X' else 'y_test'
-    val="X_val" if mode=='X' else 'y_val'
+def preprocess_without_cross_validation(data,preprocessor,final_imputer=None,Dropper=None,fit=True):
+    preprocessor.transformers = [t for t in preprocessor.transformers if t is not None]
+
+    # Remove duplicates from transformers
+    if fit:
+        seen_transformers = set()
+        unique_transformers = []
+        for transformer in preprocessor.transformers:
+            if transformer[0]=='Final Imputer':
+                final_imputer=transformer[1]
+                continue
+            if not hasattr(transformer[1], 'steps') or not transformer[1].steps:
+                    continue
+            if transformer[0] not in seen_transformers:
+                unique_transformers.append(transformer)
+                seen_transformers.add(transformer[0])
+        preprocessor.transformers = unique_transformers
     
-    preprocessor=returned_state[preprocessor_name]
-    returned_state[train]=preprocessor.fit_transform(state[train])
+    # Separate the Dropper transformer if it exists
+    if Dropper:
+        temp_data = Dropper[1].fit_transform(data) if fit else Dropper[1].transform(data)
+    else:
+        if preprocessor.transformers and preprocessor.transformers[0][0]=='Drop':
+            Dropper=preprocessor.transformers.pop(0)
+            if Dropper[1].steps:
+                temp_data=Dropper[1].fit_transform(data) if fit else Dropper[1].transform(data)
+            else:
+                temp_data=data
+        else:
+            temp_data=data
 
-    tasks = [asyncio.to_thread(preprocessor.transform, state[test])]
-    if state.get(val, None):
-        tasks.append(asyncio.to_thread(preprocessor.transform, state[val]))
+    # if there are any transformers left, apply them
+    if preprocessor.transformers:
+        temp_data=preprocessor.fit_transform(temp_data) if fit else preprocessor.transform(temp_data)
 
-    results = await asyncio.gather(*tasks)
-
-    returned_state[test] = results[0]
-    if state.get(val, None):
-        returned_state[val] = results[1]
-
-    return [f'Preprocessor has completed the task. here is the the new pipeline {new_state['preprocessing_pipeline']}.',returned_state]
+        # temp_data is a numpy array, so we need to convert it to a DataFrame and assign column names
+        columns=preprocessor.get_feature_names_out()
+        # The names of the columns are in the format 'step__column_name', so we need to remove the 'step__' part
+        columns=[column.split('__',1)[1] if '__' in column else column for column in columns]
+        temp_data=pd.DataFrame(temp_data,columns=columns)
+    
+    # Last Defence for any missing values
+    if final_imputer:
+        temp_data=final_imputer.fit_transform(temp_data) if fit else final_imputer.transform(temp_data)
+        temp_data=pd.DataFrame(temp_data,columns=columns)
+    else:
+        temp_data=temp_data.dropna()
+    
+    return temp_data,final_imputer,Dropper,preprocessor 

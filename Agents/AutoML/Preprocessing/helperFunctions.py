@@ -87,13 +87,27 @@ class NullValueTransformer(BaseEstimator, TransformerMixin):
         if isinstance(X, csr_matrix):
             X = pd.DataFrame(X.toarray())
         elif isinstance(X, np.ndarray):
-            if X.ndim > 1 and X.shape[1] > 1:  # Multi-column array
+            # Handle 1D array case
+            if X.ndim == 1:
+                X = pd.Series(X)
+            elif X.ndim > 1 and X.shape[1] > 1:  # Multi-column array
                 X = pd.DataFrame(X)
             else:
                 X = pd.Series(X.ravel())
         
-        # For single series/column, calculate statistics
-        if isinstance(X, pd.Series) or (isinstance(X, pd.DataFrame) and X.shape[1] == 1):
+        # Handle multi-column DataFrame case first
+        if isinstance(X, pd.DataFrame) and X.shape[1] > 1:
+            if self.feature_name not in X.columns:
+                raise ValueError(f"Feature {self.feature_name} not found in data")
+            
+            if self.strategy == 'mean':
+                self.fill_value = X[self.feature_name].mean()
+            elif self.strategy == 'median':
+                self.fill_value = X[self.feature_name].median()
+            elif self.strategy == 'value' and self.fill_value is None:
+                raise ValueError("fill_value must be specified when strategy is 'value'")
+        else:
+            # Handle single column/series case
             try:
                 if self.strategy == 'mean':
                     self.fill_value = X.mean()
@@ -101,10 +115,9 @@ class NullValueTransformer(BaseEstimator, TransformerMixin):
                     self.fill_value = X.median()
                 elif self.strategy == 'value' and self.fill_value is None:
                     raise ValueError("fill_value must be specified when strategy is 'value'")
-            
-            except Exception as e: 
-                print(X)
+            except Exception as e:
                 raise e
+        
         return self
 
     def transform(self, X):
@@ -112,7 +125,10 @@ class NullValueTransformer(BaseEstimator, TransformerMixin):
         if isinstance(X, csr_matrix):
             X = pd.DataFrame(X.toarray())
         elif isinstance(X, np.ndarray):
-            if X.ndim > 1 and X.shape[1] > 1:  # Multi-column array
+            # Handle 1D array case
+            if X.ndim == 1:
+                X = pd.Series(X)
+            elif X.ndim > 1 and X.shape[1] > 1:  # Multi-column array
                 X = pd.DataFrame(X)
             else:
                 X = pd.Series(X.ravel())
@@ -130,7 +146,6 @@ class NullValueTransformer(BaseEstimator, TransformerMixin):
                     if self.strategy in ['mean', 'median', 'value']:
                         X[self.feature_name] = X[self.feature_name].fillna(self.fill_value)
                 else:
-                    print(X)  
                     raise ValueError(f"Feature {self.feature_name} not found in data")
             
             return X
@@ -143,9 +158,13 @@ class NullValueTransformer(BaseEstimator, TransformerMixin):
         else:
             raise ValueError(f"Unknown strategy: {self.strategy}")
         
-        # Return as properly shaped array
-        return X_filled.values.reshape(-1, 1) if (isinstance(X_filled, pd.Series) or 
-                                                (isinstance(X_filled, pd.DataFrame) and X_filled.shape[1] == 1)) else X_filled
+        # Always return a 2D array for sklearn compatibility
+        if isinstance(X_filled, pd.Series):
+            return X_filled.values.reshape(-1, 1)
+        elif isinstance(X_filled, pd.DataFrame) and X_filled.shape[1] == 1:
+            return X_filled.values
+        else:
+            return X_filled
 
     def fit_transform(self, X, y=None):
         return self.fit(X).transform(X)
