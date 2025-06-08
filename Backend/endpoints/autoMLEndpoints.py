@@ -94,9 +94,10 @@ async def save_model_report(
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Failed to save model report: {str(e)}")
 
-@autoML_router.post('/project/{project_id}/AutoML/save-preprocessing-pipeline/{pipeline_type}', tags=["AutoML"])
+@autoML_router.post('/project/{project_id}/AutoML/save-preprocessing-pipeline/{model_name}/{pipeline_type}', tags=["AutoML"])
 async def save_preprocessing_pipeline(
     project_id: str,
+    model_name: str,
     pipeline_type: str,
     pipeline_file: UploadFile = File(...),
 ):
@@ -118,6 +119,7 @@ async def save_preprocessing_pipeline(
         # Save the preprocessing pipeline using project service
         result = await project_service.save_preprocessing_pipeline(
             project_id, 
+            model_name,
             pipeline_type,
             contents
         )

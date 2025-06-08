@@ -251,7 +251,7 @@ class ProjectService:
             raise HTTPException(status_code=500, detail=f"Error downloading model report from blob storage: {str(e)}")
         return model_report
     
-    async def save_preprocessing_pipeline(self, project_id: str,pipeline_type:str ='X',contents=None )-> bool:
+    async def save_preprocessing_pipeline(self, project_id: str,model_name:str,pipeline_type:str ='X',contents=None )-> bool:
         try:
             project = await self.project_repository.get_by_id(project_id)
         except Exception as e:
@@ -263,9 +263,9 @@ class ProjectService:
         container_client = self.blob_service_client.get_container_client("pipelines")
         # Generate unique blob name
         if pipeline_type=='X':
-            blob_name = f"{project_id}_Xpreprocessing_pipeline.pkl"
+            blob_name = f"{project_id}_Xpreprocessing_pipeline_{model_name}.pkl"
         else:
-            blob_name = f"{project_id}_Ypreprocessing_pipeline.pkl"
+            blob_name = f"{project_id}_Ypreprocessing_pipeline_{model_name}.pkl"
         try:
             # Upload to blob storage
             blob_client = container_client.upload_blob(name=blob_name, data=contents, overwrite=True)
@@ -362,16 +362,19 @@ class ProjectService:
             print(f"Warning: Failed to delete model report: {e}")
 
         # Delete X and Y preprocessing pipelines
-        for pipeline_type in ['X', 'Y']:
-            try:
-                pipeline_blob_name = f"{project_id}_{pipeline_type}preprocessing_pipeline.pkl"
-                pipeline_blob_client = self.blob_service_client.get_blob_client(container="pipelines", blob=pipeline_blob_name)
-                delete_tasks.append(asyncio.to_thread(pipeline_blob_client.delete_blob, delete_snapshots="include"))
-            except azure.core.exceptions.ResourceNotFoundError:
-                # If the blob doesn't exist, continue without error
-                pass
-            except Exception as e:
-                print(f"Warning: Failed to delete {pipeline_type} pipeline: {e}")
+        try:
+            container_client = self.blob_service_client.get_container_client("pipelines")
+            pipeline_prefix = f"{project_id}_"
+            
+            # List all blobs with the project ID prefix (for pipelines)
+            pipeline_blobs = container_client.list_blobs(name_starts_with=pipeline_prefix)
+            
+            # Delete each pipeline blob
+            for blob in pipeline_blobs:
+                blob_client = self.blob_service_client.get_blob_client(container="pipelines", blob=blob.name)
+                delete_tasks.append(asyncio.to_thread(blob_client.delete_blob, delete_snapshots="include"))
+        except Exception as e:
+            print(f"Warning: Failed to delete pipelines: {e}")
 
         # Delete all models - get list of models first then delete
         try:
