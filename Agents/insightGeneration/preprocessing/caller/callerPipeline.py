@@ -40,8 +40,8 @@ class CallerState(TypedDict):
     preprocessing_tasks: str  # The task to process
     target_column: str  # The column to process
     strategy: str  # The strategy to use
-    dataframe: NotRequired[Any]
-    preprocessed_dataframe:  NotRequired[Any]
+    dataframe: NotRequired[str]
+    preprocessed_dataframe:  NotRequired[str]
 
 # Create state graph
 workflow = StateGraph(CallerState)

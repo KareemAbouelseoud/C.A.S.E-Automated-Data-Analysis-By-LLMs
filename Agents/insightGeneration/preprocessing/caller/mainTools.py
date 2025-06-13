@@ -112,7 +112,8 @@ async def remove_outliers(column: str, method: str, threshold: float = 3.0) :
         else:
             raise ValueError(f"Invalid method: {method}. Must be one of: zscore, iqr")
             
-        return {"status" : "success", "preprocessed_dataframe" : preprocessed_df}
+        return {"status": "success", "preprocessed_dataframe": preprocessed_df.to_json()}
+
         
     except Exception as e:
         print(f"Tool-Error removing outliers from column {column}: {str(e)}")
@@ -150,7 +151,8 @@ async def change_column_type(column: str, target_type: str, format: str = None) 
         else:
             raise ValueError(f"Unsupported target type: {target_type}. Must be one of: datetime, int, float, string")
             
-        return {"status" : "success", "preprocessed_dataframe" : preprocessed_df}
+        return {"status": "success", "preprocessed_dataframe": preprocessed_df.to_json()}
+
         
     except Exception as e:
         print(f"Tool-Error converting column {column} to {target_type}: {str(e)}")
@@ -213,10 +215,11 @@ async def tool_node(state)->Literal["caller", "__end__"]:
         print(f"---TOOL CALL ARGS: {tool_args}---")
         tool_result = await tools_by_name[tool_name].ainvoke(tool_args)
         print(f"---TOOL RESULT: {tool_result}---")
-        
-        # Update the global dataframe with the result
+
+        # Convert JSON string back to DataFrame
         if isinstance(tool_result, dict) and 'preprocessed_dataframe' in tool_result:
-            global_df = tool_result['preprocessed_dataframe']
+            global_df = pd.read_json(tool_result['preprocessed_dataframe'])
+
         
         # Return success state
         return {

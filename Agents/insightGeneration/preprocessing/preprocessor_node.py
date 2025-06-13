@@ -1,41 +1,52 @@
-
 from preprocessing.pipeline import preprocess_data
 import pandas as pd
 from io import StringIO
 from preprocessing.pipeline import preprocess_data
 
-# async def preprocessor_executor_node(state):
+async def preprocessor_executor_node(state):
  
   
-#     df = state.get("df")
-#     recommendation = state.get("recommendation")
-#     result = await preprocess_data("1", df, recommendation)
-#     if isinstance(result.get("preprocessed_dataframe"), pd.DataFrame):
-#         result["preprocessed_dataframe"] = result["preprocessed_dataframe"].to_json(orient="records")
+    df = state.get("df")
+    # Ensure df is a JSON string before passing to preprocess_data
+    if isinstance(df, pd.DataFrame):
+        df = df.to_json(orient="records")
+    recommendation = state.get("recommendation")
+    result = await preprocess_data("1", df, recommendation)
+    # Ensure preprocessed_dataframe is always a JSON string
+    preprocessed = result.get("preprocessed_dataframe")
+    if isinstance(preprocessed, pd.DataFrame):
+        preprocessed = preprocessed.to_json(orient="records")
+    elif not isinstance(preprocessed, str):
+        # Try to convert to string if possible
+        try:
+            preprocessed = str(preprocessed)
+        except Exception:
+            preprocessed = ""
+    result["preprocessed_dataframe"] = preprocessed
+    print ("preprocessing done")
 
-#     print ("preprocessing done")
-#     state["num_iterations"]+=1
+    # state["num_iterations"]+=1
 
-#     return {"num_iterations": state["num_iterations"]}
+    return {"df":result["preprocessed_dataframe"] ,"num_iterations": state["num_iterations"]}
 
-from preprocessing.pipeline import preprocess_data  # your actual import path
 
-async def preprocessor_executor_node(state):
-    try:
+
+# async def preprocessor_executor_node(state):
+#     try:
         
-        df = pd.read_json(StringIO(state['df']))
-        recommendation = state.get("recommendation")
-        # wrapped_recommendation = [{"args": recommendation}]  
-        result = await preprocess_data("1", df, recommendation)
-        preprocessed_df = result.get("preprocessed_dataframe")
-        print ("preprocessing done")
-        # messages = result.get("messages", [])
-        # executed = result.get("executed_responses", [])
+#         df = pd.read_json(StringIO(state['df']))
+#         recommendation = state.get("recommendation")
+#         # wrapped_recommendation = [{"args": recommendation}]  
+#         result = await preprocess_data("1", df, recommendation)
+#         preprocessed_df = result.get("preprocessed_dataframe")
+#         print ("preprocessing done")
+#         # messages = result.get("messages", [])
+#         # executed = result.get("executed_responses", [])
 
-        return { "df": preprocessed_df }
-    except Exception as e:
+#         return { "df": preprocessed_df }
+#     except Exception as e:
         
-        return { "error": str(e)}
+#         return { "error": str(e)}
 
 
 def restart_pipeline(state):
@@ -47,4 +58,4 @@ def restart_pipeline(state):
         return "Finalize_output"
     
 
-# "messages": messages,# "executed_responses": executed, 
+# "messages": messages,# "executed_responses": executed,

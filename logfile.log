@@ -22555,3 +22555,12 @@ For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/er
 2025-06-08 01:49:55,394 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
 2025-06-08 01:58:17,661 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
 2025-06-08 02:03:36,117 - InsightGeneration - ERROR - Error in test(): 'str' object has no attribute 'to_json'
+2025-06-09 19:57:02,676 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-09 19:59:49,210 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-09 20:09:10,541 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-09 20:15:16,354 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-09 20:47:34,690 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-09 20:53:19,523 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-09 21:00:14,908 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-09 21:03:13,245 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-13 12:12:16,107 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
