@@ -29,7 +29,7 @@ class AgentGraphState(TypedDict):
     num_cards: int
     report: str
     recommendation: List[object]
-    num_iterations:NotRequired[int]
+    num_iterations: NotRequired[int] =0
    
 
 #GRAPH PIPELINE
@@ -51,14 +51,14 @@ graph_builder.add_node("preprocessor_executor",preprocessor_executor_node)
 #define edges
 graph_builder.add_edge(START, "Report_Node")
 graph_builder.add_edge("Report_Node", "data_description")
-graph_builder.add_edge("data_description","human_node")
+graph_builder.add_conditional_edges("data_description",PipelineGate,{"human_node":"human_node","qugen_node":"qugen_node"})
 graph_builder.add_edge("human_node", "qugen_node")
 graph_builder.add_conditional_edges("qugen_node", should_continue, {"qugen_node": "qugen_node", "filteration_node": "filteration_node"})
 graph_builder.add_edge("filteration_node", "SubSbaceSearch_Node")
 graph_builder.add_edge("SubSbaceSearch_Node", "explainer_node")
 graph_builder.add_conditional_edges("explainer_node",continue_pipeline,{"recommender":"recommender","Finalize_output":"Finalize_output"})
 graph_builder.add_edge("recommender", "preprocessor_executor")
-graph_builder.add_conditional_edges("preprocessor_executor",restart_pipeline,{"qugen_node":"qugen_node","Finalize_output":"Finalize_output"})
+graph_builder.add_conditional_edges("preprocessor_executor",restart_pipeline,{"Report_Node":"Report_Node","Finalize_output":"Finalize_output"})
 graph_builder.add_edge("Finalize_output",END)
 
 #verify and display the graph
@@ -168,15 +168,15 @@ from io import StringIO
 # 2,Handball,192,115,17,41
 # 3,Swimming,211,82,28,87
 # """
-file_path = r"C:\Users\DEll\Downloads\DoctorFeePrediction.csv"
-dataset = pd.read_csv(file_path)
+
 
 import asyncio
 
 async def Custom_Start_Auto_InsightGen():
     # df = pd.read_csv(StringIO(raw_csv))
     logger.info("Dataset loaded")
-    state = AgentGraphState({"df": dataset.to_json()})
+    print("Dataset loaded")
+    state = AgentGraphState({"df": dataset.to_json(),"num_iterations":0})
     thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
     try:
         async for chunk in graph.astream(state, config=thread_config):
@@ -216,6 +216,7 @@ async def Custom_Continue_Auto_InsightGen(thread_id: str):
         raise e   
  #run pipeline   
 async def consume_pipeline():
+    print("Starting the pipeline...")
     async for output, metadata in Custom_Start_Auto_InsightGen():
         print("Initial Output:", output)
         thread_id = str(metadata["thread_id"])  #extract thread_id as a string
@@ -225,6 +226,9 @@ async def consume_pipeline():
         await Custom_Continue_Auto_InsightGen(thread_id)
 
 if __name__ == "__main__":
+    file_path = r"F:\ASU\3rd year\Semster 2\ML\Labs\Project\Project\DoctorFeePrediction.csv"
+    dataset = pd.read_csv(file_path)
+    print("Dataset loaded for dry run")
     asyncio.run(consume_pipeline())
     
 

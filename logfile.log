@@ -22564,3 +22564,6 @@ For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/er
 2025-06-09 21:00:14,908 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
 2025-06-09 21:03:13,245 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
 2025-06-13 12:12:16,107 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-17 19:07:34,083 - InsightGeneration - ERROR - Error in test(): 'resulted_df'
+2025-06-17 19:12:02,074 - InsightGeneration - ERROR - Error in test(): Type is not msgpack serializable: DataFrame
+2025-06-17 19:25:57,464 - InsightGeneration - ERROR - Error in test(): Type is not msgpack serializable: DataFrame

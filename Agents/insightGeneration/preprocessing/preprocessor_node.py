@@ -52,7 +52,7 @@ async def preprocessor_executor_node(state):
 def restart_pipeline(state):
     if  state.get("num_iterations")==1 :
         print("rerunning pipeline,num_iterations:", state.get("num_iterations"))
-        return "qugen_node"
+        return "Report_Node"
     else:
         print("Finalizing output,num_iterations:", state.get("num_iterations"))
         return "Finalize_output"
