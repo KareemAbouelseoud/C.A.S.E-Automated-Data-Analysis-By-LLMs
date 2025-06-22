@@ -1,85 +1,99 @@
+import os
+import sys
 import asyncio
 import json
-import os
 import time
 import traceback
 import pandas as pd
 from Chat_Pipeline import respond_to_UserQuery
 
-async def main():
-    print("=" * 50)
-    print("RAG System Test Interface")
-    print(f"Vector store path: '{os.path.abspath('insight_vector_store')}'")
-    print("=" * 50)
+# Add current directory to path
+sys.path.append(os.getcwd())
 
-    # Check if the vector store for RAG exists
-    if not os.path.exists("insight_vector_store"):
-        print("\nWARNING: Vector store not found.")
-        print("RAG will not find insights. Please run 'python -m rag.ingest' first.")
+async def main():
+    print("=" * 60)
+    print("             AI Insights & Analysis Test Interface")
+    print("=" * 60)
     
-    # --- NEW: Get local CSV file path from user for the agent ---
+    # Check for RAG data
+    insights_path = "data/insight_cards.json"
+    print(f"Checking for RAG insights at: '{os.path.abspath(insights_path)}'")
+    if os.path.exists(insights_path):
+        print("[SUCCESS] RAG system initialized")
+    else:
+        print("\n[WARNING] Insights data not found.")
+        print("To enable RAG features, please run:")
+        print(f"    python generate_insights.py")
+
+    # Get dataset path
     dataset_path = ""
     while not dataset_path:
-        path_input = input("Enter the path to the local CSV file for the agent to use: ").strip()
-        # Normalize the path to handle different OS formats (e.g., slashes)
-        path_input = os.path.normpath(path_input)
-        if os.path.exists(path_input):
+        path_input = input("\nEnter path to CSV file: ").strip()
+        if os.path.exists(path_input) and path_input.endswith('.csv'):
             dataset_path = path_input
+            print(f"[SUCCESS] Using dataset: {dataset_path}")
         else:
-            print(f"Error: File not found at '{path_input}'. Please enter a valid path.")
-
-    # The project_id is now the local file path
-    project_id = dataset_path
-    print(f"Agent will use data from: {project_id}")
+            print(f"[ERROR] File not found: '{path_input}'. Please try again.")
 
     # Start chat session
+    print("\n--- Starting Chat Session ---")
+    print("Type questions below or 'exit' to quit")
+    
     while True:
-        query = input("\nYour question (type 'exit' to quit): ").strip()
+        query = input("\n[You]: ").strip()
         if query.lower() == 'exit':
             break
-        if not query:
-            continue
             
         start_time = time.time()
-        print(f"\nProcessing: '{query}'...")
+        print("\n[AI is thinking...]")
         
         try:
             final_response = None
-            # Pass the file path as the project_id
-            async for response_json in respond_to_UserQuery(project_id, query):
+            async for response_json in respond_to_UserQuery(dataset_path, query):
                 final_response = json.loads(response_json)
 
             if final_response:
-                print("\n" + "=" * 20 + " FINAL RESPONSE " + "=" * 20)
-                print(f"METHOD: {final_response.get('method', 'Unknown')}")
-                print(f"\nRESPONSE:\n{final_response.get('response', 'No response text.')}")
+                method = final_response.get('method', 'Unknown').upper()
+                response_text = final_response.get('response', 'No response')
                 
-                insights = final_response.get("insights", [])
-                if insights:
-                    print("\n--- Retrieved Insights (from RAG) ---")
-                    for i, insight in enumerate(insights, 1):
-                        print(f"[{i}] Score: {insight.get('score', 0):.4f} | Content: {insight.get('content', '')}")
-
-                df_result = final_response.get('resulted_df')
-                if df_result:
-                    print("\n--- Resulting Data (from Agent) ---")
-                    try:
-                        df = pd.read_json(df_result, orient='split')
-                        print(df.to_string())
-                    except:
-                        print(df_result)
+                print("\n" + "=" * 25 + f" RESPONSE ({method}) " + "=" * 25)
+                print(f"\n{response_text}")
                 
-                print("-" * 56)
+                # Format insights better
+                if method == "RAG":
+                    insights = final_response.get("insights", [])
+                    if insights:
+                        print("\n--- Relevant Insights ---")
+                        for i, insight in enumerate(insights, 1):
+                            print(f"  {i}. {insight.get('question', 'No question')}")
+                            print(f"     {insight.get('reason', 'No reason')}")
+                
+                # Show data results if available
+                if method == "AGENT":
+                    df_result = final_response.get('resulted_df')
+                    if df_result:
+                        print("\n--- Resulting Data ---")
+                        try:
+                            df = pd.read_json(df_result, orient='split')
+                            print(df.head().to_string())
+                        except:
+                            print(df_result)
+                
                 elapsed = time.time() - start_time
-                print(f"Processing time: {elapsed:.2f} seconds")
-                print("=" * 56)
+                print("\n" + "-" * 60)
+                print(f"Time: {elapsed:.2f}s")
             else:
-                print("No final response was generated.")
+                print("[ERROR] No response generated")
                 
         except Exception as e:
-            print(f"\nAn unhandled error occurred: {e}")
+            print(f"\n[ERROR] {e}")
             traceback.print_exc()
 
 if __name__ == "__main__":
-    asyncio.run(main())
-
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\nSession ended by user")
+    except Exception as e:
+        print(f"\nFATAL ERROR: {e}")
+        traceback.print_exc()

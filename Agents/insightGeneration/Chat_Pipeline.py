@@ -28,9 +28,6 @@ class AgentState(TypedDict):
     use_agent: bool
     insights: Optional[List[Dict[str, Any]]]
     resulted_df: Optional[Any]
-    insight_cards: List[object]
-    insights_explanation: Dict[str, str]
-    logs: list
 
 async def get_dataset(file_path: str) -> pd.DataFrame:
     """
@@ -39,7 +36,9 @@ async def get_dataset(file_path: str) -> pd.DataFrame:
     logger.info(f"Attempting to load dataset from local file: {file_path}")
     try:
         if os.path.exists(file_path):
-            return pd.read_csv(file_path, on_bad_lines='skip')
+            df = pd.read_csv(file_path, on_bad_lines='skip')
+            logger.info(f"Dataset loaded with shape {df.shape}")
+            return df
         else:
             raise FileNotFoundError(f"The file '{file_path}' does not exist.")
     except Exception as e:
@@ -47,33 +46,24 @@ async def get_dataset(file_path: str) -> pd.DataFrame:
         # Return an empty DataFrame on any error
         return pd.DataFrame()
 
-
+# Build the graph
 graph_builder = StateGraph(AgentState)
 
-# --- Add all nodes to the graph ---
-
+# Add nodes
 graph_builder.add_node("rag_responder", rag_responder_node)
 graph_builder.add_node("agent_responder", PandasAgentResponder)
 
-# --- Define the graph's flow ---
-
-
+# Define the conditional edge
 def should_continue(state: AgentState) -> str:
-    """
-    This function decides the next step after the RAG responder runs.
-    If the 'use_agent' flag is True, it routes to the agent.
-    Otherwise, it ends the graph execution.
-    """
     if state.get("use_agent", False):
         return "agent_responder"
     else:
         return END
 
-# 2. Define the conditional edge. After 'rag_responder' runs, call 'should_continue'.
+# Set the entry point
+graph_builder.set_entry_point("rag_responder")
 
-graph_builder.add_edge("__start__", "rag_responder")
-
-
+# Add conditional edge
 graph_builder.add_conditional_edges(
     "rag_responder",
     should_continue,
@@ -83,13 +73,16 @@ graph_builder.add_conditional_edges(
     }
 )
 
+# Add edge from agent to end
 graph_builder.add_edge("agent_responder", END)
 
- 
+# Compile the graph
 graph = graph_builder.compile()
 
+
+
+
 async def respond_to_UserQuery(project_id: str, user_query: str):
-    # The project_id is in the local file path
     df = await get_dataset(project_id)
     if df.empty:
         logger.warning(f"Could not load data from '{project_id}'. The agent may not function correctly.")
@@ -101,29 +94,52 @@ async def respond_to_UserQuery(project_id: str, user_query: str):
         method="",
         use_agent=False,
         insights=None,
-        resulted_df=None,
-        insight_cards=[],
-        insights_explanation={},
-        logs=[]
+        resulted_df=None
     )
 
-    final_state = None
-    async for chunk in graph.astream(initial_state):
-        for key, value in chunk.items():
-            logger.info(f"--- Graph Node '{key}' Finished ---")
-            final_state = value
-
+    final_state = initial_state
+    try:
+        # Execute the graph with error suppression
+        async for chunk in graph.astream(initial_state):
+            for key, value in chunk.items():
+                if key not in ["__start__", "__end__"]:  # Skip internal nodes
+                    logger.info(f"--- Graph Node '{key}' Finished ---")
+                    final_state = value
+    except KeyError as e:
+        if '__start__' in str(e):
+            logger.warning("Ignoring '__start__' key error")
+        else:
+            logger.error(f"Graph execution error: {str(e)}")
+            final_state["response"] = f"System error: {str(e)}"
+    except Exception as e:
+        logger.error(f"Graph execution error: {str(e)}")
+        final_state["response"] = f"System error: {str(e)}"
+        
+        
+        
+        
     resulted_df_json = None
-    if final_state.get("resulted_df") is not None:
+    if final_state and final_state.get("resulted_df") is not None:
         if isinstance(final_state["resulted_df"], pd.DataFrame):
             resulted_df_json = final_state["resulted_df"].to_json(orient='split')
         else:
             resulted_df_json = str(final_state["resulted_df"])
 
-    yield json.dumps({
-        "user_query": final_state["user_query"],
-        "response": final_state["response"],
-        "method": final_state.get("method", "Unknown"),
-        "insights": final_state.get("insights", []),
-        "resulted_df": resulted_df_json
-    })
+    response = {
+        "user_query": user_query,
+        "response": "",
+        "method": "error",
+        "insights": [],
+        "resulted_df": None
+    }
+    
+    if final_state:
+        response = {
+            "user_query": final_state["user_query"],
+            "response": final_state["response"],
+            "method": final_state.get("method", "Unknown"),
+            "insights": final_state.get("insights", []),
+            "resulted_df": resulted_df_json
+        }
+
+    yield json.dumps(response)

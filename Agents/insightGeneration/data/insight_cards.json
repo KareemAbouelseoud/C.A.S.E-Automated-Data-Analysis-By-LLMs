@@ -1,0 +1,22 @@
+[
+  {
+    "question": "What is the distribution of Sex?",
+    "reason": "Understanding how values are distributed in the Sex column"
+  },
+  {
+    "question": "How does Ticket relate to Survived?",
+    "reason": "Exploring the relationship between Ticket and Survived"
+  },
+  {
+    "question": "What is the sum of Age by Parch?",
+    "reason": "Analyzing Age aggregated by Parch"
+  },
+  {
+    "question": "What is the distribution of Survived?",
+    "reason": "Understanding how values are distributed in the Survived column"
+  },
+  {
+    "question": "How does Pclass relate to SibSp?",
+    "reason": "Exploring the relationship between Pclass and SibSp"
+  }
+]
