@@ -4,14 +4,14 @@ from typing_extensions import Any
 
 from dotenv import load_dotenv
 
-from config import *
+from .config import *
 from QUGEN.node import qugen_node,should_continue
 from SubSpaceSearch.node import SubspaceSearchNode
 from Explainer.node import ExplainerNode
 from Reports.node import ReportNode
 from models import InsightCard, InsightCards
 from recommender_node import recommender_node,continue_pipeline
-from preprocessing.preprocessor_node import preprocessor_executor_node,restart_pipeline
+from Preprocessing.node import preprocessor_executor_node
 import loggerModule
 logger=loggerModule.setup_logging(module_name="InsightGeneration")
 sys.path.append(os.getcwd())
@@ -69,7 +69,7 @@ graph = graph_builder.compile(checkpointer=checkpointer)
 async def Start_Auto_InsightGen(project_id:str=None):
     df = await get_dataset(project_id)
     logger.info("Dataset loaded")
-    state = AgentGraphState({"df": df.to_json()})  
+    state = AgentGraphState({"df": df.to_json(),"num_iterations":0})  
     thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
     try:
         async for chunk in graph.astream(state, config=thread_config):
@@ -159,77 +159,77 @@ async def change_desc_on_feedback(_feedback:Feedback=None, thread_id:str=None):
         logger.error(f"Error in Generating New Descritpion for the user: {str(e)}")
         raise e
     
-######################TESTINGGG WITHOUT BACKEND ON TERMINAL#############################
-from io import StringIO
+# ######################TESTINGGG WITHOUT BACKEND ON TERMINAL#############################
+# from io import StringIO
 
-# raw_csv = """
-# AthleteID,SportType,Height,Weight,Age,PerformanceScore
-# 1,Swimming,189,107,50,49
-# 2,Handball,192,115,17,41
-# 3,Swimming,211,82,28,87
-# """
+# # raw_csv = """
+# # AthleteID,SportType,Height,Weight,Age,PerformanceScore
+# # 1,Swimming,189,107,50,49
+# # 2,Handball,192,115,17,41
+# # 3,Swimming,211,82,28,87
+# # """
 
 
-import asyncio
+# import asyncio
 
-async def Custom_Start_Auto_InsightGen():
-    # df = pd.read_csv(StringIO(raw_csv))
-    logger.info("Dataset loaded")
-    print("Dataset loaded")
-    state = AgentGraphState({"df": dataset.to_json(),"num_iterations":0})
-    thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
-    try:
-        async for chunk in graph.astream(state, config=thread_config):
-            for node_id, value in chunk.items():
-                logger.info(f"Processing node {node_id}")  # Debug logging
-                if node_id == "__interrupt__":
-                  yield tuple((value[0].value,{"thread_id":thread_config["configurable"]["thread_id"]}))    
-                else:
-                    logger.info(f"Node {node_id} output: {value}")
-    except Exception as e:
-        logger.error(f"Error in test(): {str(e)}")
-        raise e
+# async def Custom_Start_Auto_InsightGen():
+#     # df = pd.read_csv(StringIO(raw_csv))
+#     logger.info("Dataset loaded")
+#     print("Dataset loaded")
+#     state = AgentGraphState({"df": dataset.to_json(),"num_iterations":0})
+#     thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
+#     try:
+#         async for chunk in graph.astream(state, config=thread_config):
+#             for node_id, value in chunk.items():
+#                 logger.info(f"Processing node {node_id}")  # Debug logging
+#                 if node_id == "__interrupt__":
+#                   yield tuple((value[0].value,{"thread_id":thread_config["configurable"]["thread_id"]}))    
+#                 else:
+#                     logger.info(f"Node {node_id} output: {value}")
+#     except Exception as e:
+#         logger.error(f"Error in test(): {str(e)}")
+#         raise e
   
-async def Custom_Continue_Auto_InsightGen(thread_id: str):
-    config = {'configurable': {'thread_id': uuid.UUID(thread_id)}}
-    result = graph.get_state(config=config)
+# async def Custom_Continue_Auto_InsightGen(thread_id: str):
+#     config = {'configurable': {'thread_id': uuid.UUID(thread_id)}}
+#     result = graph.get_state(config=config)
     
-    if not result[0]:
-        logger.error(f"No state found for thread_id: {thread_id}")
-        raise ValueError(f"No state found for thread_id: {thread_id}")
+#     if not result[0]:
+#         logger.error(f"No state found for thread_id: {thread_id}")
+#         raise ValueError(f"No state found for thread_id: {thread_id}")
     
-    current_state = result[0]
-    updated_state = AgentGraphState({
-        'df': current_state.get('df', ''),
-        'description': current_state.get('description', ''),
-        "schema": current_state.get('schema', []),
-        'human_feedback': ["done"],
-        'insight_cards': current_state.get('insight_cards', []),
-        'num_iterations':0
-    })
+#     current_state = result[0]
+#     updated_state = AgentGraphState({
+#         'df': current_state.get('df', ''),
+#         'description': current_state.get('description', ''),
+#         "schema": current_state.get('schema', []),
+#         'human_feedback': ["done"],
+#         'insight_cards': current_state.get('insight_cards', []),
+#         'num_iterations':0
+#     })
     
-    try:
-        logger.info("Continuing Pipeline ...")
-        result = await graph.ainvoke(Command(resume=["done"],update=updated_state), config=config)
-    except Exception as e:
-        logger.error(f"Error in test(): {str(e)}")
-        raise e   
- #run pipeline   
-async def consume_pipeline():
-    print("Starting the pipeline...")
-    async for output, metadata in Custom_Start_Auto_InsightGen():
-        print("Initial Output:", output)
-        thread_id = str(metadata["thread_id"])  #extract thread_id as a string
-        print("Captured Thread ID:", thread_id)
+#     try:
+#         logger.info("Continuing Pipeline ...")
+#         result = await graph.ainvoke(Command(resume=["done"],update=updated_state), config=config)
+#     except Exception as e:
+#         logger.error(f"Error in test(): {str(e)}")
+#         raise e   
+#  #run pipeline   
+# async def consume_pipeline():
+#     print("Starting the pipeline...")
+#     async for output, metadata in Custom_Start_Auto_InsightGen():
+#         print("Initial Output:", output)
+#         thread_id = str(metadata["thread_id"])  #extract thread_id as a string
+#         print("Captured Thread ID:", thread_id)
 
-        #call the continuation function with this thread_id
-        await Custom_Continue_Auto_InsightGen(thread_id)
+#         #call the continuation function with this thread_id
+#         await Custom_Continue_Auto_InsightGen(thread_id)
 
-if __name__ == "__main__":
-    file_path = r"F:\ASU\3rd year\Semster 2\ML\Labs\Project\Project\DoctorFeePrediction.csv"
-    dataset = pd.read_csv(file_path)
-    print("Dataset loaded for dry run")
-    asyncio.run(consume_pipeline())
+# if __name__ == "__main__":
+#     file_path = r"F:\ASU\3rd year\Semster 2\ML\Labs\Project\Project\DoctorFeePrediction.csv"
+#     dataset = pd.read_csv(file_path)
+#     print("Dataset loaded for dry run")
+#     asyncio.run(consume_pipeline())
     
 
 

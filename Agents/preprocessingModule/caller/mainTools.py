@@ -1,3 +1,4 @@
+from io import StringIO
 from langchain.tools import tool
 import pandas as pd
 import numpy as np
@@ -78,7 +79,7 @@ Variables:
 #         return {"status" : "error", "error" : str(e)}
 
 @tool
-async def remove_outliers(column: str, method: str, threshold: float = 3.0) :
+async def remove_outliers(column: str, method: str, threshold: float = 3.0) -> pd.DataFrame:
     """Remove outliers from a column using the specified method.
     
     Args:
@@ -112,15 +113,14 @@ async def remove_outliers(column: str, method: str, threshold: float = 3.0) :
         else:
             raise ValueError(f"Invalid method: {method}. Must be one of: zscore, iqr")
             
-        return {"status": "success", "preprocessed_dataframe": preprocessed_df.to_json()}
-
+        return {"status" : "success", "preprocessed_dataframe" : preprocessed_df}
         
     except Exception as e:
         print(f"Tool-Error removing outliers from column {column}: {str(e)}")
         return {"status" : "error", "error" : str(e)}
 
 @tool
-async def change_column_type(column: str, target_type: str, format: str = None) :
+async def change_column_type(column: str, target_type: str, format: str = None) -> pd.DataFrame:
     """Change the data type of a column.
     
     Args:
@@ -151,8 +151,7 @@ async def change_column_type(column: str, target_type: str, format: str = None) 
         else:
             raise ValueError(f"Unsupported target type: {target_type}. Must be one of: datetime, int, float, string")
             
-        return {"status": "success", "preprocessed_dataframe": preprocessed_df.to_json()}
-
+        return {"status" : "success", "preprocessed_dataframe" : preprocessed_df}
         
     except Exception as e:
         print(f"Tool-Error converting column {column} to {target_type}: {str(e)}")
@@ -198,7 +197,7 @@ async def tool_node(state)->Literal["caller", "__end__"]:
     if not all([task, column, strategy]):
         raise ValueError("Missing required fields in state: preprocessing_tasks, target_column, or strategy")
     
-    global_df = state['dataframe']
+    global_df = pd.read_json(StringIO(state['dataframe'])) if isinstance(state['dataframe'], str) else state['dataframe']
     
     try:
         # Execute the tool based on the task
@@ -215,17 +214,17 @@ async def tool_node(state)->Literal["caller", "__end__"]:
         print(f"---TOOL CALL ARGS: {tool_args}---")
         tool_result = await tools_by_name[tool_name].ainvoke(tool_args)
         print(f"---TOOL RESULT: {tool_result}---")
-
-        # Convert JSON string back to DataFrame
+        
+        # Update the global dataframe with the result
         if isinstance(tool_result, dict) and 'preprocessed_dataframe' in tool_result:
-            global_df = pd.read_json(tool_result['preprocessed_dataframe'])
-
+            global_df = tool_result['preprocessed_dataframe']
         
         # Return success state
         return {
             "next": "__end__",
             "iterations": 0,
-            "preprocessed_dataframe": global_df,
+            "preprocessed_dataframe": global_df.to_json(),
+            "dataframe":state['dataframe'].to_json(),
             "error": "no",
             "messages": [{"role": "system", "content": "Tool execution successful"}]
         }
@@ -235,6 +234,7 @@ async def tool_node(state)->Literal["caller", "__end__"]:
         error_msg = f"{type(e).__name__}: {str(e)}"
         return {
             'next': 'caller',
+            "dataframe":state['dataframe'],
             'messages': [{"role": "system", "content": f"Tool execution failed: {error_msg}"}],
             'iterations': retries,
             'error': 'yes'

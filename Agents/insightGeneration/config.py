@@ -81,6 +81,13 @@ def PipelineGate(state):
         print("This is the second Time to go through the pipeline Now the next node is the QUGEN node,num_iterations:", state.get("num_iterations"))
         return "qugen_node"
 
+def restart_pipeline(state):
+    if  state.get("num_iterations")==1 :
+        print("rerunning pipeline,num_iterations:", state.get("num_iterations"))
+        return "Report_Node"
+    else:
+        print("Finalizing output,num_iterations:", state.get("num_iterations"))
+        return "Finalize_output"
 def make_serializable(obj):
     """
     Convert an object to a serializable format.

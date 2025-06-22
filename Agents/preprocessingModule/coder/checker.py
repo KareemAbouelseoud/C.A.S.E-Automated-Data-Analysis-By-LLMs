@@ -1,5 +1,5 @@
+import numpy as np
 import pandas as pd
-import json
 import re
 
 
@@ -17,7 +17,7 @@ async def checker_node(state):
             - messages: List of messages in the conversation
 
     Returns:
-        preprocessed_dataframe: The processed dataframe (JSON string)
+        preprocessed_dataframe: The processed dataframe
         messages: List of messages in the conversation
         error: Error status
         executed_responses: List of successfully executed code solutions
@@ -33,10 +33,7 @@ async def checker_node(state):
     target_column = state["target_column"]
     strategy = state["strategy"]
     dataframe = state["dataframe"]
-
-    #prepare the globals with input DataFrame as JSON string
-    dataframe_json_str = dataframe.to_json()
-    globals_dict = {'df': dataframe_json_str}
+    globals_dict = {'df': dataframe}
 
     if not generated_solutions:
         return {
@@ -54,10 +51,9 @@ async def checker_node(state):
     # Initialize lists for results
     generated_errors = []
     executed_responses = []
-    result_json = dataframe_json_str  # fallback in case no execution happens
 
     # Check each solution
-    for idx, solution in enumerate(generated_solutions):
+    for solution in generated_solutions:
         code_solution = solution["solution"]
         current_task = solution["task"]
 
@@ -69,17 +65,11 @@ async def checker_node(state):
             # Execute code with isolation
             print(f"Executing code:\n{code_solution.imports}\n{code_solution.code}")
             exec(f"{code_solution.imports}\n{code_solution.code}", globals_dict)
-
+            
             # Validate result
-            result_json = globals_dict["df"]
-            if not isinstance(result_json, str):
-                raise TypeError("Code did not produce a JSON string")
-
-            try:
-                result_df = pd.read_json(result_json)
-            except Exception as e:
-                raise ValueError(f"Failed to parse JSON string to DataFrame: {e}")
-
+            result_df = globals_dict["df"]
+            if not isinstance(result_df, pd.DataFrame):
+                raise TypeError("Code did not produce a valid DataFrame")
             if result_df.empty:
                 raise ValueError("Processing resulted in empty DataFrame")
 
@@ -95,22 +85,13 @@ async def checker_node(state):
             generated_errors.append({
                 "solution": code_solution,
                 "task": current_task,
-                "error": error_msg,
-                "task_index": idx
+                "error": error_msg
             })
 
     # Determine if we have any errors
     has_errors = len(generated_errors) > 0
-
-    #Print DataFrame summaries
-    print("Preprocessed dataframe before code execution:")
-    print(pd.read_json(dataframe_json_str).describe())
-
-    print("Preprocessed dataframe after code execution:")
-    try:
-        print(pd.read_json(result_json).describe())
-    except Exception as e:
-        print(f"Could not describe result DataFrame due to error: {e}")
+    print(f"preprocessed dataframe before code execution: \n {dataframe.describe()}")
+    print(f"preprocessed dataframe after code execution: \n {result_df.describe()}")
 
     return {
         "generation": generated_solutions,
@@ -118,5 +99,5 @@ async def checker_node(state):
         "error": "no" if not has_errors else "yes",
         "generated_errors": generated_errors,
         "executed_responses": executed_responses,
-        "preprocessed_dataframe": result_json  # return as JSON string
+        "preprocessed_dataframe": result_df
     }

@@ -2,9 +2,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 from langchain import hub
 from langchain_core.prompts import ChatPromptTemplate
+from pydantic import BaseModel, Field
 import sys
 import os
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 load_dotenv()
@@ -16,7 +16,6 @@ CONFIGURATIONS = {
 
 llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 system_prompt = hub.pull("preprocessing-coder-reflector").messages[0].prompt.template
-
 
 async def reflector_node(state):
     """
@@ -30,9 +29,10 @@ async def reflector_node(state):
     """
     print("---REFLECTING ON ERRORS---")
 
+    # State
     messages = state["messages"]
     iterations = state["iterations"]
-    generated_errors = state.get("generated_errors", [])
+    generated_errors = state["generated_errors"]
     preprocessing_tasks = state["preprocessing_tasks"]
 
     if not generated_errors:
@@ -44,43 +44,34 @@ async def reflector_node(state):
             "generated_errors": []
         }
 
-    for idx, error_case in enumerate(generated_errors):
-        current_task = error_case.get("task", {})
-        error_msg = error_case.get("error", "No error message provided.")
+    # Process each error
+    for error_case in generated_errors:
+        task_index = error_case["task_index"]
+        current_task = error_case["task"]
+        error_msg = error_case["error"]
 
-        # Safely handle task info whether dict or str
-        if isinstance(current_task, dict):
-            task_name = current_task.get('task', 'Unknown Task')
-            column_name = current_task.get('column', 'Unknown Column')
-            strategy = current_task.get('strategy', 'No Strategy Provided')
-        else:
-            task_name = str(current_task)
-            column_name = 'Unknown Column'
-            strategy = 'No Strategy Provided'
-
-        human_content = f"""
-Current Task: {task_name}
-Target Column: {column_name}
-Strategy: {strategy}
-Error Message: {error_msg}
-Please analyze the error and suggest improvements.
-"""
-
+        # Prompt to enforce tool use
         reflector_prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
-            ("human", human_content)
+            ("human", f"""
+            Current Task: {current_task['task']}
+            Target Column: {current_task['column']}
+            Strategy: {current_task['strategy']}
+            Error Message: {error_msg}
+            Please analyze the error and suggest improvements.
+            """)
         ])
 
         reflector_chain = (reflector_prompt | llm)
         reflections = await reflector_chain.ainvoke({"messages": messages})
-
-        messages.append(("assistant", f"Reflections for task {idx}: {reflections}"))
+        
+        messages.append(("assistant", f"Reflections for task {task_index}: {reflections}"))
 
     return {
-        "generation": state.get("generation", []),
+        "generation": state["generation"],
         "messages": messages,
         "iterations": iterations,
-        "current_task_index": state.get("current_task_index", 0),
+        "current_task_index": state["current_task_index"],
         "preprocessing_tasks": preprocessing_tasks,
-        "generated_errors": []  # clear errors after reflection
+        "generated_errors": []
     }
