@@ -1,26 +1,42 @@
-from helperFunctions import *
-from .config import *
-import loggerModule
-logger=loggerModule.setup_logging(module_name="InsightGeneration")
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=1)
+import pandas as pd
+import logging
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_experimental.agents import create_pandas_dataframe_agent
+from typing import Dict, Any
 
-async def PandasAgentResponder(state: dict) -> str:
-    """
-    This function is responsible for generating advanced insights based on the original insight card.
-    It uses the LangChain framework to interact with the LLM and generate new insights.
-    """
-    agent_executor = create_pandas_dataframe_agent(
-                    llm,
-                    state["df"],
-                    agent_type="tool-calling",
-                    allow_dangerous_code=True,
-                    verbose=True,
-                )
-    response = agent_executor.invoke(state["user_query"])
-    step = response["intermediate_steps"][-1]
+logger = logging.getLogger(__name__)
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7, timeout=120)
+
+async def PandasAgentResponder(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Agent responder node for state graph"""
     try:
-        output_df = extract_dataframe_from_output(step[1])
+        # Extract state elements
+        df = state["df"]
+        query = state["user_query"]
+        
+        # Create and invoke agent
+        agent = create_pandas_dataframe_agent(
+            llm,
+            df,
+            agent_type="tool-calling",
+            verbose=False,
+        )
+        
+        response = await agent.ainvoke(query)
+        output = response.get("output", "No response generated")
+        
+        # Update state
+        return {
+            **state,
+            "response": output,
+            "method": "agent",
+            "resulted_df": df,  # Agent might modify df in future
+            "use_agent": False  # Agent processing complete
+        }
     except Exception as e:
-        logger.error(f"Error in extracting dataframe from output: {e}")
-        output_df = pd.DataFrame()
-    return {"response": response["output"], "resulted_df": output_df}
+        logger.error(f"Agent failed: {str(e)}")
+        return {
+            **state,
+            "response": f"Error processing query: {str(e)}",
+            "method": "agent (with error)"
+        }
