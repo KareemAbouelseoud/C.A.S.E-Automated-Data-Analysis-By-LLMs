@@ -21,7 +21,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from API.Requests.projectRequests import get_dataset,save_insights
 from API.Endpoints.dataItems import Feedback,SaveInsights
 
-def finalize_output(state: Dict[str, str]):
+def finalize_output(state):
     """
     Finalize the output of the pipeline by converting all objects to JSON-serializable format.
     """
@@ -35,7 +35,7 @@ def finalize_output(state: Dict[str, str]):
             card_dict = card.model_dump()
             if hasattr(card, "resulted_df") and card.resulted_df is not None:
                 card_dict["resulted_df"] = card.resulted_df.to_json() if not isinstance(card.resulted_df, str) else card.resulted_df
-            final_state["insight_cards"].append(card_dict)
+            final_state["insight_cards"].append(make_serializable(card_dict))
     
     # Handle advanced insight cards
     if "advanced_insight_cards" in state:
@@ -48,14 +48,20 @@ def finalize_output(state: Dict[str, str]):
                     card_dict["resulted_df"] = card.resulted_df.to_json() if not isinstance(card.resulted_df, str) else card.resulted_df
                 
                 # Convert subspace values to serializable format
-                serializable_subspace = subspace.copy()
+                serializable_subspace = copy.deepcopy(subspace)
                 if "filters" in serializable_subspace:
+                    print("#"*70)
+                    print(serializable_subspace)
                     serializable_subspace["filters"] = [
                         (str(col), str(val) if isinstance(val, (int, float,np.int64, np.int32, np.int16, np.int8,np.float64, np.float32, np.float16,np.datetime64, pd.Timestamp)) else val)
                         for col, val in serializable_subspace["filters"]
                     ]
+                    print(serializable_subspace)
+                    print("#"*70)
                 
-                final_state["advanced_insight_cards"][key].append((serializable_subspace, card_dict))
+                serialized_tuple = make_serializable((serializable_subspace, card_dict))
+                print(serialized_tuple)
+                final_state["advanced_insight_cards"][key].append(serialized_tuple)
     
     # Handle description
     if "description" in state:
@@ -64,14 +70,26 @@ def finalize_output(state: Dict[str, str]):
     # Copy other simple fields
     for key in ["df", "schema", "human_feedback", "num_cards", "insights_explanation", "report"]:
         if key in state:
-            final_state[key] = state[key]
+            final_state[key] = copy.deepcopy(state[key])
     
     # print("Final state keys:", final_state.keys())
+    for key in final_state.keys():
+        final_state[key]=make_serializable(state[key])
     final_state = make_serializable(final_state)
     print("Serialization check complete")
-
+    print("#"*70)
+    print("Original State Keys")
+    print(state.keys())
+    print("Modifed and Final State Keys")
+    print(final_state.keys())
+    print("#"*70)
     # print("Final state after serialization:", final_state)
+
     return final_state
+
+def explore_func(state):
+    print(state)
+    return state
 
 
 def make_serializable(obj):
@@ -82,6 +100,8 @@ def make_serializable(obj):
         return {k: make_serializable(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [make_serializable(i) for i in obj]
+    elif isinstance(obj, tuple):  # Add tuple support
+        return tuple(make_serializable(i) for i in obj)
     elif isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
         return int(obj)
     elif isinstance(obj, (np.float64, np.float32, np.float16)):
@@ -93,7 +113,7 @@ def make_serializable(obj):
     elif isinstance(obj, (np.datetime64, pd.Timestamp)):
         print("FOUND DATETIME")
         print(obj)
-        return obj.astype(str)
+        return str(obj)
     elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
         return None
     else:

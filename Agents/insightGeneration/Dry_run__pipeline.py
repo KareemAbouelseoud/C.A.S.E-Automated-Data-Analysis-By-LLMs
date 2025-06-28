@@ -27,7 +27,6 @@ class AgentGraphState(TypedDict):
     num_cards: int
     report: str
    
-
 #GRAPH PIPELINE
 graph_builder = StateGraph(AgentGraphState)
 #define nodes
@@ -40,6 +39,7 @@ graph_builder.add_node("filteration_node_B", filterationB_node)
 graph_builder.add_node("SubSbaceSearch_Node", SubspaceSearchNode)
 graph_builder.add_node("explainer_node", ExplainerNode)
 graph_builder.add_node("Finalize_output", finalize_output)
+graph_builder.add_node("final_node",explore_func)
 
 #define edges
 graph_builder.add_edge(START, "Report_Node")
@@ -51,7 +51,8 @@ graph_builder.add_edge("filteration_node_A", "SubSbaceSearch_Node")
 graph_builder.add_edge("SubSbaceSearch_Node", "filteration_node_B")
 graph_builder.add_edge("filteration_node_B", "explainer_node")
 graph_builder.add_edge("explainer_node","Finalize_output")
-graph_builder.add_edge("Finalize_output", END)
+graph_builder.add_edge("Finalize_output", "final_node")
+graph_builder.add_edge("final_node", END)
 #verify and display the graph
 #compile the graph
 checkpointer=MemorySaver()

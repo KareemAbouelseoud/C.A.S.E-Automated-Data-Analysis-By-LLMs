@@ -6,3 +6,17 @@
 2025-06-28 11:52:44,127 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: 'list' object has no attribute 'model_dump'
 2025-06-28 11:55:59,241 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: 'list' object has no attribute 'model_dump'
 2025-06-28 12:01:40,615 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: 'list' object has no attribute 'model_dump'
+2025-06-28 13:06:26,672 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 13:15:36,916 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 13:30:27,048 - InsightGeneration - ERROR - No state found for thread_id: f1eed86b-89e2-446e-bc4e-d17d2083ccd7
+2025-06-28 13:33:21,624 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 14:05:13,782 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 14:10:21,206 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 14:19:02,012 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 14:28:21,369 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 14:34:57,874 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 14:44:30,620 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 14:55:09,175 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 15:07:28,489 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 15:18:23,134 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64
+2025-06-28 15:38:20,773 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: Type is not msgpack serializable: numpy.datetime64

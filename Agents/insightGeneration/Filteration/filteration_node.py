@@ -48,7 +48,7 @@ def filter_unique_Advanced_cards(state, threshold=0.7):
         advanced_cards[card]=[]
         for _ , (score,ScoreAdvancedCards) in enumerate(state["advanced_insight_cards"][card]):
             duplicate = False
-            print("Filtering the Score:", score)
+            # print("Filtering the Score:", score)
             for idx,current_card in enumerate(ScoreAdvancedCards):
                 duplicate=filter_AdvancedCard_question(ScoreAdvancedCards,current_card,start_index=idx, threshold=threshold)
             if not duplicate:
@@ -199,6 +199,5 @@ async def filterationB_node(state: Dict) -> str:
 
     # Update the state with ranked cards
     state["advanced_insight_cards"] = ranked_cards
-    print(ranked_cards)
     print("Cards Finished from filteration B")
     return state

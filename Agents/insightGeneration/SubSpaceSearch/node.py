@@ -177,7 +177,7 @@ def subspace_search(df:pd.DataFrame,card:InsightCard,desc:DataDescription, beam_
     final_result = []
     for score in sorted_scores:
         final_result.append((f"Score: {score}", all_insights[score]))
-    print("Final Result:", final_result)
+    # print("Final Result:", final_result)
     return final_result
 
 def old_subspace_search(df:pd.DataFrame,card:InsightCard,desc:DataDescription, beam_width=3, max_depth=2, exp_factor=2):
