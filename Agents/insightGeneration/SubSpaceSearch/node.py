@@ -53,7 +53,7 @@ def thread_function(df, unique_cards, DataDescription,advanced_cards_dict):
 
     for thread in threads:
         thread.join()
-#TODO: WE NEED TO CONSIDER THE FILTERS WITH THE SAME SCORE AS ONE ENTRY IN THE BEAM
+
 def subspace_search(df:pd.DataFrame,card:InsightCard,desc:DataDescription, beam_width=3, max_depth=2, exp_factor=2):
     """Beam Search, modified for scoring functions."""
     # Initialize

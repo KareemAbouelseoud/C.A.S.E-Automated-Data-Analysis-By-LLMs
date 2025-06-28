@@ -34,6 +34,29 @@ def filter_unique_cards(state, threshold=0.7):
     
     return (unique_cards, len(unique_cards))
 
+def filter_unique_Advanced_cards(state, threshold=0.7):
+    """
+    Filter out duplicate insight cards based on cosine similarity of questions.
+    Args:
+        state (dict): The current graph state
+        threshold (float): Similarity threshold for filtering duplicates
+    Returns:
+        list: List of unique insight cards
+    """
+    advanced_cards = dict()
+    for card in state["advanced_insight_cards"].keys():
+        advanced_cards[card]=[]
+        for _ , (score,ScoreAdvancedCards) in enumerate(state["advanced_insight_cards"][card]):
+            duplicate = False
+            print("Filtering the Score:", score)
+            for idx,current_card in enumerate(ScoreAdvancedCards):
+                duplicate=filter_AdvancedCard_question(ScoreAdvancedCards,current_card,start_index=idx, threshold=threshold)
+            if not duplicate:
+                advanced_cards[card].append(current_card)
+        advanced_cards[card]=advanced_cards[card][:15]
+    
+    return advanced_cards
+
 
 def filter_question(state,current_card:InsightCard,mode:Literal["insight_cards","unique_insight_cards"]="insight_cards",start_index:int=0, threshold=0.7):
     """
@@ -58,6 +81,36 @@ def filter_question(state,current_card:InsightCard,mode:Literal["insight_cards",
         if similarity > threshold:    
             if (new_ques.breakdown).lower() == (current_card.breakdown).lower() and (new_ques.measure).lower() == (current_card.measure).lower() and (new_ques.aggregation).lower() == (current_card.aggregation).lower():
                 print(f"Duplicate found: {new_ques.question} is similar to {current_card.question}")
+                duplicate = True
+                break
+    return duplicate
+
+def filter_AdvancedCard_question(ScoreAdvancedCards:list,current_card,start_index:int=0, threshold=0.7):
+    """
+    Filter out duplicate questions based on cosine similarity.
+    Args:
+        state (dict): The current graph state
+        current_card (InsightCard): The current insight card to check for duplicates
+        mode (str): The mode of operation ("insight_cards" or "unique_insight_cards")
+        start_index (int): The starting index for filtering
+        threshold (float): Similarity threshold for filtering duplicates
+    Returns:
+        bool: True if a duplicate is found, False otherwise
+    """
+    start_index = start_index +1  
+    duplicate = False
+    for new_ques in ScoreAdvancedCards[start_index:]:
+        if new_ques[0]== current_card[0]:
+            duplicate = True
+            break
+        similarity = cosine_similarity(
+            semantic_model.encode(current_card[1].question.lower()).reshape(1, -1),
+            semantic_model.encode(new_ques[1].question.lower()).reshape(1, -1)
+        )[0][0]
+        # print(f"Comparing:\n - New: {c.question}\n - Existing: {new_ques.question}\n - Similarity: {similarity:.4f}")
+        if similarity > threshold:    
+            if (new_ques[1].breakdown).lower() == (current_card[1].breakdown).lower() and (new_ques[1].measure).lower() == (current_card[1].measure).lower() and (new_ques[1].aggregation).lower() == (current_card[1].aggregation).lower():
+                print(f"Duplicate found: {new_ques[1].question} is similar to {current_card[1].question}")
                 duplicate = True
                 break
     return duplicate
@@ -129,4 +182,23 @@ async def filterationA_node(state: Dict) -> str:
     print("Cards Finished from filteration A")
     return state
 
-##TODO: Filteration B Is RANKING AND INSIGHT CARDS are scored 
+
+async def filterationB_node(state: Dict) -> str:
+    """
+    Filteration B: Rank insight cards based on their relevance or score.
+    """
+    if "advanced_insight_cards" not in state:
+        raise ValueError("No advanced insight cards provided in state.")
+    
+    # Placeholder for ranking logic
+
+    # For now, we will just return the insight cards as is
+    # In a real implementation, you would rank the cards based on some criteria
+    
+    ranked_cards=filter_unique_Advanced_cards(state)
+
+    # Update the state with ranked cards
+    state["advanced_insight_cards"] = ranked_cards
+    print(ranked_cards)
+    print("Cards Finished from filteration B")
+    return state

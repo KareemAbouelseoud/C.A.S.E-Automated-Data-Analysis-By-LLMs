@@ -1,8 +1,8 @@
 services:
   Agents:
-    # build: 
-    #   context: ./Agents
-    #   dockerfile: dockerfile
+    build: 
+      context: ./Agents
+      dockerfile: dockerfile
     image: agents:3.0.1
     networks:
       - case-pb

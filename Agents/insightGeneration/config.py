@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
 from Data_description_generator.data_description_node import data_description_generator_node,DataDescription
 from Data_description_generator.human_node import human_input
-from Filteration.filteration_node import filterationA_node
+from Filteration.filteration_node import filterationA_node,filterationB_node
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from API.Requests.projectRequests import get_dataset,save_insights
 from API.Endpoints.dataItems import Feedback,SaveInsights

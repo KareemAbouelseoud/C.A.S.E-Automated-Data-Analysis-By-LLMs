@@ -1,3 +1,8 @@
 2025-04-03 19:33:43,555 - InsightGeneration - ERROR - Error in test(): 'Interrupt' object is not subscriptable
 2025-04-03 19:35:18,282 - InsightGeneration - ERROR - Error in test(): 'Interrupt' object has no attribute 'description'
 2025-04-03 19:37:27,128 - InsightGeneration - ERROR - Error in test(): 'Interrupt' object is not subscriptable
+2025-06-28 10:55:31,292 - InsightGeneration - ERROR - No state found for thread_id: 7195c369-671f-4ace-9777-f59c5dab52ed
+2025-06-28 10:57:31,619 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: 'list' object has no attribute 'model_dump'
+2025-06-28 11:52:44,127 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: 'list' object has no attribute 'model_dump'
+2025-06-28 11:55:59,241 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: 'list' object has no attribute 'model_dump'
+2025-06-28 12:01:40,615 - InsightGeneration - ERROR - Error in Continue_Auto_InsightGen: 'list' object has no attribute 'model_dump'

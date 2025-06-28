@@ -100,7 +100,7 @@ async def should_continue(state) -> str:
             return "qugen_node"
         else:
             print(f"Generated {cards_count} cards, expected {int(state['num_cards'])}")
-            return "filteration_node"
+            return "filteration_node_A"
     else:
         print("No recommendations found, returning to selector node")
         return "qugen_node"
