@@ -42,6 +42,7 @@ llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGUR
 
 system_prompt = hub.pull("preprocessing-caller").messages[0].prompt.template
 
+
 async def caller_node(state):
     """
     Process a single preprocessing task using tools.

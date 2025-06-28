@@ -36,8 +36,8 @@ class CoderState(TypedDict):
     error: NotRequired[str] = ''
     project_id: str
     data_report: NotRequired[str]
-    dataframe: NotRequired[str]  # Store as JSON string, not pandas.DataFrame
-    preprocessed_dataframe: NotRequired[str]
+    dataframe: NotRequired[Any]
+    preprocessed_dataframe: NotRequired[Any]
     preprocessing_tasks: NotRequired[str]  # The task to process
     target_column: NotRequired[str]  # The column to process
     strategy: NotRequired[str]  # The strategy to use

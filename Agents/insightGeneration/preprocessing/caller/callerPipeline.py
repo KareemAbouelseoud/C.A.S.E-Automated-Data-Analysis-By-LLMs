@@ -11,7 +11,7 @@ Dependencies:
 - langchain_core.messages
 - pandas
 """
-from typing_extensions import TypedDict, Annotated, NotRequired, Literal
+from typing_extensions import TypedDict, Annotated, NotRequired, Literal,Any
 import operator
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AnyMessage
@@ -40,8 +40,8 @@ class CallerState(TypedDict):
     preprocessing_tasks: str  # The task to process
     target_column: str  # The column to process
     strategy: str  # The strategy to use
-    dataframe: NotRequired[str]
-    preprocessed_dataframe:  NotRequired[str]
+    dataframe: NotRequired[Any]
+    preprocessed_dataframe: NotRequired[Any]
 
 # Create state graph
 workflow = StateGraph(CallerState)

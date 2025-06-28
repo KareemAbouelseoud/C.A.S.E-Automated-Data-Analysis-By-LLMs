@@ -17,7 +17,6 @@ CONFIGURATIONS = {
 llm = ChatGoogleGenerativeAI(model=CONFIGURATIONS['model'], temperature=CONFIGURATIONS['temperature'])
 system_prompt = hub.pull("preprocessing-coder-reflector").messages[0].prompt.template
 
-
 async def reflector_node(state):
     """
     Reflect on errors in failed code solutions

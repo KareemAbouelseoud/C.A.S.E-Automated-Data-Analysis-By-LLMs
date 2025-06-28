@@ -20,3 +20,11 @@ def human_input(state):
         update={"human_feedback": current_feedback + [user_feedback]},
         goto="data_description"
     )
+
+def take_human_feedback(state):
+    if state.get("num_iterations")==0 :
+        print("taking human feedback,num_iterations:", state.get("num_iterations"))
+        return "human_node"
+    else:
+        print("skipping human feedback,num_iterations:", state.get("num_iterations"))
+        return "qugen_node"

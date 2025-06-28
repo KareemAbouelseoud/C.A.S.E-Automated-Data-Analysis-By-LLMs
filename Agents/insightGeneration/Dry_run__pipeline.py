@@ -5,13 +5,15 @@ from typing_extensions import Any
 from dotenv import load_dotenv
 
 from config import *
+from Data_description_generator.human_node import take_human_feedback
 from QUGEN.node import qugen_node,should_continue
 from SubSpaceSearch.node import SubspaceSearchNode
 from Explainer.node import ExplainerNode
 from Reports.node import ReportNode
 from models import InsightCard, InsightCards
 from recommender_node import recommender_node,continue_pipeline
-from preprocessing.preprocessor_node import preprocessor_executor_node,restart_pipeline
+from preprocessing.preprocessor_node import preprocessor_node,restart_pipeline
+from pklCheckpointer import PickleCheckpointer
 import loggerModule
 logger=loggerModule.setup_logging(module_name="InsightGeneration")
 sys.path.append(os.getcwd())
@@ -19,7 +21,7 @@ load_dotenv()
 
 #define states
 class AgentGraphState(TypedDict):
-    df:str
+    df:NotRequired[Any]
     description: str
     human_feedback: Annotated[list[str], add_messages]
     schema: list[str]
@@ -30,6 +32,8 @@ class AgentGraphState(TypedDict):
     report: str
     recommendation: List[object]
     num_iterations:NotRequired[int]
+   
+
    
 
 #GRAPH PIPELINE
@@ -45,19 +49,21 @@ graph_builder.add_node("SubSbaceSearch_Node", SubspaceSearchNode)
 graph_builder.add_node("explainer_node", ExplainerNode)
 graph_builder.add_node("Finalize_output", finalize_output)
 graph_builder.add_node("recommender",recommender_node)
-graph_builder.add_node("preprocessor_executor",preprocessor_executor_node)
+graph_builder.add_node("preprocessor_executor",preprocessor_node)
+
 
 
 #define edges
 graph_builder.add_edge(START, "data_description")
 graph_builder.add_edge("data_description", "Report_Node")
-graph_builder.add_edge("Report_Node","human_node")
+# graph_builder.add_edge("Report_Node","human_node")
+graph_builder.add_conditional_edges("Report_Node", take_human_feedback, {"human_node": "human_node", "qugen_node": "qugen_node"})
 graph_builder.add_conditional_edges("qugen_node", should_continue, {"qugen_node": "qugen_node", "filteration_node": "filteration_node"})
 graph_builder.add_edge("filteration_node", "SubSbaceSearch_Node")
 graph_builder.add_edge("SubSbaceSearch_Node", "explainer_node")
 graph_builder.add_conditional_edges("explainer_node",continue_pipeline,{"recommender":"recommender","Finalize_output":"Finalize_output"})
 graph_builder.add_edge("recommender", "preprocessor_executor")
-graph_builder.add_conditional_edges("preprocessor_executor",restart_pipeline,{"qugen_node":"qugen_node","Finalize_output":"Finalize_output"})
+graph_builder.add_conditional_edges("preprocessor_executor",restart_pipeline,{"Report_Node":"Report_Node","Finalize_output":"Finalize_output"})
 graph_builder.add_edge("Finalize_output",END)
 
 #verify and display the graph
@@ -68,7 +74,7 @@ graph = graph_builder.compile(checkpointer=checkpointer)
 async def Start_Auto_InsightGen(project_id:str=None):
     df = await get_dataset(project_id)
     logger.info("Dataset loaded")
-    state = AgentGraphState({"df": df.to_json()})  
+    state = AgentGraphState({"df": df.to_json(orient="records")})  
     thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
     try:
         async for chunk in graph.astream(state, config=thread_config):
@@ -175,7 +181,7 @@ import asyncio
 async def Custom_Start_Auto_InsightGen():
     # df = pd.read_csv(StringIO(raw_csv))
     logger.info("Dataset loaded")
-    state = AgentGraphState({"df": dataset.to_json()})
+    state = AgentGraphState({"df": dataset.to_json(orient="records"), 'num_iterations':0})
     thread_config= {"configurable": {"thread_id": uuid.uuid4()}}
     try:
         async for chunk in graph.astream(state, config=thread_config):
@@ -199,13 +205,15 @@ async def Custom_Continue_Auto_InsightGen(thread_id: str):
     
     current_state = result[0]
     updated_state = AgentGraphState({
-        'df': current_state.get('df', ''),
+        'df': current_state["df"].to_json(orient="records") if isinstance(current_state["df"], pd.DataFrame) else current_state["df"],
         'description': current_state.get('description', ''),
         "schema": current_state.get('schema', []),
         'human_feedback': ["done"],
         'insight_cards': current_state.get('insight_cards', []),
-        'num_iterations':0
+        'num_iterations':0,
+       
     })
+    
     
     try:
         logger.info("Continuing Pipeline ...")

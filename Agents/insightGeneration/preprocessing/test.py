@@ -8,6 +8,7 @@ load_dotenv()
 from dotenv import load_dotenv
 from preprocessing.pipeline import preprocess_data
 import pandas as pd
+import json
 
 if __name__ == "__main__":
     import asyncio
@@ -36,10 +37,13 @@ if __name__ == "__main__":
         'preprocessing_step': 'Handle missing links'}]}, 'type': 'preprocessing_recommender'}]
 
         dataframe = pd.read_csv(r"C:\Users\DEll\Downloads\DoctorFeePrediction.csv")
+        # dataframe=dataframe.to_json(orient="records")
        
         try:
             result = await preprocess_data(project_id, dataframe, preprocessing_tasks)
             
+            # result["preprocessed_dataframe"]=result["preprocessed_dataframe"].to_json(orient="records")
+            # print(type(result["preprocessed_dataframe"]))
         except Exception as e:
             print(f"Error during preprocessing: {f'{type(e).__name__}: {str(e)}'}")
             sys.exit(1)

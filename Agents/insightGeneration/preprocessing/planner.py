@@ -95,6 +95,7 @@ async def planner_node(state) -> Tuple[List[dict], List[dict]]:
             else:
                 caller_tasks.append(preprocessing_task)
         
+        
         print(f"Planner routed {len(coder_tasks)} tasks to coder and {len(caller_tasks)} tasks to caller")
         print(f"coder_tasks: {coder_tasks}")
         print(f"caller_tasks: {caller_tasks}")

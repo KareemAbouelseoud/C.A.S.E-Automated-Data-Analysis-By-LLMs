@@ -22564,3 +22564,144 @@ For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/er
 2025-06-09 21:00:14,908 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
 2025-06-09 21:03:13,245 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
 2025-06-13 12:12:16,107 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 04:04:21,463 - InsightGeneration - ERROR - Error in test(): 'project_id'
+2025-06-14 16:58:52,896 - InsightGeneration - ERROR - Error in test(): 'project_id'
+2025-06-14 17:13:18,200 - InsightGeneration - ERROR - Error in test(): Failed to parse input DataFrame JSON string: Expected object or value
+2025-06-14 17:31:42,559 - InsightGeneration - ERROR - Error in test(): Failed to parse input DataFrame JSON string: DataFrame JSON string is empty
+2025-06-14 17:39:01,239 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 18:06:29,161 - InsightGeneration - ERROR - Error in test(): Failed to parse input DataFrame JSON string: DataFrame JSON string is empty
+2025-06-14 18:08:00,235 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 18:38:43,289 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 18:42:47,907 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 19:42:05,381 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 19:51:29,734 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 19:56:59,628 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 20:16:09,392 - InsightGeneration - ERROR - Error in test(): Multiple subgraphs called inside the same node
+
+Troubleshooting URL: https://python.langchain.com/docs/troubleshooting/errors/MULTIPLE_SUBGRAPHS/
+2025-06-14 20:36:28,469 - InsightGeneration - ERROR - Error in test(): Recursion limit of 25 reached without hitting a stop condition. You can increase the limit by setting the `recursion_limit` config key.
+For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/GRAPH_RECURSION_LIMIT
+2025-06-14 21:04:40,536 - InsightGeneration - ERROR - Error in test(): Multiple subgraphs called inside the same node
+
+Troubleshooting URL: https://python.langchain.com/docs/troubleshooting/errors/MULTIPLE_SUBGRAPHS/
+2025-06-14 22:01:49,276 - InsightGeneration - ERROR - Error in test(): 'str' object has no attribute 'copy'
+2025-06-14 23:41:44,496 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 23:45:12,473 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-14 23:55:00,181 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-17 08:01:17,132 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-17 08:17:32,190 - InsightGeneration - ERROR - Error in test(): 'recommendations'
+2025-06-17 08:19:24,908 - InsightGeneration - ERROR - Error in test(): list indices must be integers or slices, not str
+2025-06-17 08:25:43,815 - InsightGeneration - ERROR - Error in test(): This agent relies on access to a python repl tool which can execute arbitrary code. This can be dangerous and requires a specially sandboxed environment to be safely used. Please read the security notice in the doc-string of this function. You must opt-in to use this functionality by setting allow_dangerous_code=True.For general security guidelines, please see: https://python.langchain.com/docs/security/
+2025-06-23 07:40:53,508 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-23 08:29:44,259 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-23 09:18:21,115 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-23 09:22:55,896 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-23 09:32:54,964 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-23 09:40:41,817 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-23 09:52:25,338 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-23 09:56:42,125 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-23 10:09:24,942 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-25 08:16:05,541 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-25 09:49:18,913 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-25 10:00:09,750 - InsightGeneration - ERROR - Error in test(): 'dict' object has no attribute 'latest_node'
+2025-06-25 10:04:07,127 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-25 10:07:42,237 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-25 10:10:33,271 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-25 10:47:57,078 - InsightGeneration - ERROR - Error in test(): 'str' object has no attribute 'copy'
+2025-06-25 19:37:17,382 - InsightGeneration - ERROR - Error in test(): 'str' object has no attribute 'copy'
+2025-06-25 19:39:40,225 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-25 19:50:40,056 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-25 19:55:40,979 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-25 20:05:37,795 - InsightGeneration - ERROR - Error in test(): Object of type DataFrame is not serializable
+2025-06-28 04:10:21,015 - InsightGeneration - ERROR - Error in test(): 
+2025-06-28 04:13:16,530 - InsightGeneration - ERROR - Error in test(): 'tuple' object has no attribute 'config'
+2025-06-28 04:17:41,439 - InsightGeneration - ERROR - Error in test(): 'tuple' object has no attribute 'config'
+2025-06-28 04:19:39,138 - InsightGeneration - ERROR - Error in test(): 'tuple' object has no attribute 'config'
+2025-06-28 04:20:59,161 - InsightGeneration - ERROR - Error in test(): 'tuple' object has no attribute 'config'
+2025-06-28 05:26:55,726 - InsightGeneration - ERROR - Error in test(): list indices must be integers or slices, not str
+2025-06-28 05:29:43,541 - InsightGeneration - ERROR - Error in test(): 'preprocessing_step'
+2025-06-28 05:35:01,348 - InsightGeneration - ERROR - Error in test(): This agent relies on access to a python repl tool which can execute arbitrary code. This can be dangerous and requires a specially sandboxed environment to be safely used. Please read the security notice in the doc-string of this function. You must opt-in to use this functionality by setting allow_dangerous_code=True.For general security guidelines, please see: https://python.langchain.com/docs/security/
+2025-06-28 05:46:37,503 - InsightGeneration - ERROR - Error in test(): 404 models/gemini-2.0-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+2025-06-28 05:51:07,562 - InsightGeneration - ERROR - Error in test(): An output parsing error occurred. In order to pass this error back to the agent and have it try again, pass `handle_parsing_errors=True` to the AgentExecutor. This is the error: Could not parse LLM output: `I apologize again for the repeated errors. I seem to be stuck in a loop. I will try to provide the code and the expected output.
+
+```python
+import pandas as pd
+import numpy as np
+
+def clean_dataframe(df):
+    # Correct inconsistencies in 'City' column
+    df['City'] = df['City'].str.replace('-', ' ')
+
+    # Remove special characters and extra information from 'Doctor Qualification' column
+    df['Doctor Qualification'] = df['Doctor Qualification'].str.replace(r'[^a-zA-Z0-9\s,()]', '', regex=True)
+
+    # Handle missing values in 'Hospital Address' column
+    df['Hospital Address'] = df['Hospital Address'].replace('No Address Available', np.nan)
+    return df
+
+# Assuming df is already defined as a pandas DataFrame
+# Example DataFrame (replace with your actual DataFrame)
+data = {'Doctor Name': ['Dr. Umair Hafeez', 'Dr. Haris Shakeel', 'Dr. Iqra Rehman', 'Dr. Erum Memon', 'Dr. Aisha Ahmad'],
+        'City': ['GUJRANWALA', 'RAJAN-PUR', 'MIRPUR-KHAS', 'HYDERABAD', 'LAHORE'],
+        'Specialization': ['Ent Specialist', 'General Physician', 'General Physician', 'Gynecologist', 'Dermatologist'],
+        'Doctor Qualification': ['MBBS , FCPS ( Otorhinolaryngologic ENT )', 'MBBS', 'MBBS, RMP, CFP (USA), Certified in Covid 19 +', 'MBBS, FCPS (Gynae &amp; Obstetrics)', 'MBBS, FCPS (Dermatology), Certified (Aesthetic Medicine)'],
+        'Experience(Years)': [6, 1, 6, 11, 12],
+        'Total_Reviews': [11, 0, 9, 71, 199],
+        'Patient Satisfaction Rate(%age)': [100, 94, 100, 96, 100],
+        'Avg Time to Patients(mins)': [19, 14, 10, 18, 16],
+        'Wait Time(mins)': [6, 11, 0, 10, 2],
+        'Hospital Address': ['Central Hospital, Jinnah Colony, Gujranwala', 'No Address Available', 'Rehman Clinic, tandoadam naka, Mirpur Khas', 'Mehmood Hospital, Qasimabad, Hyderabad', 'Skinnovation, Johar Town, Lahore'],
+        'Doctors Link': ['https://www.marham.pk/doctors/gujranwala/ent-specialist/dr-umair-hafeez#reviews-scroll', 'No Link Available', 'https://www.marham.pk/doctors/mirpur-khas/general-physician/dr-iqra-rehman#reviews-scroll', 'https://www.marham.pk/doctors/hyderabad/gynecologist/dr-erum-memon#reviews-scroll', 'https://www.marham.pk/doctors/lahore/dermatologist/dr-aisha-ahmad#reviews-scroll'],
+        'Fee(PKR)': [2000, 500, 1000, 800, 1500]}
+
+df = pd.DataFrame(data)
+
+df = clean_dataframe(df)
+print(df.head())
+```
+
+The expected output should be:
+
+```
+  Doctor Name          City      Specialization  \
+0  Dr. Umair Hafeez  GUJRANWALA  Ent Specialist   
+1 Dr. Haris Shakeel   RAJAN PUR  General Physician   
+2   Dr. Iqra Rehman  MIRPUR KHAS  General Physician   
+3    Dr. Erum Memon   HYDERABAD      Gynecologist   
+4   Dr. Aisha Ahmad      LAHORE     Dermatologist   
+
+                                Doctor Qualification  Experience(Years)  \
+0             MBBS , FCPS ( Otorhinolaryngologic ENT )                  6   
+1                                                MBBS                  1   
+2       MBBS, RMP, CFP (USA), Certified in Covid 19                   6   
+3                 MBBS, FCPS (Gynae  Obstetrics)                  11   
+4  MBBS, FCPS (Dermatology), Certified (Aesthetic...                  12   
+
+   Total_Reviews  Patient Satisfaction Rate(%age)  Avg Time to Patients(mins)  \
+0             11                               100                          19   
+1              0                                94                          14   
+2              9                               100                          10   
+3             71                                96                          18   
+4            199                               100                          16   
+
+   Wait Time(mins)                         Hospital Address  \
+0                6  Central Hospital, Jinnah Colony, Gujranwala   
+1               11                                        NaN   
+2                0  Rehman Clinic, tandoadam naka, Mirpur Khas   
+3               10     Mehmood Hospital, Qasimabad, Hyderabad   
+4                2             Skinnovation, Johar Town, Lahore   
+
+                                         Doctors Link  Fee(PKR)  
+0  https://www.marham.pk/doctors/gujranwala/ent-sp...      2000  
+1                                    No Link Available       500  
+2  https://www.marham.pk/doctors/mirpur-khas/genera...      1000  
+3  https://www.marham.pk/doctors/hyderabad/gynecol...       800  
+4  https://www.marham.pk/doctors/lahore/dermatolog...      1500
+```
+`
+For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE 
+2025-06-28 06:01:08,926 - InsightGeneration - ERROR - Error in test(): 'dataframe'
+2025-06-28 06:03:55,665 - InsightGeneration - ERROR - Error in test(): Error parsing agent JSON output: the JSON object must be str, bytes or bytearray, not dict
+2025-06-28 06:09:06,600 - InsightGeneration - ERROR - Error in test(): Agent response missing the 'df' key
+2025-06-28 06:13:37,957 - InsightGeneration - ERROR - Error in test(): initial_value must be str or None, not DataFrame
+2025-06-28 06:43:39,671 - InsightGeneration - ERROR - Error in test(): 'resulted_df'

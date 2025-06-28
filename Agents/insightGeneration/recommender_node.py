@@ -66,6 +66,7 @@ def recommender_node (state):
     prompt=recommender_prompt(report,insight_cards,advanced_insight_cards,explanation)
     structured_llm = llm.with_structured_output(recommender_schema)
     response = structured_llm.invoke(prompt)
+    
     state["num_iterations"]+=1
 
     print(response)

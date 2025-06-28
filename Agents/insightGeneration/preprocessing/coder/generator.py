@@ -33,45 +33,36 @@ class CODE(BaseModel):
     description: str = Field(description="Description of the problem and approach")
     imports: str = Field(description="Code block import statements")
     code: str = Field(description="Code block not including import statements")
-
 async def generator_node(state):
     """
-    Generate code solutions for a preprocessing task, expecting df as a JSON string.
+    Generate code solutions for a preprocessing task
 
     Args:
         state (dict): The current graph state containing:
             - preprocessing_tasks: The task to perform
             - target_column: The column to process
             - strategy: The strategy to use
-            - dataframe: JSON string of the input DataFrame
+            - dataframe: The input DataFrame
             - messages: List of messages in the conversation
 
     Returns:
         state (dict): Updated state with generated code solutions
     """
     print("---GENERATING CODE SOLUTIONS---")
-
+    
+    # Get task details
     task = state["preprocessing_tasks"]
     column = state["target_column"]
     strategy = state["strategy"]
-    df_json_str = state["dataframe"]
-
-    #check
+    
+    # Get the current dataframe from state
     try:
-        #if DataFrame, convert to JSON string
-        if hasattr(df_json_str, "to_json") and callable(df_json_str.to_json):
-            df_json_str = df_json_str.to_json()
-        #check if string
-        if not isinstance(df_json_str, str):
-            raise TypeError(f"Expected JSON string for dataframe, got {type(df_json_str)}")
-
-        #parse JSON string to DataFrame
-        df = pd.read_json(df_json_str)
-        if not isinstance(df, pd.DataFrame):
-            raise TypeError("Parsed data is not a DataFrame")
+        df = state['dataframe']
+        # if not isinstance(df, pd.DataFrame):
+        #     raise TypeError("Invalid DataFrame in state")
         
+        # Model with structured output
         structured_llm = llm.with_structured_output(CODE, include_raw=True)
-
     except Exception as e:
         error_msg = f"Data initialization failed: {str(e)}"
         print(f"!!! CRITICAL ERROR: {error_msg}")
@@ -86,21 +77,22 @@ async def generator_node(state):
             "strategy": strategy
         }
 
-
+    # Generate code for the task
     try:
+        # Prompt template with task and column information
         code_gen_prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("human", f"""
             Preprocessing Task: {task}
             Target Column: {column}
             Strategy: {strategy}
-            Assume `df` is a JSON string containing a DataFrame (not a pandas object).
-            Convert it to a pandas DataFrame using `pd.read_json(df)`.
-            Do not redefine or overwrite `df`, just transform it in-place if needed and return as JSON.
+            Assume there is a pandas DataFrame named `df` already available in memory.
+            Do not redefine or recreate it.
+           
             """)
         ])
 
-        code_chain_raw = code_gen_prompt | structured_llm
+        code_chain_raw = (code_gen_prompt | structured_llm)
         fallback_chain = insert_errors | code_chain_raw
         code_gen_chain_retry = code_chain_raw.with_fallbacks(
             fallbacks=[fallback_chain] * CONFIGURATIONS["number of retries"],
