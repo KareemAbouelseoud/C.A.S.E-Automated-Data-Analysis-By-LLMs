@@ -13,7 +13,6 @@ from Reports.node import ReportNode
 from models import InsightCard, InsightCards
 from recommender_node import recommender_node,continue_pipeline
 from preprocessing.preprocessor_node import preprocessor_node,restart_pipeline
-from pklCheckpointer import PickleCheckpointer
 import loggerModule
 logger=loggerModule.setup_logging(module_name="InsightGeneration")
 sys.path.append(os.getcwd())
@@ -54,16 +53,15 @@ graph_builder.add_node("preprocessor_executor",preprocessor_node)
 
 
 #define edges
-graph_builder.add_edge(START, "data_description")
-graph_builder.add_edge("data_description", "Report_Node")
+graph_builder.add_edge(START,"Report_Node")
+graph_builder.add_edge("Report_Node","data_description")
 # graph_builder.add_edge("Report_Node","human_node")
-graph_builder.add_conditional_edges("Report_Node", take_human_feedback, {"human_node": "human_node", "qugen_node": "qugen_node"})
+graph_builder.add_conditional_edges("data_description", take_human_feedback, {"human_node": "human_node", "qugen_node": "qugen_node"})
 graph_builder.add_conditional_edges("qugen_node", should_continue, {"qugen_node": "qugen_node", "filteration_node": "filteration_node"})
 graph_builder.add_edge("filteration_node", "SubSbaceSearch_Node")
 graph_builder.add_edge("SubSbaceSearch_Node", "explainer_node")
 graph_builder.add_conditional_edges("explainer_node",continue_pipeline,{"recommender":"recommender","Finalize_output":"Finalize_output"})
 graph_builder.add_edge("recommender", "preprocessor_executor")
-graph_builder.add_conditional_edges("preprocessor_executor",restart_pipeline,{"Report_Node":"Report_Node","Finalize_output":"Finalize_output"})
 graph_builder.add_conditional_edges("preprocessor_executor",restart_pipeline,{"Report_Node":"Report_Node","Finalize_output":"Finalize_output"})
 graph_builder.add_edge("Finalize_output",END)
 
@@ -233,7 +231,7 @@ async def consume_pipeline():
         await Custom_Continue_Auto_InsightGen(thread_id)
 
 if __name__ == "__main__":
-    file_path = r"F:\ASU\3rd year\Semster 2\ML\Labs\Project\Project\DoctorFeePrediction.csv"
+    file_path = r"c:\Users\DEll\Downloads\DoctorFeePrediction.csv"
     dataset = pd.read_csv(file_path)
     print("Dataset loaded for dry run")
     asyncio.run(consume_pipeline())
