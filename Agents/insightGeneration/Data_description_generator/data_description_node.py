@@ -4,11 +4,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 import pandas as pd
 from models import DataDescription
 
-def data_description_prompt(df, feedback):
+def data_description_prompt(data_Report, feedback):
     return f"""
     Human Feedback: {feedback[-1] if feedback else 'No feedback yet'}
-       Given the dataset:
-        {df}
+       Given the dataset report:
+        {data_Report}
         Consider previous human feedback to refine the response. 
         Provide the following:
         1. explanation of each column in bullet points.
@@ -40,17 +40,14 @@ def data_description_generator_node(state):
     if "df" not in state:
         raise ValueError("No dataset provided in state.")
 
-    df = state["df"]
-    temp_df=pd.read_json(StringIO(df))
+    
+    temp_df=pd.read_json(StringIO(state["df"]))
     feedback = state.get("human_feedback", ["No feedback yet"])
-    prompt=data_description_prompt(df, feedback)
+    prompt=data_description_prompt(state["report"], feedback)
     
   
     structured_llm = llm.with_structured_output(DataDescription, include_raw=False)
     response = structured_llm.invoke(prompt)
-
-    description = response
-
     
     schema = [col.lower() for col in temp_df.columns.tolist()]
    

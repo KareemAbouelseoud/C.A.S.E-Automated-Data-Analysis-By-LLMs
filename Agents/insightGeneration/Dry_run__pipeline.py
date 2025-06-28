@@ -64,6 +64,7 @@ graph_builder.add_edge("SubSbaceSearch_Node", "explainer_node")
 graph_builder.add_conditional_edges("explainer_node",continue_pipeline,{"recommender":"recommender","Finalize_output":"Finalize_output"})
 graph_builder.add_edge("recommender", "preprocessor_executor")
 graph_builder.add_conditional_edges("preprocessor_executor",restart_pipeline,{"Report_Node":"Report_Node","Finalize_output":"Finalize_output"})
+graph_builder.add_conditional_edges("preprocessor_executor",restart_pipeline,{"Report_Node":"Report_Node","Finalize_output":"Finalize_output"})
 graph_builder.add_edge("Finalize_output",END)
 
 #verify and display the graph
@@ -173,8 +174,7 @@ from io import StringIO
 # 2,Handball,192,115,17,41
 # 3,Swimming,211,82,28,87
 # """
-file_path = r"C:\Users\DEll\Downloads\DoctorFeePrediction.csv"
-dataset = pd.read_csv(file_path)
+
 
 import asyncio
 
@@ -223,6 +223,7 @@ async def Custom_Continue_Auto_InsightGen(thread_id: str):
         raise e   
  #run pipeline   
 async def consume_pipeline():
+    print("Starting the pipeline...")
     async for output, metadata in Custom_Start_Auto_InsightGen():
         print("Initial Output:", output)
         thread_id = str(metadata["thread_id"])  #extract thread_id as a string
@@ -232,6 +233,9 @@ async def consume_pipeline():
         await Custom_Continue_Auto_InsightGen(thread_id)
 
 if __name__ == "__main__":
+    file_path = r"F:\ASU\3rd year\Semster 2\ML\Labs\Project\Project\DoctorFeePrediction.csv"
+    dataset = pd.read_csv(file_path)
+    print("Dataset loaded for dry run")
     asyncio.run(consume_pipeline())
     
 

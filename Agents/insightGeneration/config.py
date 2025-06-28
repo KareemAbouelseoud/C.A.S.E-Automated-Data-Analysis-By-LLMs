@@ -12,7 +12,7 @@ import uuid
 from typing import Dict, Annotated,List
 from pydantic import BaseModel, ConfigDict,Field
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
 from Data_description_generator.data_description_node import data_description_generator_node,DataDescription
 from Data_description_generator.human_node import human_input
@@ -73,6 +73,13 @@ def finalize_output(state: Dict[str, str]):
     # print("Final state after serialization:", final_state)
     return final_state
 
+def PipelineGate(state):
+    if state.get("num_iterations")==0 :
+        print("This is the first Time to go through the pipeline Now the next node is the human node,num_iterations:", state.get("num_iterations"))
+        return "human_node"
+    else:
+        print("This is the second Time to go through the pipeline Now the next node is the QUGEN node,num_iterations:", state.get("num_iterations"))
+        return "qugen_node"
 
 def make_serializable(obj):
     """
