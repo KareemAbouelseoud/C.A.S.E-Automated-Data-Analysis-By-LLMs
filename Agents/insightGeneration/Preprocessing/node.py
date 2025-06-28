@@ -28,7 +28,7 @@ async def preprocessor_executor_node(state: Dict):
                 })
         # wrapped_recommendation = [{"args": recommendation}]  
         result= await preprocess_data("1", state['df'], preprocessing_tasks)
-        return {"df":result["preprocessed_dataframe"].to_json()}
+        return {"df":result["preprocessed_dataframe"]}
 
     except Exception as e:
         raise Exception(f"Error in preprocessor_executor_node: {str(e)}")
