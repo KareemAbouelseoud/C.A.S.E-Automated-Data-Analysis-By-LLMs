@@ -1,22 +1,62 @@
 [
   {
-    "question": "What is the distribution of Sex?",
-    "reason": "Understanding how values are distributed in the Sex column"
+    "question": "What is the distribution of SibSp?",
+    "reason": "Understanding how values are distributed in the SibSp column"
   },
   {
-    "question": "How does Ticket relate to Survived?",
-    "reason": "Exploring the relationship between Ticket and Survived"
+    "question": "How does Parch relate to Survived?",
+    "reason": "Exploring the relationship between Parch and Survived"
   },
   {
-    "question": "What is the sum of Age by Parch?",
-    "reason": "Analyzing Age aggregated by Parch"
+    "question": "What is the min of Parch by Embarked?",
+    "reason": "Analyzing Parch aggregated by Embarked"
   },
   {
-    "question": "What is the distribution of Survived?",
-    "reason": "Understanding how values are distributed in the Survived column"
+    "question": "What is the distribution of Ticket?",
+    "reason": "Understanding how values are distributed in the Ticket column"
   },
   {
-    "question": "How does Pclass relate to SibSp?",
-    "reason": "Exploring the relationship between Pclass and SibSp"
+    "question": "How does PassengerId relate to Age?",
+    "reason": "Exploring the relationship between PassengerId and Age"
+  },
+  {
+    "question": "What is the min of Cabin by Ticket?",
+    "reason": "Analyzing Cabin aggregated by Ticket"
+  },
+  {
+    "question": "What is the distribution of Ticket?",
+    "reason": "Understanding how values are distributed in the Ticket column"
+  },
+  {
+    "question": "How does Name relate to Embarked?",
+    "reason": "Exploring the relationship between Name and Embarked"
+  },
+  {
+    "question": "What is the min of Pclass by PassengerId?",
+    "reason": "Analyzing Pclass aggregated by PassengerId"
+  },
+  {
+    "question": "What is the distribution of Age?",
+    "reason": "Understanding how values are distributed in the Age column"
+  },
+  {
+    "question": "How does Cabin relate to Ticket?",
+    "reason": "Exploring the relationship between Cabin and Ticket"
+  },
+  {
+    "question": "What is the min of Sex by Sex?",
+    "reason": "Analyzing Sex aggregated by Sex"
+  },
+  {
+    "question": "What is the distribution of Ticket?",
+    "reason": "Understanding how values are distributed in the Ticket column"
+  },
+  {
+    "question": "How does Age relate to Pclass?",
+    "reason": "Exploring the relationship between Age and Pclass"
+  },
+  {
+    "question": "What is the sum of PassengerId by Survived?",
+    "reason": "Analyzing PassengerId aggregated by Survived"
   }
 ]

@@ -3,11 +3,14 @@ import json
 import pandas as pd
 import random
 from dotenv import load_dotenv
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from rag.config import VECTOR_STORE_PATH, EMBEDDING_MODEL, INSIGHTS_DATA_PATH
 
 # Load environment variables first
 load_dotenv()
 
-def generate_insight_cards(df: pd.DataFrame, num_cards=5) -> list:
+def generate_insight_cards(df: pd.DataFrame, num_cards=10) -> list:
     """Generate meaningful insight cards based on dataset columns"""
     cards = []
     columns = df.columns.tolist()
@@ -53,20 +56,31 @@ def main():
         print(f"✅ Loaded dataset with {len(df)} rows and {len(df.columns)} columns")
         
         # Generate insight cards
-        insight_cards = generate_insight_cards(df, num_cards=5)
+        insight_cards = generate_insight_cards(df, num_cards=15)
         
         if not insight_cards:
             print("⚠️ No insight cards generated")
             return
         
         # Create data directory if needed
-        os.makedirs("data", exist_ok=True)
-        insights_path = "data/insight_cards.json"
+        os.makedirs(os.path.dirname(INSIGHTS_DATA_PATH), exist_ok=True)
         
         # Save insights to JSON
-        with open(insights_path, 'w') as f:
+        with open(INSIGHTS_DATA_PATH, 'w') as f:
             json.dump(insight_cards, f, indent=2)
-        print(f"💾 Saved {len(insight_cards)} insights to {insights_path}")
+        print(f"💾 Saved {len(insight_cards)} insights to {INSIGHTS_DATA_PATH}")
+        
+        # Create and save the vector store
+        print("Generating embeddings and creating vector store...")
+        embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+        
+        # Use the 'question' from each insight card for embedding
+        insight_questions = [card['question'] for card in insight_cards]
+        
+        vector_store = FAISS.from_texts(texts=insight_questions, embedding=embeddings, metadatas=insight_cards)
+        vector_store.save_local(VECTOR_STORE_PATH)
+        
+        print(f"✅ Vector store created and saved to {VECTOR_STORE_PATH}")
         
         print("📥 RAG system is ready to use")
         

@@ -1,83 +1,60 @@
 import os
 import json
 import logging
-from langchain_google_genai import ChatGoogleGenerativeAI
-from typing import Dict, Any
+from typing import Dict, Any, List
+from .vector_store import get_vector_store
 
 logger = logging.getLogger(__name__)
 
-async def rag_responder_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    logger.info("RAG responder node started")
+def get_relevant_insights(user_query: str) -> List[Dict[str, Any]]:
+    """
+    Retrieve relevant insights from the vector store.
+    """
     try:
-        # Check if insights data exists
-        insights_path = "data/insight_cards.json"
-        if not os.path.exists(insights_path):
-            logger.warning("Insights data not found")
-            return {
-                **state,
-                "use_agent": True,
-                "response": ""
-            }
+        if not os.path.exists("data/vector_store"):
+            logger.warning("Vector store not found. Please generate insights first.")
+            return []
             
-        # Load stored insights
-        with open(insights_path, 'r') as f:
-            insights = json.load(f)
+        vector_store = get_vector_store()
+        # Retrieve top 3 most similar insights
+        retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+        relevant_docs = retriever.get_relevant_documents(user_query)
         
-        # If no insights, use agent
-        if not insights:
-            logger.info("No insights available")
-            return {
-                **state,
-                "use_agent": True,
-                "response": ""
-            }
-        
-        # Create Gemini-compatible prompt (no system messages)
-        prompt = f"""
-        USER: You are an AI assistant that decides whether a user query can be answered using available insights.
-        Query: {state["user_query"]}
-        
-        Available Insights:
-        {json.dumps(insights, indent=2)}
-        
-        INSTRUCTION: 
-        Can the query be answered with these insights? 
-        Respond only with YES or NO.
-        """
-        
-        # Initialize LLM
-        llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
-            temperature=0.1
-        )
-        
-        # Get decision from judge LLM
-        response = await llm.ainvoke(prompt)
-        decision = response.content.strip().upper()
-        logger.info(f"Judge decision: {decision}")
-        
-        # If judge says YES, return the first insight
-        if "YES" in decision:
-            return {
-                **state,
-                "response": f"{insights[0].get('question', '')}\n{insights[0].get('reason', '')}",
-                "insights": [insights[0]],
-                "method": "rag",
-                "use_agent": False
-            }
-        
-        # If judge says NO, use the agent
-        logger.info("No relevant insights found, using agent")
-        return {
-            **state,
-            "use_agent": True,
-            "response": ""
-        }
-        
+        # The metadata of the documents contains our original insight cards
+        return [doc.metadata for doc in relevant_docs]
+
     except Exception as e:
-        logger.error(f"RAG error: {str(e)}")
+        logger.error(f"Error retrieving insights from vector store: {e}")
+        return []
+
+async def rag_responder_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    RAG node that uses a vector store to find relevant insights.
+    """
+    logger.info("--- RAG RESPONDER ---")
+    user_query = state.get("user_query")
+    
+    # Retrieve relevant insights using semantic search
+    relevant_insights = get_relevant_insights(user_query)
+    
+    if relevant_insights:
+        logger.info(f"Found {len(relevant_insights)} relevant insights.")
+        # For now, we'll just use the most relevant insight
+        top_insight = relevant_insights[0]
+        
+        return {
+            **state,
+            "response": f"I found a relevant insight for your query:\n\n"
+                        f"**Question:** {top_insight.get('question')}\n"
+                        f"**Reason:** {top_insight.get('reason')}",
+            "insights": relevant_insights,
+            "method": "RAG",
+            "use_agent": False
+        }
+    else:
+        # If no relevant insights are found, delegate to the agent
+        logger.info("No relevant insights found. Delegating to agent.")
         return {
             **state,
             "use_agent": True,
-            "response": ""
         }
