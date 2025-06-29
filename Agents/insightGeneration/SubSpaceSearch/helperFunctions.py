@@ -137,3 +137,29 @@ def apply_filters(df:pd.DataFrame, filters):
         filtered_dfs.append(filtered_df_less)
         # Return the list of DataFrames and the multiple_Views flag
         return filtered_dfs, multiple_Views
+def make_serializable(obj):
+    """
+    Convert an object to a serializable format.
+    """
+    if isinstance(obj, dict):
+        return {k: make_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [make_serializable(i) for i in obj]
+    elif isinstance(obj, tuple):  # Add tuple support
+        return tuple(make_serializable(i) for i in obj)
+    elif isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
+        return int(obj)
+    elif isinstance(obj, (np.float64, np.float32, np.float16)):
+        return float(obj)
+    elif isinstance(obj, pd.Interval):
+        return {'left': obj.left, 'right': obj.right, 'closed': obj.closed}
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.datetime64, pd.Timestamp)):
+        print("FOUND DATETIME")
+        print(obj)
+        return str(obj)
+    elif isinstance(obj, (np.float64, float)) and (np.isnan(obj) or np.isinf(obj)):
+        return None
+    else:
+        return obj

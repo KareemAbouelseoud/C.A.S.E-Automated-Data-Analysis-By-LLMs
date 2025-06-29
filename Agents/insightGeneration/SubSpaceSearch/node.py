@@ -176,6 +176,9 @@ def subspace_search(df:pd.DataFrame,card:InsightCard,desc:DataDescription, beam_
     # Prepare the final result with aggregated insights
     final_result = []
     for score in sorted_scores:
+        for idx,(_Subspace, adv_card) in enumerate(all_insights[score]):
+            serialized_Subspace=make_serializable(_Subspace)
+            all_insights[score][idx] = (serialized_Subspace, adv_card)
         final_result.append((f"Score: {score}", all_insights[score]))
     # print("Final Result:", final_result)
     return final_result
