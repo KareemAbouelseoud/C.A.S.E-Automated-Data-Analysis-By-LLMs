@@ -70,15 +70,8 @@ async def main():
                 
                 # Show data results if available
                 if method == "AGENT":
-                    df_result = final_response.get('resulted_df')
-                    if df_result:
-                        print("\n--- Resulting Data ---")
-                        try:
-                            df = pd.read_json(df_result, orient='split')
-                            print(df.head().to_string())
-                        except:
-                            print(df_result)
-                
+                    print("\n--- Resulting Data ---")
+                    print(final_response.get("response"))
                 elapsed = time.time() - start_time
                 print("\n" + "-" * 60)
                 print(f"Time: {elapsed:.2f}s")

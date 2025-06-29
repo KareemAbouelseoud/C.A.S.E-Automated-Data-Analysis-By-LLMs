@@ -5,7 +5,7 @@ import os
 import sys
 import pandas as pd
 from langgraph.graph import StateGraph, END
-from rag.rag_node import rag_responder_node
+from Rag.rag_node import rag_responder_node
 from ChatResponder.node import PandasAgentResponder
 from typing import Any, TypedDict, List, Dict, Optional
 from dotenv import load_dotenv

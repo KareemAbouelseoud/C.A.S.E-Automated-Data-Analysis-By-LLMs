@@ -24,7 +24,8 @@ async def PandasAgentResponder(state: Dict[str, Any]) -> Dict[str, Any]:
             llm,
             df,
             agent_type="tool-calling",
-            verbose=False
+            verbose=False,
+            allow_dangerous_code=True
         )
 
         # Get response
